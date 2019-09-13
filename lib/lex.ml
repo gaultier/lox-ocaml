@@ -64,6 +64,10 @@ let rec lex_r acc irest =
       lex_r (GreaterEqual :: acc) irest
   | '>' :: irest ->
       lex_r (Greater :: acc) irest
+  | ' ' :: irest -> lex_r acc irest
+  | '\n' :: irest -> lex_r acc irest
+  | '\t' :: irest -> lex_r acc irest
+  | '\r' :: irest -> lex_r acc irest
   | x :: irest ->
       lex_r (Unknown x :: acc) irest
 
