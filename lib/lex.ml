@@ -20,9 +20,6 @@ type lex_token =
   | GreaterEqual
   | Unknown of char
 
-let rec list_drop_while l f =
-  match l with x :: rest when f x -> list_drop_while rest f | _ -> l
-
 let rec lex_r acc irest =
   match irest with
   | [] ->
@@ -48,7 +45,7 @@ let rec lex_r acc irest =
   | '*' :: irest ->
       lex_r (Star :: acc) irest
   | '/' :: '/' :: irest ->
-      lex_r acc (list_drop_while irest (fun c -> c != '\n'))
+      lex_r acc (Base.List.drop_while irest ~f:(fun c -> c != '\n'))
   | '/' :: irest ->
       lex_r (Slash :: acc) irest
   | '!' :: '=' :: irest ->
@@ -69,8 +66,6 @@ let rec lex_r acc irest =
       lex_r (Greater :: acc) irest
   | x :: irest ->
       lex_r (Unknown x :: acc) irest
-
-let string_to_list s = List.init (String.length s) (String.get s)
 
 let lex_token_to_s c =
   match c with
@@ -115,4 +110,4 @@ let lex_token_to_s c =
   | Unknown c ->
       "Unknown=`" ^ String.make 1 c ^ "`"
 
-let lex s = lex_r [] (string_to_list s)
+let lex s = lex_r [] (Base.String.to_list s)
