@@ -20,11 +20,8 @@ type lex_token =
   | GreaterEqual
   | Unknown of char
 
-
-let rec list_drop_while l f = 
-    match l with
-    | x :: rest when f x -> list_drop_while rest f
-    | _ -> l
+let rec list_drop_while l f =
+  match l with x :: rest when f x -> list_drop_while rest f | _ -> l
 
 let rec lex_r acc irest =
   match irest with
@@ -51,7 +48,7 @@ let rec lex_r acc irest =
   | '*' :: irest ->
       lex_r (Star :: acc) irest
   | '/' :: '/' :: irest ->
-      lex_r (Slash :: acc) irest
+      lex_r acc (list_drop_while irest (fun c -> c != '\n'))
   | '/' :: irest ->
       lex_r (Slash :: acc) irest
   | '!' :: '=' :: irest ->
