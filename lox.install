@@ -1,0 +1,8 @@
+lib: [
+  "_build/install/default/lib/lox/META"
+  "_build/install/default/lib/lox/dune-package"
+  "_build/install/default/lib/lox/opam"
+]
+bin: [
+  "_build/install/default/bin/lox"
+]
