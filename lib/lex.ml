@@ -16,31 +16,36 @@ type lex_token =
 
 let rec lex_r acc irest =
   match irest with
-  | [] -> acc
-  | '{' ::irest ->
+  | [] ->
+      acc
+  | '{' :: irest ->
       lex_r (CurlyBraceLeft :: acc) irest
-  | '}' ::irest ->
+  | '}' :: irest ->
       lex_r (CurlyBraceRight :: acc) irest
-  | '(' ::irest ->
+  | '(' :: irest ->
       lex_r (LeftParen :: acc) irest
-  | ')' ::irest ->
+  | ')' :: irest ->
       lex_r (RightParen :: acc) irest
-  | ',' ::irest ->
+  | ',' :: irest ->
       lex_r (Comma :: acc) irest
-  | '.' ::irest ->
+  | '.' :: irest ->
       lex_r (Dot :: acc) irest
-  | '-'::irest ->
-      lex_r (Minus::acc) irest
-  | '+' ::irest ->
+  | '-' :: irest ->
+      lex_r (Minus :: acc) irest
+  | '+' :: irest ->
       lex_r (Plus :: acc) irest
-  | ';' ::irest ->
+  | ';' :: irest ->
       lex_r (SemiColon :: acc) irest
-  | '*' ::irest ->
+  | '*' :: irest ->
       lex_r (Star :: acc) irest
-  | '/' ::irest ->
+  | '/' :: irest ->
       lex_r (Slash :: acc) irest
-  | x ::irest ->
-      lex_r ((Unknown x) :: acc) irest
+  | '!' :: '=' :: irest ->
+      lex_r (BangEqual :: acc) irest
+  | '!' :: x :: irest ->
+      lex_r (Bang :: acc) (x :: irest)
+  | x :: irest ->
+      lex_r (Unknown x :: acc) irest
 
 let string_to_list s = List.init (String.length s) (String.get s)
 
@@ -68,8 +73,10 @@ let lex_token_to_s c =
       "CurlyBraceLeft"
   | CurlyBraceRight ->
       "CurlyBraceRight"
-  | Bang -> "Bang"
-  | BangEqual -> "BangEqual"
+  | Bang ->
+      "Bang"
+  | BangEqual ->
+      "BangEqual"
   | Unknown c ->
       "Unknown=" ^ String.make 1 c
 
