@@ -10,36 +10,37 @@ type lex_token =
   | SemiColon
   | Star
   | Slash
+  | Bang
+  | BangEqual
   | Unknown of char
 
-let chars_to_token x =
-  match x with
-  | '{' ->
-      CurlyBraceLeft
-  | '}' ->
-      CurlyBraceRight
-  | '(' ->
-      LeftParen
-  | ')' ->
-      RightParen
-  | ',' ->
-      Comma
-  | '.' ->
-      Dot
-  | '-' ->
-      Minus
-  | '+' ->
-      Plus
-  | ';' ->
-      SemiColon
-  | '*' ->
-      Star
-  | '/' ->
-      Slash
-  | _ ->
-      Unknown x
-
-let lex_reducer acc x = chars_to_token x :: acc
+let rec lex_r acc irest =
+  match irest with
+  | [] -> acc
+  | '{' ::irest ->
+      lex_r (CurlyBraceLeft :: acc) irest
+  | '}' ::irest ->
+      lex_r (CurlyBraceRight :: acc) irest
+  | '(' ::irest ->
+      lex_r (LeftParen :: acc) irest
+  | ')' ::irest ->
+      lex_r (RightParen :: acc) irest
+  | ',' ::irest ->
+      lex_r (Comma :: acc) irest
+  | '.' ::irest ->
+      lex_r (Dot :: acc) irest
+  | '-'::irest ->
+      lex_r (Minus::acc) irest
+  | '+' ::irest ->
+      lex_r (Plus :: acc) irest
+  | ';' ::irest ->
+      lex_r (SemiColon :: acc) irest
+  | '*' ::irest ->
+      lex_r (Star :: acc) irest
+  | '/' ::irest ->
+      lex_r (Slash :: acc) irest
+  | x ::irest ->
+      lex_r ((Unknown x) :: acc) irest
 
 let string_to_list s = List.init (String.length s) (String.get s)
 
@@ -67,7 +68,9 @@ let lex_token_to_s c =
       "CurlyBraceLeft"
   | CurlyBraceRight ->
       "CurlyBraceRight"
+  | Bang -> "Bang"
+  | BangEqual -> "BangEqual"
   | Unknown c ->
       "Unknown=" ^ String.make 1 c
 
-let lex s = s |> string_to_list |> List.fold_left lex_reducer []
+let lex s = lex_r [] (string_to_list s)
