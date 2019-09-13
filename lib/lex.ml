@@ -12,6 +12,8 @@ type lex_token =
   | Slash
   | Bang
   | BangEqual
+  | Equal
+  | EqualEqual
   | Unknown of char
 
 let rec lex_r acc irest =
@@ -42,8 +44,12 @@ let rec lex_r acc irest =
       lex_r (Slash :: acc) irest
   | '!' :: '=' :: irest ->
       lex_r (BangEqual :: acc) irest
-  | '!' :: x :: irest ->
-      lex_r (Bang :: acc) (x :: irest)
+  | '!' :: irest ->
+      lex_r (Bang :: acc) irest
+  | '=' :: '=' :: irest ->
+      lex_r (EqualEqual :: acc) irest
+  | '=' :: irest ->
+      lex_r (Equal :: acc) irest
   | x :: irest ->
       lex_r (Unknown x :: acc) irest
 
@@ -77,7 +83,11 @@ let lex_token_to_s c =
       "Bang"
   | BangEqual ->
       "BangEqual"
+  | Equal ->
+      "Equal"
+  | EqualEqual ->
+      "EqualEqual"
   | Unknown c ->
-      "Unknown=" ^ String.make 1 c
+      "Unknown=`" ^ String.make 1 c ^ "`"
 
 let lex s = lex_r [] (string_to_list s)
