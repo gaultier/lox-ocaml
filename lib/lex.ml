@@ -14,6 +14,10 @@ type lex_token =
   | BangEqual
   | Equal
   | EqualEqual
+  | Less
+  | LessEqual
+  | Greater
+  | GreaterEqual
   | Unknown of char
 
 let rec lex_r acc irest =
@@ -50,6 +54,14 @@ let rec lex_r acc irest =
       lex_r (EqualEqual :: acc) irest
   | '=' :: irest ->
       lex_r (Equal :: acc) irest
+  | '<' :: '=' :: irest ->
+      lex_r (LessEqual :: acc) irest
+  | '<' :: irest ->
+      lex_r (Less :: acc) irest
+  | '>' :: '=' :: irest ->
+      lex_r (GreaterEqual :: acc) irest
+  | '>' :: irest ->
+      lex_r (Greater :: acc) irest
   | x :: irest ->
       lex_r (Unknown x :: acc) irest
 
@@ -87,6 +99,14 @@ let lex_token_to_s c =
       "Equal"
   | EqualEqual ->
       "EqualEqual"
+  | Less ->
+      "Less"
+  | LessEqual ->
+      "LessEqual"
+  | Greater ->
+      "Greater"
+  | GreaterEqual ->
+      "GreaterEqual"
   | Unknown c ->
       "Unknown=`" ^ String.make 1 c ^ "`"
 
