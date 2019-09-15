@@ -18,7 +18,7 @@ type lex_token =
   | LessEqual
   | Greater
   | GreaterEqual
-  | LexString of string
+  | LexString of char list
   | Unknown of char
 
 let rec lex_r acc irest =
@@ -65,11 +65,17 @@ let rec lex_r acc irest =
       lex_r (GreaterEqual :: acc) irest
   | '>' :: irest ->
       lex_r (Greater :: acc) irest
-  | ' ' :: irest -> lex_r acc irest
-  | '\n' :: irest -> lex_r acc irest
-  | '\t' :: irest -> lex_r acc irest
-  | '\r' :: irest -> lex_r acc irest
-  | '"' :: irest -> let s, r = Base.List.split_while irest ~f:(fun c -> c != '"') in lex_r ( (LexString s) :: acc) r 
+  | ' ' :: irest ->
+      lex_r acc irest
+  | '\n' :: irest ->
+      lex_r acc irest
+  | '\t' :: irest ->
+      lex_r acc irest
+  | '\r' :: irest ->
+      lex_r acc irest
+  | '"' :: irest ->
+      let s, r = Base.List.split_while irest ~f:(fun c -> c != '"') in
+      lex_r (LexString s :: acc) r
   | x :: irest ->
       lex_r (Unknown x :: acc) irest
 
@@ -113,7 +119,8 @@ let lex_token_to_s c =
       "Greater"
   | GreaterEqual ->
       "GreaterEqual"
-  | LexString s -> "LexString=`" ^ s ^ "`"
+  | LexString s ->
+      "LexString=`" ^ Base.String.of_char_list s ^ "`"
   | Unknown c ->
       "Unknown=`" ^ String.make 1 c ^ "`"
 
