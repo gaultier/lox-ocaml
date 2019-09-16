@@ -18,10 +18,76 @@ type lex_token =
   | LessEqual
   | Greater
   | GreaterEqual
+  | And
+  | Class
+  | Else
+  | False
+  | For
+  | Fun
+  | If
+  | Nil
+  | Or
+  | Print
+  | Return
+  | Super
+  | This
+  | True
+  | Var
+  | While
   | LexString of char list
   | LexNumber of float
   | LexIdentifier of char list
   | Unknown of char list
+
+let keywords = Hashtbl.create ~random:false 20
+
+;;
+Hashtbl.add keywords "and" And
+
+;;
+Hashtbl.add keywords "class" Class
+
+;;
+Hashtbl.add keywords "else" Else
+
+;;
+Hashtbl.add keywords "false" False
+
+;;
+Hashtbl.add keywords "for" For
+
+;;
+Hashtbl.add keywords "fun" Fun
+
+;;
+Hashtbl.add keywords "if" If
+
+;;
+Hashtbl.add keywords "nil" Nil
+
+;;
+Hashtbl.add keywords "or" Or
+
+;;
+Hashtbl.add keywords "print" Print
+
+;;
+Hashtbl.add keywords "return"
+
+;;
+Hashtbl.add keywords "super" Super
+
+;;
+Hashtbl.add keywords "this" This
+
+;;
+Hashtbl.add keywords "true" True
+
+;;
+Hashtbl.add keywords "var" Var
+
+;;
+Hashtbl.add keywords "while" While
 
 let rec lex_r acc rest =
   match rest with
