@@ -222,10 +222,7 @@ let lex_token_to_s c =
       "Unknown=`" ^ Base.String.of_char_list c ^ "`"
 
 let lex s = lex_r [] (Base.String.to_list s)
+  |> List.rev
 
-let rec fact n = if n = 1 then 1 else n * fact (n - 1);;
-
-print_endline (string_of_int (fact 5));;
-
-let%test _ = fact 5 = 0
+let%test _ = lex "and or class" = [And; Or; Class]
 
