@@ -157,11 +157,16 @@ let rec lex_r acc rest =
       let s = Base.String.of_char_list digits in
       let f = Float.of_string s in
       lex_r (LexNumber f :: acc) r
-  | x :: _ when Base.Char.is_alpha x ->
+  | x :: _ when Base.Char.is_alpha x -> (
       let identifier, r =
         Base.List.split_while rest ~f:Base.Char.is_alphanum
       in
-      lex_r (LexIdentifier identifier :: acc) r
+      let s = Base.String.of_char_list identifier in
+      match Hashtbl.find_opt keywords s with
+      | Some k ->
+          lex_r (k :: acc) r
+      | _ ->
+          lex_r (LexIdentifier identifier :: acc) r )
   | x :: irest ->
       lex_r (Unknown [x] :: acc) irest
 
