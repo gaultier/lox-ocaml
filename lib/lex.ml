@@ -205,6 +205,38 @@ let lex_token_to_s c =
       "Greater"
   | GreaterEqual ->
       "GreaterEqual"
+  | And ->
+      "And"
+  | Class ->
+      "Class"
+  | Else ->
+      "Else"
+  | False ->
+      "False"
+  | For ->
+      "For"
+  | Fun ->
+      "Fun"
+  | If ->
+      "If"
+  | Nil ->
+      "Nil"
+  | Or ->
+      "Or"
+  | Print ->
+      "Print"
+  | Return ->
+      "Return"
+  | Super ->
+      "Super"
+  | This ->
+      "This"
+  | True ->
+      "True"
+  | Var ->
+      "Var"
+  | While ->
+      "While"
   | LexString s ->
       "LexString=`" ^ Base.String.of_char_list s ^ "`"
   | LexNumber n ->
