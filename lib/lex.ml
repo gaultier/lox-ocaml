@@ -244,19 +244,12 @@ let%test _ =
   = [Minus; Plus; SemiColon; Star; Slash; Unknown ['@']; Bang; Dot; BangEqual]
 
 let%test _ =
-  lex ".!====<=<>>=// abc\n!\"hey\"!\"a!"
-  = [ Dot
-    ; BangEqual
-    ; EqualEqual
-    ; Equal
-    ; LessEqual
-    ; Equal
-    ; Less
-    ; Greater
-    ; GreaterEqual
-    ; Slash
-    ; Slash
-    ; LexIdentifier ['a'; 'b'; 'c']
+  lex ".!====<=<>>=// foo"
+  = [Dot; BangEqual; EqualEqual; Equal; LessEqual; Less; Greater; GreaterEqual]
+
+let%test _ =
+  lex " abc\n!\"hey\"!\"a!"
+  = [ LexIdentifier ['a'; 'b'; 'c']
     ; Bang
     ; LexString ['h'; 'e'; 'y']
     ; Bang
