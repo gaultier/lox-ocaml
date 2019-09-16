@@ -20,14 +20,8 @@ type lex_token =
   | GreaterEqual
   | LexString of char list
   | LexNumber of float
+  | LexIdentifier of char list
   | Unknown of char list
-
-let is_char_digit c =
-  match c with
-  | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' ->
-      true
-  | _ ->
-      false
 
 let rec lex_r acc rest =
   match rest with
@@ -88,11 +82,20 @@ let rec lex_r acc rest =
           lex_r (LexString s :: acc) rrest
       | _ ->
           lex_r (Unknown s :: acc) r )
-  | x :: _ when is_char_digit x ->
-      let digits, r = Base.List.split_while rest ~f:is_char_digit in
+  | x :: _ when Base.Char.is_digit x ->
+      (* trailing dot is allowed for now *)
+      let digits, r =
+        Base.List.split_while rest ~f:(fun c ->
+            Base.Char.is_digit c || c == '.')
+      in
       let s = Base.String.of_char_list digits in
       let f = Float.of_string s in
       lex_r (LexNumber f :: acc) r
+  | x :: _ when Base.Char.is_alpha x ->
+      let identifier, r =
+        Base.List.split_while rest ~f:Base.Char.is_alphanum
+      in
+      lex_r (LexIdentifier identifier :: acc) r
   | x :: irest ->
       lex_r (Unknown [x] :: acc) irest
 
@@ -140,6 +143,8 @@ let lex_token_to_s c =
       "LexString=`" ^ Base.String.of_char_list s ^ "`"
   | LexNumber n ->
       "LexNumber=" ^ Float.to_string n
+  | LexIdentifier s ->
+      "LexIdentifier=`" ^ Base.String.of_char_list s ^ "`"
   | Unknown c ->
       "Unknown=`" ^ Base.String.of_char_list c ^ "`"
 
