@@ -117,7 +117,7 @@ let rec lex_r acc rest =
       | '"' :: rrest ->
           lex_r (LexString s :: acc) rrest
       | _ ->
-          lex_r (Unknown s :: acc) r )
+          lex_r (Unknown ('"' :: s) :: acc) r )
   | x :: _ when Base.Char.is_digit x ->
       (* trailing dot is allowed for now *)
       let digits, r =
@@ -247,10 +247,8 @@ let%test _ =
   lex ".!====<=<>>=// foo"
   = [Dot; BangEqual; EqualEqual; Equal; LessEqual; Less; Greater; GreaterEqual]
 
-let%test _ =
-  lex " abc\n!\"hey\"!\"a!"
-  = [ LexIdentifier ['a'; 'b'; 'c']
-    ; Bang
-    ; LexString ['h'; 'e'; 'y']
-    ; Bang
-    ; Unknown ['"'; 'a'; '!'] ]
+let%test _ = lex " abc\n" = [LexIdentifier ['a'; 'b'; 'c']]
+
+let%test _ = lex "!\"hey\"!" = [Bang; LexString ['h'; 'e'; 'y']; Bang]
+
+let%test _ = lex "\"a!" = [Unknown ['"'; 'a'; '!']]
