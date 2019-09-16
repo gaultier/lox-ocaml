@@ -213,13 +213,13 @@ let lex_token_to_s c =
   | While ->
       "While"
   | LexString s ->
-      "LexString=`" ^ Base.String.of_char_list s ^ "`"
+      "(LexString \"" ^ Base.String.of_char_list s ^ "\")"
   | LexNumber n ->
-      "LexNumber=" ^ Float.to_string n
+      "(LexNumber " ^ Float.to_string n ^ ")"
   | LexIdentifier s ->
-      "LexIdentifier=`" ^ Base.String.of_char_list s ^ "`"
+      "(LexIdentifier " ^ Base.String.of_char_list s ^ ")"
   | Unknown c ->
-      "Unknown=`" ^ Base.String.of_char_list c ^ "`"
+      "(Unknown " ^ Base.String.of_char_list c ^ ")"
 
 let lex s = lex_r [] (Base.String.to_list s) |> List.rev
 
