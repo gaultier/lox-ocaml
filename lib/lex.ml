@@ -39,7 +39,7 @@ type lex_token =
   | LexIdentifier of char list
   | Unknown of char list
 
-let keywords = Hashtbl.create ~random:false 20
+let keywords = Hashtbl.create ~random:false 16
 
 ;;
 Hashtbl.add keywords "and" And
