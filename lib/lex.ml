@@ -19,6 +19,7 @@ type lex_token =
   | Greater
   | GreaterEqual
   | LexString of char list
+  | LexNumber of float
   | Unknown of char list
 
 let rec lex_r acc irest =
@@ -80,6 +81,8 @@ let rec lex_r acc irest =
           lex_r (LexString s :: acc) rrest
       | _ ->
           lex_r (Unknown s :: acc) r )
+  | '0' :: irest ->
+      lex_r (LexNumber 0. :: acc) irest
   | x :: irest ->
       lex_r (Unknown [x] :: acc) irest
 
@@ -125,6 +128,8 @@ let lex_token_to_s c =
       "GreaterEqual"
   | LexString s ->
       "LexString=`" ^ Base.String.of_char_list s ^ "`"
+  | LexNumber n ->
+      "LexNumber=" ^ Float.to_string n ^ "\""
   | Unknown c ->
       "Unknown=`" ^ Base.String.of_char_list c ^ "`"
 
