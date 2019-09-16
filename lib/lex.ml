@@ -22,6 +22,13 @@ type lex_token =
   | LexNumber of float
   | Unknown of char list
 
+let is_char_digit c =
+  match c with
+  | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' ->
+      true
+  | _ ->
+      false
+
 let rec lex_r acc irest =
   match irest with
   | [] ->
@@ -81,7 +88,7 @@ let rec lex_r acc irest =
           lex_r (LexString s :: acc) rrest
       | _ ->
           lex_r (Unknown s :: acc) r )
-  | '0' :: irest ->
+  | x :: irest when is_char_digit x ->
       lex_r (LexNumber 0. :: acc) irest
   | x :: irest ->
       lex_r (Unknown [x] :: acc) irest
