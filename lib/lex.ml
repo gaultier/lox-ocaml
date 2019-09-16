@@ -88,11 +88,11 @@ let rec lex_r acc rest =
           lex_r (LexString s :: acc) rrest
       | _ ->
           lex_r (Unknown s :: acc) r )
-  | x :: irest when is_char_digit x ->
-      let digits = Base.List.take_while rest ~f:is_char_digit in
+  | x :: _ when is_char_digit x ->
+      let digits, r = Base.List.split_while rest ~f:is_char_digit in
       let s = Base.String.of_char_list digits in
       let f = Float.of_string s in
-      lex_r (LexNumber f :: acc) irest
+      lex_r (LexNumber f :: acc) r
   | x :: irest ->
       lex_r (Unknown [x] :: acc) irest
 
@@ -139,7 +139,7 @@ let lex_token_to_s c =
   | LexString s ->
       "LexString=`" ^ Base.String.of_char_list s ^ "`"
   | LexNumber n ->
-      "LexNumber=" ^ Float.to_string n ^ "\""
+      "LexNumber=" ^ Float.to_string n
   | Unknown c ->
       "Unknown=`" ^ Base.String.of_char_list c ^ "`"
 
