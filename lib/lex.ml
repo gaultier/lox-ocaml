@@ -39,55 +39,25 @@ type lex_token =
   | LexIdentifier of char list
   | Unknown of char list
 
-let keywords = Hashtbl.create ~random:false 16
-
-;;
-Hashtbl.add keywords "and" And
-
-;;
-Hashtbl.add keywords "class" Class
-
-;;
-Hashtbl.add keywords "else" Else
-
-;;
-Hashtbl.add keywords "false" False
-
-;;
-Hashtbl.add keywords "for" For
-
-;;
-Hashtbl.add keywords "fun" Fun
-
-;;
-Hashtbl.add keywords "if" If
-
-;;
-Hashtbl.add keywords "nil" Nil
-
-;;
-Hashtbl.add keywords "or" Or
-
-;;
-Hashtbl.add keywords "print" Print
-
-;;
-Hashtbl.add keywords "return"
-
-;;
-Hashtbl.add keywords "super" Super
-
-;;
-Hashtbl.add keywords "this" This
-
-;;
-Hashtbl.add keywords "true" True
-
-;;
-Hashtbl.add keywords "var" Var
-
-;;
-Hashtbl.add keywords "while" While
+let keywords =
+  Base.Hashtbl.of_alist_exn
+    (module Base.String)
+    [ ("and", And)
+    ; ("class", Class)
+    ; ("else", Else)
+    ; ("false", False)
+    ; ("for", For)
+    ; ("fun", Fun)
+    ; ("if", If)
+    ; ("nil", Nil)
+    ; ("or", Or)
+    ; ("print", Print)
+    ; ("return", Return)
+    ; ("super", Super)
+    ; ("this", This)
+    ; ("true", True)
+    ; ("var", Var)
+    ; ("while", While) ]
 
 let rec lex_r acc rest =
   match rest with
@@ -162,7 +132,7 @@ let rec lex_r acc rest =
         Base.List.split_while rest ~f:Base.Char.is_alphanum
       in
       let s = Base.String.of_char_list identifier in
-      match Hashtbl.find_opt keywords s with
+      match Base.Hashtbl.find keywords s with
       | Some k ->
           lex_r (k :: acc) r
       | _ ->
