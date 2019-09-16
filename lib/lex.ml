@@ -221,12 +221,43 @@ let lex_token_to_s c =
   | Unknown c ->
       "Unknown=`" ^ Base.String.of_char_list c ^ "`"
 
-let lex s = lex_r [] (Base.String.to_list s)
-  |> List.rev
+let lex s = lex_r [] (Base.String.to_list s) |> List.rev
 
-let%test _ = lex "and or class fun true false class for nil" = [And; Or; Class; Fun; True; False; Class; For; Nil]
+let%test _ =
+  lex "and or class fun true false class for nil"
+  = [And; Or; Class; Fun; True; False; Class; For; Nil]
 
-let%test _ = lex  "and 123.4 or (){},." = [And; LexNumber(123.4); Or; LeftParen; RightParen; CurlyBraceLeft; CurlyBraceRight; Comma; Dot]
-(*
-let%test _ = lex  ".!====<=<>>=// abc\n!\"hey\"!\"a!" = [Dot; Minus; Plus; SemiColon; Star; Slash; Unknown(['@']); BangEqual; EqualEqual; Equal; LessEqual; Equal; Less; Greater; GreaterEqual; Slash; Slash; LexIdentifier(['a', 'b', 'c']) ]
-*)
+let%test _ =
+  lex "and 123.4 or (){},."
+  = [ And
+    ; LexNumber 123.4
+    ; Or
+    ; LeftParen
+    ; RightParen
+    ; CurlyBraceLeft
+    ; CurlyBraceRight
+    ; Comma
+    ; Dot ]
+
+let%test _ =
+  lex "-+;*/@!.!="
+  = [Minus; Plus; SemiColon; Star; Slash; Unknown ['@']; Bang; Dot; BangEqual]
+
+let%test _ =
+  lex ".!====<=<>>=// abc\n!\"hey\"!\"a!"
+  = [ Dot
+    ; BangEqual
+    ; EqualEqual
+    ; Equal
+    ; LessEqual
+    ; Equal
+    ; Less
+    ; Greater
+    ; GreaterEqual
+    ; Slash
+    ; Slash
+    ; LexIdentifier ['a'; 'b'; 'c']
+    ; Bang
+    ; LexString ['h'; 'e'; 'y']
+    ; Bang
+    ; Unknown ['"'; 'a'; '!'] ]

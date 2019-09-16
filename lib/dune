@@ -1,5 +1,6 @@
 (library
  (name lox)
  (libraries base)
-  (inline_tests)
- (preprocess (pps ppx_inline_test)))
+ (inline_tests)
+ (preprocess
+  (pps ppx_inline_test)))
