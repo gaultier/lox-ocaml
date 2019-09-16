@@ -29,8 +29,8 @@ let is_char_digit c =
   | _ ->
       false
 
-let rec lex_r acc irest =
-  match irest with
+let rec lex_r acc rest =
+  match rest with
   | [] ->
       acc
   | '{' :: irest ->
@@ -89,7 +89,10 @@ let rec lex_r acc irest =
       | _ ->
           lex_r (Unknown s :: acc) r )
   | x :: irest when is_char_digit x ->
-      lex_r (LexNumber 0. :: acc) irest
+      let digits = Base.List.take_while rest ~f:is_char_digit in
+      let s = Base.String.of_char_list digits in
+      let f = Float.of_string s in
+      lex_r (LexNumber f :: acc) irest
   | x :: irest ->
       lex_r (Unknown [x] :: acc) irest
 
