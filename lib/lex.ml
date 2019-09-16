@@ -224,5 +224,4 @@ let lex_token_to_s c =
 let lex s = lex_r [] (Base.String.to_list s)
   |> List.rev
 
-let%test _ = lex "and or class" = [And; Or; Class]
-
+let%test _ = lex "and or class fun true false class for nil" = [And; Or; Class; Fun; True; False; Class; For; Nil]
