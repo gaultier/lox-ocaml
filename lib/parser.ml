@@ -19,3 +19,5 @@ let rec expr_to_s e =
       "(Literal " ^ Float.to_string f ^ ")"
   | Unary (t, r) ->
       "(Unary " ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s r ^ ")"
+
+let%test _ = (parse_r (Literal 99.) [Lex.False]) = Literal(0.)
