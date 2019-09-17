@@ -6,6 +6,8 @@ type expr =
   | Literal of literal_value
   | Unary of Lex.lex_token * expr
 
+let grouping _ = Grouping (Literal Nil)
+
 let parse_r acc rest =
   match rest with
   | [] ->
@@ -20,6 +22,8 @@ let parse_r acc rest =
       Literal (EFloat f)
   | Lex.LexString s :: _ ->
       Literal (EString (Base.String.of_char_list s))
+  | Lex.LeftParen :: irest ->
+      grouping irest
   | _ ->
       Literal Nil
 
