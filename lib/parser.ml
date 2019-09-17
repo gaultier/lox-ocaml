@@ -11,7 +11,7 @@ let parse_r acc rest =
   | [] ->
       acc
   | Lex.False :: _ ->
-      Literal (Float 0.)
+      Literal false
   | _ ->
       Literal Nil
 
@@ -38,4 +38,4 @@ let rec expr_to_s e =
   | Unary (t, r) ->
       "(Unary " ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s r ^ ")"
 
-let%test _ = parse_r (Literal (Float 99.)) [Lex.False] = Literal (Float 0.)
+let%test _ = parse_r (Literal (Float 99.)) [Lex.False] = Literal false
