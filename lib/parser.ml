@@ -14,6 +14,8 @@ let parse_r acc rest =
       Literal false
   | Lex.True :: _ ->
       Literal true
+  | Lex.Nil :: _ ->
+      Literal Nil
   | _ ->
       Literal Nil
 
@@ -42,3 +44,4 @@ let rec expr_to_s e =
 
 let%test _ = parse_r (Literal (Float 99.)) [Lex.False] = Literal false
 let%test _ = parse_r (Literal (Float 99.)) [Lex.True] = Literal true
+let%test _ = parse_r (Literal (Float 99.)) [Lex.Nil] = Literal Nil
