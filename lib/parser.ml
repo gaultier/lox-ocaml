@@ -4,6 +4,11 @@ type expr =
   | Literal of float
   | Unary of Lex.lex_token * expr
 
+let parse_r acc rest = match rest with 
+| [] -> acc
+| Lex.False :: _ -> Literal (0.)
+| _ -> Literal(-1.)
+
 let rec expr_to_s e =
   match e with
   | Binary (l, t, r) ->
