@@ -1,4 +1,4 @@
-type literal_value = false | true | Float of float | Nil
+type literal_value = false | true | EFloat of float | Nil | EString of string
 
 type expr =
   | Binary of expr * Lex.lex_token * expr
@@ -17,7 +17,9 @@ let parse_r acc rest =
   | Lex.Nil :: _ ->
       Literal Nil
   | Lex.LexNumber f :: _ ->
-      Literal (Float f)
+      Literal (EFloat f)
+  | Lex.LexString s :: _ ->
+      Literal (EString (Base.String.of_char_list s))
   | _ ->
       Literal Nil
 
@@ -35,8 +37,10 @@ let rec expr_to_s e =
             "false"
         | true ->
             "true"
-        | Float f ->
+        | EFloat f ->
             Float.to_string f
+        | EString s ->
+            s
         | Nil ->
             "nil"
       in
@@ -44,11 +48,15 @@ let rec expr_to_s e =
   | Unary (t, r) ->
       "(Unary " ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s r ^ ")"
 
-let%test _ = parse_r (Literal (Float 99.)) [Lex.False] = Literal false
+let%test _ = parse_r (Literal (EFloat 99.)) [Lex.False] = Literal false
 
-let%test _ = parse_r (Literal (Float 99.)) [Lex.True] = Literal true
+let%test _ = parse_r (Literal (EFloat 99.)) [Lex.True] = Literal true
 
-let%test _ = parse_r (Literal (Float 99.)) [Lex.Nil] = Literal Nil
+let%test _ = parse_r (Literal (EFloat 99.)) [Lex.Nil] = Literal Nil
 
 let%test _ =
-  parse_r (Literal (Float 99.)) [Lex.LexNumber 3.] = Literal (Float 3.)
+  parse_r (Literal (EFloat 99.)) [Lex.LexNumber 3.] = Literal (EFloat 3.)
+
+let%test _ =
+  parse_r (Literal (EFloat 99.)) [Lex.LexString ['a'; 'b']]
+  = Literal (EString "ab")
