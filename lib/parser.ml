@@ -29,6 +29,9 @@ let rec unary tokens =
   | Lex.Bang :: rest ->
       let right, rrest = unary rest in
       (Unary (Lex.Bang, right), rrest)
+  | Lex.Minus :: rest ->
+      let right, rrest = unary rest in
+      (Unary (Lex.Minus, right), rrest)
   | _ ->
       primary tokens
 
@@ -103,3 +106,7 @@ let%test _ = primary [Lex.LexString ['a'; 'b']] = (Literal (EString "ab"), [])
 let%test _ =
   unary [Lex.Bang; Lex.LexNumber 1.]
   = (Unary (Lex.Bang, Literal (EFloat 1.)), [])
+
+let%test _ =
+  unary [Lex.Minus; Lex.LexNumber 1.]
+  = (Unary (Lex.Minus, Literal (EFloat 1.)), [])
