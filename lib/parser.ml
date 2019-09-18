@@ -123,3 +123,6 @@ let%test _ =
 let%test _ = primary [Lex.LexNumber 1.] = (Literal (EFloat 1.), [])
 
 let%test _ = multiplication [Lex.LexNumber 1.] = (Literal (EFloat 1.), [])
+
+let%test _ = multiplication [Lex.LexNumber 1.; Lex.Star; Lex.LexNumber 2.] = (Binary (Literal (EFloat 1.), Lex.Star, Literal (EFloat 2.)), [])
+
