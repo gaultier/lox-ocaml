@@ -35,6 +35,8 @@ let rec unary tokens =
   | _ ->
       primary tokens
 
+let multiplication tokens = unary tokens
+
 (* let multiplication e tokens = unary e tokens *)
 (* let addition e tokens = multiplication e tokens *)
 (* let comparison e tokens = addition e tokens *)
@@ -112,3 +114,6 @@ let%test _ =
   = (Unary (Lex.Minus, Literal (EFloat 1.)), [])
 
 let%test _ = primary [Lex.LexNumber 1.] = (Literal (EFloat 1.), [])
+
+let%test _ = multiplication [Lex.LexNumber 1.] = (Literal (EFloat 1.), [])
+
