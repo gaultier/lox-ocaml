@@ -6,21 +6,9 @@ type expr =
   | Literal of literal_value
   | Unary of Lex.lex_token * expr
 
-let primary _ _ = Literal Nil
-let unary e tokens = primary e tokens
-let multiplication e tokens = unary e tokens
-let addition e tokens = multiplication e tokens
-let comparison e tokens = addition e tokens
-let equality e tokens = comparison e tokens
-
-let expression () = equality
-let grouping _ = Grouping (Literal Nil)
-
-
-let parse_r acc rest =
-  match rest with
-  | [] ->
-      acc
+let primary e tokens = 
+  match tokens with
+  | [] -> e
   | Lex.False :: _ ->
       Literal false
   | Lex.True :: _ ->
@@ -31,10 +19,41 @@ let parse_r acc rest =
       Literal (EFloat f)
   | Lex.LexString s :: _ ->
       Literal (EString (Base.String.of_char_list s))
-  | Lex.LeftParen :: irest ->
-      grouping irest
   | _ ->
       Literal Nil
+
+(* let unary e tokens = primary e tokens *)
+(* let multiplication e tokens = unary e tokens *)
+(* let addition e tokens = multiplication e tokens *)
+(* let comparison e tokens = addition e tokens *)
+(* let rec equality e tokens = match tokens with *)
+(* | Lex.BangEqual :: trest -> *) 
+(*     equality (Binary e Lex.BangEqual equality ) trest *)
+(*         (1* let right = comparison enew trest in Binary(e Lex.BangEqual right) *1) *)
+(* | _ -> comparison e tokens *)
+
+(* let expression () = equality *)
+(* let grouping _ = Grouping (Literal Nil) *)
+
+
+(* let parse_r acc rest = *)
+(*   match rest with *)
+(*   | [] -> *)
+(*       acc *)
+(*   | lex.false :: _ -> *)
+(*       literal false *)
+(*   | lex.true :: _ -> *)
+(*       literal true *)
+(*   | lex.nil :: _ -> *)
+(*       literal nil *)
+(*   | lex.lexnumber f :: _ -> *)
+(*       literal (efloat f) *)
+(*   | lex.lexstring s :: _ -> *)
+(*       literal (estring (base.string.of_char_list s)) *)
+(*   | Lex.LeftParen :: irest -> *)
+(*       grouping irest *)
+(*   | _ -> *)
+(*       Literal Nil *)
 
 let rec expr_to_s e =
   match e with
@@ -61,15 +80,15 @@ let rec expr_to_s e =
   | Unary (t, r) ->
       "(Unary " ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s r ^ ")"
 
-let%test _ = parse_r (Literal (EFloat 99.)) [Lex.False] = Literal false
+let%test _ = primary (Literal (EFloat 99.)) [Lex.False] = Literal false
 
-let%test _ = parse_r (Literal (EFloat 99.)) [Lex.True] = Literal true
+let%test _ = primary (Literal (EFloat 99.)) [Lex.True] = Literal true
 
-let%test _ = parse_r (Literal (EFloat 99.)) [Lex.Nil] = Literal Nil
-
-let%test _ =
-  parse_r (Literal (EFloat 99.)) [Lex.LexNumber 3.] = Literal (EFloat 3.)
+let%test _ = primary (Literal (EFloat 99.)) [Lex.Nil] = Literal Nil
 
 let%test _ =
-  parse_r (Literal (EFloat 99.)) [Lex.LexString ['a'; 'b']]
+  primary (Literal (EFloat 99.)) [Lex.LexNumber 3.] = Literal (EFloat 3.)
+
+let%test _ =
+  primary (Literal (EFloat 99.)) [Lex.LexString ['a'; 'b']]
   = Literal (EString "ab")
