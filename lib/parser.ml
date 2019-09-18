@@ -6,35 +6,35 @@ type expr =
   | Literal of literal_value
   | Unary of Lex.lex_token * expr
 
-let primary e tokens = 
+let primary e tokens =
   match tokens with
-  | [] -> e
-  | Lex.False :: _ ->
-      Literal false
-  | Lex.True :: _ ->
-      Literal true
-  | Lex.Nil :: _ ->
-      Literal Nil
-  | Lex.LexNumber f :: _ ->
-      Literal (EFloat f)
-  | Lex.LexString s :: _ ->
-      Literal (EString (Base.String.of_char_list s))
-  | _ ->
-      Literal Nil
+  | [] ->
+      (e, [])
+  | Lex.False :: rest ->
+      (Literal false, rest)
+  | Lex.True :: rest ->
+      (Literal true, rest)
+  | Lex.Nil :: rest ->
+      (Literal Nil, rest)
+  | Lex.LexNumber f :: rest ->
+      (Literal (EFloat f), rest)
+  | Lex.LexString s :: rest ->
+      (Literal (EString (Base.String.of_char_list s)), rest)
+  | _ :: rest ->
+      (Literal Nil, rest)
 
 (* let unary e tokens = primary e tokens *)
 (* let multiplication e tokens = unary e tokens *)
 (* let addition e tokens = multiplication e tokens *)
 (* let comparison e tokens = addition e tokens *)
 (* let rec equality e tokens = match tokens with *)
-(* | Lex.BangEqual :: trest -> *) 
+(* | Lex.BangEqual :: trest -> *)
 (*     equality (Binary e Lex.BangEqual equality ) trest *)
 (*         (1* let right = comparison enew trest in Binary(e Lex.BangEqual right) *1) *)
 (* | _ -> comparison e tokens *)
 
 (* let expression () = equality *)
 (* let grouping _ = Grouping (Literal Nil) *)
-
 
 (* let parse_r acc rest = *)
 (*   match rest with *)
@@ -80,15 +80,15 @@ let rec expr_to_s e =
   | Unary (t, r) ->
       "(Unary " ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s r ^ ")"
 
-let%test _ = primary (Literal (EFloat 99.)) [Lex.False] = Literal false
+let%test _ = primary (Literal (EFloat 99.)) [Lex.False] = (Literal false, [])
 
-let%test _ = primary (Literal (EFloat 99.)) [Lex.True] = Literal true
+let%test _ = primary (Literal (EFloat 99.)) [Lex.True] = (Literal true, [])
 
-let%test _ = primary (Literal (EFloat 99.)) [Lex.Nil] = Literal Nil
+let%test _ = primary (Literal (EFloat 99.)) [Lex.Nil] = (Literal Nil, [])
 
 let%test _ =
-  primary (Literal (EFloat 99.)) [Lex.LexNumber 3.] = Literal (EFloat 3.)
+  primary (Literal (EFloat 99.)) [Lex.LexNumber 3.] = (Literal (EFloat 3.), [])
 
 let%test _ =
   primary (Literal (EFloat 99.)) [Lex.LexString ['a'; 'b']]
-  = Literal (EString "ab")
+  = (Literal (EString "ab"), [])
