@@ -35,7 +35,14 @@ let rec unary tokens =
   | _ ->
       primary tokens
 
-let multiplication tokens = unary tokens
+let multiplication tokens =
+  let left, rest = unary tokens in
+  match rest with
+  | Lex.Star :: rrest ->
+      let right, rrrest = unary rrest in
+      (Binary (left, Lex.Star, right), rrrest)
+  | _ ->
+      (left, rest)
 
 (* let multiplication e tokens = unary e tokens *)
 (* let addition e tokens = multiplication e tokens *)
@@ -116,4 +123,3 @@ let%test _ =
 let%test _ = primary [Lex.LexNumber 1.] = (Literal (EFloat 1.), [])
 
 let%test _ = multiplication [Lex.LexNumber 1.] = (Literal (EFloat 1.), [])
-
