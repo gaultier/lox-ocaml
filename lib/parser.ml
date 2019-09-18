@@ -48,6 +48,18 @@ let multiplication tokens =
   | _ ->
       (left, rest)
 
+let addition tokens =
+  let left, rest = multiplication tokens in
+  match rest with
+  | Lex.Plus :: rrest ->
+      let right, rrrest = multiplication rrest in
+      (Binary (left, Lex.Plus, right), rrrest)
+  | Lex.Minus :: rrest ->
+      let right, rrrest = multiplication rrest in
+      (Binary (left, Lex.Minus, right), rrrest)
+  | _ ->
+      (left, rest)
+
 (* let multiplication e tokens = unary e tokens *)
 (* let addition e tokens = multiplication e tokens *)
 (* let comparison e tokens = addition e tokens *)
@@ -142,4 +154,11 @@ let%test _ =
   multiplication [Lex.LexNumber 1.; Lex.Slash; Lex.Minus; Lex.LexNumber 2.]
   = ( Binary
         (Literal (EFloat 1.), Lex.Slash, Unary (Lex.Minus, Literal (EFloat 2.)))
+    , [] )
+
+
+let%test _ =
+  addition [Lex.LexNumber 1.; Lex.Plus; Lex.Minus; Lex.LexNumber 2.]
+  = ( Binary
+        (Literal (EFloat 1.), Lex.Plus, Unary (Lex.Minus, Literal (EFloat 2.)))
     , [] )
