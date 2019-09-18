@@ -23,7 +23,13 @@ let primary e tokens =
   | _ :: rest ->
       (Literal Nil, rest)
 
-(* let unary e tokens = primary e tokens *)
+let unary e tokens =
+  match tokens with
+  | Lex.Bang :: rest ->
+      (Unary (Lex.Bang, e), rest)
+  | _ ->
+      primary e tokens
+
 (* let multiplication e tokens = unary e tokens *)
 (* let addition e tokens = multiplication e tokens *)
 (* let comparison e tokens = addition e tokens *)
