@@ -6,7 +6,16 @@ type expr =
   | Literal of literal_value
   | Unary of Lex.lex_token * expr
 
+let primary _ _ = Literal Nil
+let unary e tokens = primary e tokens
+let multiplication e tokens = unary e tokens
+let addition e tokens = multiplication e tokens
+let comparison e tokens = addition e tokens
+let equality e tokens = comparison e tokens
+
+let expression () = equality
 let grouping _ = Grouping (Literal Nil)
+
 
 let parse_r acc rest =
   match rest with
