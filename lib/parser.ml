@@ -41,6 +41,9 @@ let multiplication tokens =
   | Lex.Star :: rrest ->
       let right, rrrest = unary rrest in
       (Binary (left, Lex.Star, right), rrrest)
+  | Lex.Slash :: rrest ->
+      let right, rrrest = unary rrest in
+      (Binary (left, Lex.Slash, right), rrrest)
   | _ ->
       (left, rest)
 
@@ -124,8 +127,19 @@ let%test _ = primary [Lex.LexNumber 1.] = (Literal (EFloat 1.), [])
 
 let%test _ = multiplication [Lex.LexNumber 1.] = (Literal (EFloat 1.), [])
 
-let%test _ = multiplication [Lex.LexNumber 1.; Lex.Star; Lex.LexNumber 2.] = (Binary (Literal (EFloat 1.), Lex.Star, Literal (EFloat 2.)), [])
+let%test _ =
+  multiplication [Lex.LexNumber 1.; Lex.Star; Lex.LexNumber 2.]
+  = (Binary (Literal (EFloat 1.), Lex.Star, Literal (EFloat 2.)), [])
 
-let%test _ = multiplication [Lex.LexNumber 1.; Lex.Star; Lex.Minus; Lex.LexNumber 2.] = (Binary (Literal (EFloat 1.), Lex.Star, (Unary (Lex.Minus, Literal (EFloat 2.)))), [])
+let%test _ =
+  multiplication [Lex.LexNumber 1.; Lex.Star; Lex.Minus; Lex.LexNumber 2.]
+  = ( Binary
+        (Literal (EFloat 1.), Lex.Star, Unary (Lex.Minus, Literal (EFloat 2.)))
+    , [] )
 
+let%test _ =
+  multiplication [Lex.LexNumber 1.; Lex.Slash; Lex.Minus; Lex.LexNumber 2.]
+  = ( Binary
+        (Literal (EFloat 1.), Lex.Slash, Unary (Lex.Minus, Literal (EFloat 2.)))
+    , [] )
 
