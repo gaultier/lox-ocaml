@@ -60,36 +60,23 @@ let addition tokens =
   | _ ->
       (left, rest)
 
-(* let multiplication e tokens = unary e tokens *)
-(* let addition e tokens = multiplication e tokens *)
-(* let comparison e tokens = addition e tokens *)
-(* let rec equality e tokens = match tokens with *)
-(* | Lex.BangEqual :: trest -> *)
-(*     equality (Binary e Lex.BangEqual equality ) trest *)
-(*         (1* let right = comparison enew trest in Binary(e Lex.BangEqual right) *1) *)
-(* | _ -> comparison e tokens *)
-
-(* let expression () = equality *)
-(* let grouping _ = Grouping (Literal Nil) *)
-
-(* let parse_r acc rest = *)
-(*   match rest with *)
-(*   | [] -> *)
-(*       acc *)
-(*   | lex.false :: _ -> *)
-(*       literal false *)
-(*   | lex.true :: _ -> *)
-(*       literal true *)
-(*   | lex.nil :: _ -> *)
-(*       literal nil *)
-(*   | lex.lexnumber f :: _ -> *)
-(*       literal (efloat f) *)
-(*   | lex.lexstring s :: _ -> *)
-(*       literal (estring (base.string.of_char_list s)) *)
-(*   | Lex.LeftParen :: irest -> *)
-(*       grouping irest *)
-(*   | _ -> *)
-(*       Literal Nil *)
+let comparison tokens =
+  let left, rest = addition tokens in
+  match rest with
+  | Lex.Greater as t :: rrest  ->
+      let right, rrrest = addition rrest in
+      (Binary (left, t, right), rrrest)
+  | Lex.GreaterEqual as t :: rrest  ->
+      let right, rrrest = addition rrest in
+      (Binary (left, t, right), rrrest)
+  | Lex.Less as t :: rrest  ->
+      let right, rrrest = addition rrest in
+      (Binary (left, t, right), rrrest)
+  | Lex.LessEqual as t :: rrest  ->
+      let right, rrrest = addition rrest in
+      (Binary (left, t, right), rrrest)
+  | _ ->
+      (left, rest)
 
 let rec expr_to_s e =
   match e with
@@ -167,3 +154,10 @@ let%test _ =
   = ( Binary
         (Literal (EFloat 1.), Lex.Plus, Unary (Lex.Minus, Literal (EFloat 2.)))
     , [] )
+
+let%test _ =
+  "1 < -2" |> Lex.lex |> comparison
+  = ( Binary
+        (Literal (EFloat 1.), Lex.Less, Unary (Lex.Minus, Literal (EFloat 2.)))
+    , [] )
+
