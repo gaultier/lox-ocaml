@@ -110,3 +110,5 @@ let%test _ =
 let%test _ =
   unary [Lex.Minus; Lex.LexNumber 1.]
   = (Unary (Lex.Minus, Literal (EFloat 1.)), [])
+
+let%test _ = primary [Lex.LexNumber 1.] = (Literal (EFloat 1.), [])
