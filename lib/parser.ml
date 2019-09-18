@@ -156,9 +156,14 @@ let%test _ =
         (Literal (EFloat 1.), Lex.Slash, Unary (Lex.Minus, Literal (EFloat 2.)))
     , [] )
 
-
 let%test _ =
   addition [Lex.LexNumber 1.; Lex.Plus; Lex.Minus; Lex.LexNumber 2.]
+  = ( Binary
+        (Literal (EFloat 1.), Lex.Plus, Unary (Lex.Minus, Literal (EFloat 2.)))
+    , [] )
+
+let%test _ =
+  "1 + -2" |> Lex.lex |> addition
   = ( Binary
         (Literal (EFloat 1.), Lex.Plus, Unary (Lex.Minus, Literal (EFloat 2.)))
     , [] )
