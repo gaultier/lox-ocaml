@@ -22,6 +22,7 @@ let primary tokens =
   | Lex.LexString s :: rest ->
       (Literal (EString (Base.String.of_char_list s)), rest)
   | _ :: rest ->
+      (* TODO: parenthesized expression *)
       (Literal Nil, rest)
 
 let rec unary tokens =
@@ -142,4 +143,3 @@ let%test _ =
   = ( Binary
         (Literal (EFloat 1.), Lex.Slash, Unary (Lex.Minus, Literal (EFloat 2.)))
     , [] )
-
