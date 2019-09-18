@@ -5,11 +5,12 @@ type expr =
   | Grouping of expr
   | Literal of literal_value
   | Unary of Lex.lex_token * expr
+  | Error
 
-let primary e tokens =
+let primary tokens =
   match tokens with
   | [] ->
-      (e, [])
+      (Error, [])
   | Lex.False :: rest ->
       (Literal false, rest)
   | Lex.True :: rest ->
@@ -23,12 +24,13 @@ let primary e tokens =
   | _ :: rest ->
       (Literal Nil, rest)
 
-let unary e tokens =
+let rec unary tokens =
   match tokens with
   | Lex.Bang :: rest ->
-      (Unary (Lex.Bang, e), rest)
+      let right, rrest = unary rest in
+      (Unary (Lex.Bang, right), rrest)
   | _ ->
-      primary e tokens
+      primary tokens
 
 (* let multiplication e tokens = unary e tokens *)
 (* let addition e tokens = multiplication e tokens *)
@@ -85,16 +87,19 @@ let rec expr_to_s e =
       "(Literal " ^ literal_value_s ^ ")"
   | Unary (t, r) ->
       "(Unary " ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s r ^ ")"
+  | Error ->
+      "(Error)"
 
-let%test _ = primary (Literal (EFloat 99.)) [Lex.False] = (Literal false, [])
+let%test _ = primary [Lex.False] = (Literal false, [])
 
-let%test _ = primary (Literal (EFloat 99.)) [Lex.True] = (Literal true, [])
+let%test _ = primary [Lex.True] = (Literal true, [])
 
-let%test _ = primary (Literal (EFloat 99.)) [Lex.Nil] = (Literal Nil, [])
+let%test _ = primary [Lex.Nil] = (Literal Nil, [])
+
+let%test _ = primary [Lex.LexNumber 3.] = (Literal (EFloat 3.), [])
+
+let%test _ = primary [Lex.LexString ['a'; 'b']] = (Literal (EString "ab"), [])
 
 let%test _ =
-  primary (Literal (EFloat 99.)) [Lex.LexNumber 3.] = (Literal (EFloat 3.), [])
-
-let%test _ =
-  primary (Literal (EFloat 99.)) [Lex.LexString ['a'; 'b']]
-  = (Literal (EString "ab"), [])
+  unary [Lex.Bang; Lex.LexNumber 1.]
+  = (Unary (Lex.Bang, Literal (EFloat 1.)), [])
