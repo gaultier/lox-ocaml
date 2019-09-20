@@ -7,97 +7,103 @@ type expr =
   | Unary of Lex.lex_token * expr
   | Error
 
-let primary tokens =
-  match tokens with
-  | [] ->
-      (Error, [])
-  | Lex.False :: rest ->
-      (Literal false, rest)
-  | Lex.True :: rest ->
-      (Literal true, rest)
-  | Lex.Nil :: rest ->
-      (Literal Nil, rest)
-  | Lex.LexNumber f :: rest ->
-      (Literal (EFloat f), rest)
-  | Lex.LexString s :: rest ->
-      (Literal (EString (Base.String.of_char_list s)), rest)
-  | Lex.LeftParen :: rest -> (
-      let e, rrest = expression rest in
-      match rrest with
-      | Lex.RightParen :: rrrest ->
-          (Grouping e, rrrest)
+let rec primary = function
+  | tokens -> (
+    match tokens with
+    | [] ->
+        (Error, [])
+    | Lex.False :: rest ->
+        (Literal false, rest)
+    | Lex.True :: rest ->
+        (Literal true, rest)
+    | Lex.Nil :: rest ->
+        (Literal Nil, rest)
+    | Lex.LexNumber f :: rest ->
+        (Literal (EFloat f), rest)
+    | Lex.LexString s :: rest ->
+        (Literal (EString (Base.String.of_char_list s)), rest)
+    | Lex.LeftParen :: rest -> (
+        let e, rrest = expression rest in
+        match rrest with
+        | Lex.RightParen :: rrrest ->
+            (Grouping e, rrrest)
+        | _ ->
+            (Error, rrest) )
+    | _ :: rest ->
+        (* TODO: parenthesized expression *)
+        (Literal Nil, rest) )
+
+and unary = function
+  | tokens -> (
+    match tokens with
+    | Lex.Bang :: rest ->
+        let right, rrest = unary rest in
+        (Unary (Lex.Bang, right), rrest)
+    | Lex.Minus :: rest ->
+        let right, rrest = unary rest in
+        (Unary (Lex.Minus, right), rrest)
+    | _ ->
+        primary tokens )
+
+and multiplication = function
+  | tokens -> (
+      let left, rest = unary tokens in
+      match rest with
+      | (Lex.Star as t) :: rrest ->
+          let right, rrrest = multiplication rrest in
+          (Binary (left, t, right), rrrest)
+      | (Lex.Slash as t) :: rrest ->
+          let right, rrrest = multiplication rrest in
+          (Binary (left, t, right), rrrest)
       | _ ->
-          (Error, rrest) )
-  | _ :: rest ->
-      (* TODO: parenthesized expression *)
-      (Literal Nil, rest)
+          (left, rest) )
 
-let rec unary tokens =
-  match tokens with
-  | Lex.Bang :: rest ->
-      let right, rrest = unary rest in
-      (Unary (Lex.Bang, right), rrest)
-  | Lex.Minus :: rest ->
-      let right, rrest = unary rest in
-      (Unary (Lex.Minus, right), rrest)
-  | _ ->
-      primary tokens
+and addition = function
+  | tokens -> (
+      let left, rest = multiplication tokens in
+      match rest with
+      | Lex.Plus :: rrest ->
+          let right, rrrest = addition rrest in
+          (Binary (left, Lex.Plus, right), rrrest)
+      | Lex.Minus :: rrest ->
+          let right, rrrest = addition rrest in
+          (Binary (left, Lex.Minus, right), rrrest)
+      | _ ->
+          (left, rest) )
 
-let rec multiplication tokens =
-  let left, rest = unary tokens in
-  match rest with
-  | (Lex.Star as t) :: rrest ->
-      let right, rrrest = multiplication rrest in
-      (Binary (left, t, right), rrrest)
-  | (Lex.Slash as t) :: rrest ->
-      let right, rrrest = multiplication rrest in
-      (Binary (left, t, right), rrrest)
-  | _ ->
-      (left, rest)
+and comparison = function
+  | tokens -> (
+      let left, rest = addition tokens in
+      match rest with
+      | (Lex.Greater as t) :: rrest ->
+          let right, rrrest = comparison rrest in
+          (Binary (left, t, right), rrrest)
+      | (Lex.GreaterEqual as t) :: rrest ->
+          let right, rrrest = comparison rrest in
+          (Binary (left, t, right), rrrest)
+      | (Lex.Less as t) :: rrest ->
+          let right, rrrest = comparison rrest in
+          (Binary (left, t, right), rrrest)
+      | (Lex.LessEqual as t) :: rrest ->
+          let right, rrrest = comparison rrest in
+          (Binary (left, t, right), rrrest)
+      | _ ->
+          (left, rest) )
 
-let rec addition tokens =
-  let left, rest = multiplication tokens in
-  match rest with
-  | Lex.Plus :: rrest ->
-      let right, rrrest = addition rrest in
-      (Binary (left, Lex.Plus, right), rrrest)
-  | Lex.Minus :: rrest ->
-      let right, rrrest = addition rrest in
-      (Binary (left, Lex.Minus, right), rrrest)
-  | _ ->
-      (left, rest)
+and equality = function
+  | tokens -> (
+      let left, rest = comparison tokens in
+      match rest with
+      | (Lex.BangEqual as t) :: rrest ->
+          let right, rrrest = equality rrest in
+          (Binary (left, t, right), rrrest)
+      | (Lex.EqualEqual as t) :: rrest ->
+          let right, rrrest = equality rrest in
+          (Binary (left, t, right), rrrest)
+      | _ ->
+          (left, rest) )
 
-let rec comparison tokens =
-  let left, rest = addition tokens in
-  match rest with
-  | (Lex.Greater as t) :: rrest ->
-      let right, rrrest = comparison rrest in
-      (Binary (left, t, right), rrrest)
-  | (Lex.GreaterEqual as t) :: rrest ->
-      let right, rrrest = comparison rrest in
-      (Binary (left, t, right), rrrest)
-  | (Lex.Less as t) :: rrest ->
-      let right, rrrest = comparison rrest in
-      (Binary (left, t, right), rrrest)
-  | (Lex.LessEqual as t) :: rrest ->
-      let right, rrrest = comparison rrest in
-      (Binary (left, t, right), rrrest)
-  | _ ->
-      (left, rest)
-
-let rec equality tokens =
-  let left, rest = comparison tokens in
-  match rest with
-  | (Lex.BangEqual as t) :: rrest ->
-      let right, rrrest = equality rrest in
-      (Binary (left, t, right), rrrest)
-  | (Lex.EqualEqual as t) :: rrest ->
-      let right, rrrest = equality rrest in
-      (Binary (left, t, right), rrrest)
-  | _ ->
-      (left, rest)
-
-let expression tokens = equality tokens
+and expression = function tokens -> equality tokens
 
 let rec expr_to_s e =
   match e with
