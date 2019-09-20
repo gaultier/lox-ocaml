@@ -63,20 +63,34 @@ let addition tokens =
 let comparison tokens =
   let left, rest = addition tokens in
   match rest with
-  | Lex.Greater as t :: rrest  ->
+  | (Lex.Greater as t) :: rrest ->
       let right, rrrest = addition rrest in
       (Binary (left, t, right), rrrest)
-  | Lex.GreaterEqual as t :: rrest  ->
+  | (Lex.GreaterEqual as t) :: rrest ->
       let right, rrrest = addition rrest in
       (Binary (left, t, right), rrrest)
-  | Lex.Less as t :: rrest  ->
+  | (Lex.Less as t) :: rrest ->
       let right, rrrest = addition rrest in
       (Binary (left, t, right), rrrest)
-  | Lex.LessEqual as t :: rrest  ->
+  | (Lex.LessEqual as t) :: rrest ->
       let right, rrrest = addition rrest in
       (Binary (left, t, right), rrrest)
   | _ ->
       (left, rest)
+
+let equality tokens =
+  let left, rest = comparison tokens in
+  match rest with
+  | (Lex.BangEqual as t) :: rrest ->
+      let right, rrrest = comparison rrest in
+      (Binary (left, t, right), rrrest)
+  | (Lex.EqualEqual as t) :: rrest ->
+      let right, rrrest = comparison rrest in
+      (Binary (left, t, right), rrrest)
+  | _ ->
+      (left, rest)
+
+let expression tokens = equality tokens
 
 let rec expr_to_s e =
   match e with
@@ -161,3 +175,24 @@ let%test _ =
         (Literal (EFloat 1.), Lex.Less, Unary (Lex.Minus, Literal (EFloat 2.)))
     , [] )
 
+let%test _ =
+  "1 == -2" |> Lex.lex |> expression
+  = ( Binary
+        ( Literal (EFloat 1.)
+        , Lex.EqualEqual
+        , Unary (Lex.Minus, Literal (EFloat 2.)) )
+    , [] )
+
+let%test _ =
+  "1 != 3" |> Lex.lex |> expression
+  = (Binary (Literal (EFloat 1.), Lex.BangEqual, Literal (EFloat 3.)), [])
+
+let%test _ =
+  "1 != 3 == -2" |> Lex.lex |> expression
+  = ( Binary
+        ( Binary (Literal (EFloat 1.), Lex.BangEqual, Literal (EFloat 3.))
+        , EqualEqual
+        , Unary (Lex.Minus, Literal (EFloat 2.)) )
+  , [] );;
+
+"1 != 3 == -2" |> Lex.lex |> expression |> fst |> expr_to_s |> print_endline
