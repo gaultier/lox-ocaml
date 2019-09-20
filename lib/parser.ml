@@ -21,6 +21,13 @@ let primary tokens =
       (Literal (EFloat f), rest)
   | Lex.LexString s :: rest ->
       (Literal (EString (Base.String.of_char_list s)), rest)
+  | Lex.LeftParen :: rest -> (
+      let e, rrest = expression rest in
+      match rrest with
+      | Lex.RightParen :: rrrest ->
+          (Grouping e, rrrest)
+      | _ ->
+          (Error, rrest) )
   | _ :: rest ->
       (* TODO: parenthesized expression *)
       (Literal Nil, rest)
