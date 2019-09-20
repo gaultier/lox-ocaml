@@ -206,3 +206,12 @@ let%test _ =
             , Lex.EqualEqual
             , Unary (Lex.Minus, Literal (EFloat 2.)) ) )
     , [] )
+
+let%test _ =
+  "(1 != 3) == -2" |> Lex.lex |> expression
+  = ( Binary
+        ( Grouping
+            (Binary (Literal (EFloat 1.), Lex.BangEqual, Literal (EFloat 3.)))
+        , Lex.EqualEqual
+        , Unary (Lex.Minus, Literal (EFloat 2.)) )
+    , [] )
