@@ -126,7 +126,7 @@ let rec expr_to_s e =
             "nil"
         )
   | Unary (t, r) ->
-      "(Unary " ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s r ^ ")"
+      "(" ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s r ^ ")"
   | Error ->
       "(Error)"
 
