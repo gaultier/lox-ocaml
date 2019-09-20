@@ -36,7 +36,6 @@ let rec unary tokens =
   | _ ->
       primary tokens
 
-
 let rec multiplication tokens =
   let left, rest = unary tokens in
   match rest with
@@ -96,23 +95,21 @@ let expression tokens = equality tokens
 let rec expr_to_s e =
   match e with
   | Binary (l, t, r) ->
-      "(" ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s l ^ " " ^ expr_to_s r
-      ^ ")"
+      "(" ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s l ^ " " ^ expr_to_s r ^ ")"
   | Grouping m ->
       "(Grouping " ^ expr_to_s m ^ ")"
-  | Literal v ->
-        (match v with
-        | false ->
-            "false"
-        | true ->
-            "true"
-        | EFloat f ->
-            Float.to_string f
-        | EString s ->
-            s
-        | Nil ->
-            "nil"
-        )
+  | Literal v -> (
+    match v with
+    | false ->
+        "false"
+    | true ->
+        "true"
+    | EFloat f ->
+        Float.to_string f
+    | EString s ->
+        s
+    | Nil ->
+        "nil" )
   | Unary (t, r) ->
       "(" ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s r ^ ")"
   | Error ->
@@ -189,9 +186,10 @@ let%test _ =
 let%test _ =
   "1 != 3 == -2" |> Lex.lex |> expression
   = ( Binary
-        ( Binary (Literal (EFloat 1.), Lex.BangEqual, Literal (EFloat 3.))
-        , EqualEqual
-        , Unary (Lex.Minus, Literal (EFloat 2.)) )
-  , [] );;
-
-"1 != 3 == -2" |> Lex.lex |> expression |> fst |> expr_to_s |> print_endline
+        ( Literal (EFloat 1.)
+        , Lex.BangEqual
+        , Binary
+            ( Literal (EFloat 3.)
+            , Lex.EqualEqual
+            , Unary (Lex.Minus, Literal (EFloat 2.)) ) )
+    , [] )
