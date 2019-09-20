@@ -36,6 +36,19 @@ let rec unary tokens =
   | _ ->
       primary tokens
 
+
+let rec multiplication_r tokens =
+  let left, rest = unary tokens in
+  match rest with
+  | Lex.Star :: rrest ->
+      let right, rrrest = multiplication_r rrest in
+      (Binary (left, Lex.Star, right), rrrest)
+  | Lex.Slash :: rrest ->
+      let right, rrrest = unary rrest in
+      (Binary (left, Lex.Slash, right), rrrest)
+  | _ ->
+      (left, rest)
+
 let multiplication tokens =
   let left, rest = unary tokens in
   match rest with
@@ -95,13 +108,12 @@ let expression tokens = equality tokens
 let rec expr_to_s e =
   match e with
   | Binary (l, t, r) ->
-      "(Binary " ^ expr_to_s l ^ " " ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s r
+      "(" ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s l ^ " " ^ expr_to_s r
       ^ ")"
   | Grouping m ->
       "(Grouping " ^ expr_to_s m ^ ")"
   | Literal v ->
-      let literal_value_s =
-        match v with
+        (match v with
         | false ->
             "false"
         | true ->
@@ -112,8 +124,7 @@ let rec expr_to_s e =
             s
         | Nil ->
             "nil"
-      in
-      "(Literal " ^ literal_value_s ^ ")"
+        )
   | Unary (t, r) ->
       "(Unary " ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s r ^ ")"
   | Error ->
