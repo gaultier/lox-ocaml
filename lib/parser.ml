@@ -61,12 +61,12 @@ and addition = function
   | tokens -> (
       let left, rest = multiplication tokens in
       match rest with
-      | Lex.Plus :: rrest ->
+      | (Lex.Plus as t) :: rrest ->
           let right, rrrest = addition rrest in
-          (Binary (left, Lex.Plus, right), rrrest)
-      | Lex.Minus :: rrest ->
+          (Binary (left, t, right), rrrest)
+      | (Lex.Minus as t) :: rrest ->
           let right, rrrest = addition rrest in
-          (Binary (left, Lex.Minus, right), rrrest)
+          (Binary (left, t, right), rrrest)
       | _ ->
           (left, rest) )
 
