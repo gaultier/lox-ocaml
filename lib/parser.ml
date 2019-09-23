@@ -30,8 +30,7 @@ let rec primary = function
         | _ ->
             (Error, rrest) )
     | _ :: rest ->
-        (* TODO: parenthesized expression *)
-        (Literal Nil, rest) )
+        (Error, rest) )
 
 and unary = function
   | tokens -> (
