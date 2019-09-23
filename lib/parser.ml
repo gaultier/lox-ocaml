@@ -65,15 +65,9 @@ and comparison = function
   | tokens -> (
       let left, rest = addition tokens in
       match rest with
-      | (Lex.Greater as t) :: rrest ->
-          let right, rrrest = comparison rrest in
-          (Binary (left, t, right), rrrest)
-      | (Lex.GreaterEqual as t) :: rrest ->
-          let right, rrrest = comparison rrest in
-          (Binary (left, t, right), rrrest)
-      | (Lex.Less as t) :: rrest ->
-          let right, rrrest = comparison rrest in
-          (Binary (left, t, right), rrrest)
+      | (Lex.Greater as t) :: rrest
+      | (Lex.GreaterEqual as t) :: rrest
+      | (Lex.Less as t) :: rrest
       | (Lex.LessEqual as t) :: rrest ->
           let right, rrrest = comparison rrest in
           (Binary (left, t, right), rrrest)
