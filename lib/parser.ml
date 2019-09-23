@@ -35,12 +35,9 @@ let rec primary = function
 and unary = function
   | tokens -> (
     match tokens with
-    | Lex.Bang :: rest ->
+    | (Lex.Bang as t) :: rest | (Lex.Minus as t) :: rest ->
         let right, rrest = unary rest in
-        (Unary (Lex.Bang, right), rrest)
-    | Lex.Minus :: rest ->
-        let right, rrest = unary rest in
-        (Unary (Lex.Minus, right), rrest)
+        (Unary (t, right), rrest)
     | _ ->
         primary tokens )
 
