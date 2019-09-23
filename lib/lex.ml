@@ -1,8 +1,8 @@
 type lex_token =
   | CurlyBraceLeft
   | CurlyBraceRight
-  | LeftParen
-  | RightParen
+  | ParenLeft
+  | ParenRight
   | Comma
   | Dot
   | Minus
@@ -68,9 +68,9 @@ let rec lex_r acc rest =
   | '}' :: irest ->
       lex_r (CurlyBraceRight :: acc) irest
   | '(' :: irest ->
-      lex_r (LeftParen :: acc) irest
+      lex_r (ParenLeft :: acc) irest
   | ')' :: irest ->
-      lex_r (RightParen :: acc) irest
+      lex_r (ParenRight :: acc) irest
   | ',' :: irest ->
       lex_r (Comma :: acc) irest
   | '.' :: irest ->
@@ -142,10 +142,10 @@ let rec lex_r acc rest =
 
 let lex_token_to_s c =
   match c with
-  | LeftParen ->
-      "LeftParen"
-  | RightParen ->
-      "RightParen"
+  | ParenLeft ->
+      "ParenLeft"
+  | ParenRight ->
+      "ParenRight"
   | Comma ->
       "Comma"
   | Dot ->
@@ -232,8 +232,8 @@ let%test _ =
   = [ And
     ; LexNumber 123.4
     ; Or
-    ; LeftParen
-    ; RightParen
+    ; ParenLeft
+    ; ParenRight
     ; CurlyBraceLeft
     ; CurlyBraceRight
     ; Comma

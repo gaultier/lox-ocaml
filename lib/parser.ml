@@ -22,10 +22,10 @@ let rec primary = function
         (Literal (EFloat f), rest)
     | Lex.LexString s :: rest ->
         (Literal (EString (Base.String.of_char_list s)), rest)
-    | Lex.LeftParen :: rest -> (
+    | Lex.ParenLeft :: rest -> (
         let e, rrest = expression rest in
         match rrest with
-        | Lex.RightParen :: rrrest ->
+        | Lex.ParenRight :: rrrest ->
             (Grouping e, rrrest)
         | _ ->
             (Error, rrest) )
