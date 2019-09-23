@@ -197,3 +197,12 @@ let%test _ =
         , Lex.EqualEqual
         , Unary (Lex.Minus, Literal (EFloat 2.)) )
     , [] )
+
+let%test _ =
+  "2 >= (1 + 1) " |> Lex.lex |> expression
+  = ( Binary
+        ( Literal (EFloat 2.)
+        , Lex.GreaterEqual
+        , Grouping
+            (Binary (Literal (EFloat 1.), Lex.Plus, Literal (EFloat 1.))) )
+    , [] )
