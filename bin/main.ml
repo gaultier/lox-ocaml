@@ -9,5 +9,5 @@ tokens |> List.iter (fun t -> Printf.printf "%s\n" (Lox.Lex.lex_token_to_s t))
 |> Lox.Parse.expr_to_s |> print_endline
 
 ;;
-"-1 + 3" |> Lox.Lex.lex |> Lox.Parse.expression |> fst |> Lox.Interpret.eval
-|> Lox.Parse.literal_to_s |> print_endline
+"-1 + 3 * 5" |> Lox.Lex.lex |> Lox.Parse.expression |> fst
+|> Lox.Interpret.eval |> Lox.Parse.literal_to_s |> print_endline

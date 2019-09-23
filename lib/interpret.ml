@@ -1,7 +1,7 @@
-let efloat_plus a b =
+let efloat_op a b op =
   match (a, b) with
   | Parse.EFloat x, Parse.EFloat y ->
-      Parse.EFloat (x +. y)
+      Parse.EFloat (op x y)
   | _ ->
       Parse.Nil
 
@@ -23,6 +23,12 @@ let rec eval exp =
   | Parse.Literal (Parse.EFloat f) ->
       Parse.EFloat f
   | Binary (left, Lex.Plus, right) ->
-      efloat_plus (eval left) (eval right)
+      efloat_op (eval left) (eval right) ( +. )
+  | Binary (left, Lex.Minus, right) ->
+      efloat_op (eval left) (eval right) ( -. )
+  | Binary (left, Lex.Slash, right) ->
+      efloat_op (eval left) (eval right) ( /. )
+  | Binary (left, Lex.Star, right) ->
+      efloat_op (eval left) (eval right) ( *. )
   | _ ->
       Nil
