@@ -143,81 +143,81 @@ let rec lex_r acc rest =
 let lex_token_to_s c =
   match c with
   | ParenLeft ->
-      "ParenLeft"
+      "("
   | ParenRight ->
-      "ParenRight"
+      ")"
   | Comma ->
-      "Comma"
+      ","
   | Dot ->
-      "Dot"
+      "."
   | Minus ->
-      "Minus"
+      "-"
   | Plus ->
-      "Plus"
+      "+"
   | SemiColon ->
-      "SemiColon"
+      ";"
   | Star ->
-      "Star"
+      "*"
   | Slash ->
-      "Slash"
+      "/"
   | CurlyBraceLeft ->
-      "CurlyBraceLeft"
+      "{"
   | CurlyBraceRight ->
-      "CurlyBraceRight"
+      "}"
   | Bang ->
-      "Bang"
+      "!"
   | BangEqual ->
-      "BangEqual"
+      "!="
   | Equal ->
-      "Equal"
+      "="
   | EqualEqual ->
-      "EqualEqual"
+      "=="
   | Less ->
-      "Less"
+      "<"
   | LessEqual ->
-      "LessEqual"
+      "<="
   | Greater ->
-      "Greater"
+      ">"
   | GreaterEqual ->
-      "GreaterEqual"
+      ">="
   | And ->
-      "And"
+      "and"
   | Class ->
-      "Class"
+      "class"
   | Else ->
-      "Else"
+      "else"
   | False ->
-      "False"
+      "false"
   | For ->
-      "For"
+      "for"
   | Fun ->
-      "Fun"
+      "fun"
   | If ->
-      "If"
+      "if"
   | Nil ->
-      "Nil"
+      "nil"
   | Or ->
-      "Or"
+      "or"
   | Print ->
-      "Print"
+      "print"
   | Return ->
-      "Return"
+      "return"
   | Super ->
-      "Super"
+      "super"
   | This ->
-      "This"
+      "this"
   | True ->
-      "True"
+      "true"
   | Var ->
-      "Var"
+      "var"
   | While ->
-      "While"
+      "while"
   | LexString s ->
-      "(LexString \"" ^ Base.String.of_char_list s ^ "\")"
+      "\"" ^ Base.String.of_char_list s ^ "\""
   | LexNumber n ->
-      "(LexNumber " ^ Float.to_string n ^ ")"
+      Float.to_string n
   | LexIdentifier s ->
-      "(LexIdentifier " ^ Base.String.of_char_list s ^ ")"
+      Base.String.of_char_list s
   | Unknown c ->
       "(Unknown " ^ Base.String.of_char_list c ^ ")"
 
