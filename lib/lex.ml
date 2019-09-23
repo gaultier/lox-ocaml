@@ -124,8 +124,7 @@ let rec lex_r acc rest =
         Base.List.split_while rest ~f:(fun c ->
             Base.Char.is_digit c || c == '.')
       in
-      let s = Base.String.of_char_list digits in
-      let f = Float.of_string s in
+      let f = digits |> Base.String.of_char_list |> Float.of_string in
       lex_r (LexNumber f :: acc) r
   | x :: _ when Base.Char.is_alpha x -> (
       let identifier, r =
