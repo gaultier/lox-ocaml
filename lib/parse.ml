@@ -86,24 +86,27 @@ and equality = function
 
 and expression = function tokens -> equality tokens
 
+let literal_to_s l =
+  match l with
+  | false ->
+      "false"
+  | true ->
+      "true"
+  | EFloat f ->
+      Float.to_string f
+  | EString s ->
+      s
+  | Nil ->
+      "nil"
+
 let rec expr_to_s e =
   match e with
   | Binary (l, t, r) ->
       "(" ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s l ^ " " ^ expr_to_s r ^ ")"
   | Grouping m ->
       "(Grouping " ^ expr_to_s m ^ ")"
-  | Literal v -> (
-    match v with
-    | false ->
-        "false"
-    | true ->
-        "true"
-    | EFloat f ->
-        Float.to_string f
-    | EString s ->
-        s
-    | Nil ->
-        "nil" )
+  | Literal v ->
+      literal_to_s v
   | Unary (t, r) ->
       "(" ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s r ^ ")"
   | Error ->
