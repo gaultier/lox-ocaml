@@ -10,4 +10,4 @@ tokens |> List.iter (fun t -> Printf.printf "%s\n" (Lox.Lex.lex_token_to_s t))
 
 ;;
 "(1 != 3) == -2" |> Lox.Lex.lex |> Lox.Parse.expression |> fst
-|> Lox.Parse.expr_to_s |> print_endline
+|> Lox.Parse.expr_to_s |> Interpret.eval |> print_endline
