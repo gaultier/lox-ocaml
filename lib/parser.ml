@@ -78,10 +78,7 @@ and equality = function
   | tokens -> (
       let left, rest = comparison tokens in
       match rest with
-      | (Lex.BangEqual as t) :: rrest ->
-          let right, rrrest = equality rrest in
-          (Binary (left, t, right), rrrest)
-      | (Lex.EqualEqual as t) :: rrest ->
+      | (Lex.BangEqual as t) :: rrest | (Lex.EqualEqual as t) :: rrest ->
           let right, rrrest = equality rrest in
           (Binary (left, t, right), rrrest)
       | _ ->
