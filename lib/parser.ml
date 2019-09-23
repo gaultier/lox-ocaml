@@ -48,10 +48,7 @@ and multiplication = function
   | tokens -> (
       let left, rest = unary tokens in
       match rest with
-      | (Lex.Star as t) :: rrest ->
-          let right, rrrest = multiplication rrest in
-          (Binary (left, t, right), rrrest)
-      | (Lex.Slash as t) :: rrest ->
+      | (Lex.Star as t) :: rrest | (Lex.Slash as t) :: rrest ->
           let right, rrrest = multiplication rrest in
           (Binary (left, t, right), rrrest)
       | _ ->
