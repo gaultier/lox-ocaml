@@ -109,15 +109,16 @@ let rec expr_to_s e =
   | Error ->
       "(Error)"
 
-let%test _ = primary [Lex.False] = (Literal false, [])
+let%test _ = expression [Lex.False] = (Literal false, [])
 
-let%test _ = primary [Lex.True] = (Literal true, [])
+let%test _ = expression [Lex.True] = (Literal true, [])
 
-let%test _ = primary [Lex.Nil] = (Literal Nil, [])
+let%test _ = expression [Lex.Nil] = (Literal Nil, [])
 
-let%test _ = primary [Lex.LexNumber 3.] = (Literal (EFloat 3.), [])
+let%test _ = expression [Lex.LexNumber 3.] = (Literal (EFloat 3.), [])
 
-let%test _ = primary [Lex.LexString ['a'; 'b']] = (Literal (EString "ab"), [])
+let%test _ =
+  expression [Lex.LexString ['a'; 'b']] = (Literal (EString "ab"), [])
 
 let%test _ =
   unary [Lex.Bang; Lex.LexNumber 1.]
@@ -127,40 +128,40 @@ let%test _ =
   unary [Lex.Minus; Lex.LexNumber 1.]
   = (Unary (Lex.Minus, Literal (EFloat 1.)), [])
 
-let%test _ = primary [Lex.LexNumber 1.] = (Literal (EFloat 1.), [])
+let%test _ = expression [Lex.LexNumber 1.] = (Literal (EFloat 1.), [])
 
-let%test _ = multiplication [Lex.LexNumber 1.] = (Literal (EFloat 1.), [])
+let%test _ = expression [Lex.LexNumber 1.] = (Literal (EFloat 1.), [])
 
 let%test _ =
-  multiplication [Lex.LexNumber 1.; Lex.Star; Lex.LexNumber 2.]
+  expression [Lex.LexNumber 1.; Lex.Star; Lex.LexNumber 2.]
   = (Binary (Literal (EFloat 1.), Lex.Star, Literal (EFloat 2.)), [])
 
 let%test _ =
-  multiplication [Lex.LexNumber 1.; Lex.Star; Lex.Minus; Lex.LexNumber 2.]
+  expression [Lex.LexNumber 1.; Lex.Star; Lex.Minus; Lex.LexNumber 2.]
   = ( Binary
         (Literal (EFloat 1.), Lex.Star, Unary (Lex.Minus, Literal (EFloat 2.)))
     , [] )
 
 let%test _ =
-  multiplication [Lex.LexNumber 1.; Lex.Slash; Lex.Minus; Lex.LexNumber 2.]
+  expression [Lex.LexNumber 1.; Lex.Slash; Lex.Minus; Lex.LexNumber 2.]
   = ( Binary
         (Literal (EFloat 1.), Lex.Slash, Unary (Lex.Minus, Literal (EFloat 2.)))
     , [] )
 
 let%test _ =
-  addition [Lex.LexNumber 1.; Lex.Plus; Lex.Minus; Lex.LexNumber 2.]
+  expression [Lex.LexNumber 1.; Lex.Plus; Lex.Minus; Lex.LexNumber 2.]
   = ( Binary
         (Literal (EFloat 1.), Lex.Plus, Unary (Lex.Minus, Literal (EFloat 2.)))
     , [] )
 
 let%test _ =
-  "1 + -2" |> Lex.lex |> addition
+  "1 + -2" |> Lex.lex |> expression
   = ( Binary
         (Literal (EFloat 1.), Lex.Plus, Unary (Lex.Minus, Literal (EFloat 2.)))
     , [] )
 
 let%test _ =
-  "1 < -2" |> Lex.lex |> comparison
+  "1 < -2" |> Lex.lex |> expression
   = ( Binary
         (Literal (EFloat 1.), Lex.Less, Unary (Lex.Minus, Literal (EFloat 2.)))
     , [] )
