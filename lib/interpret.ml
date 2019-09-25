@@ -8,7 +8,7 @@ let efloat_op_float a b op =
 let efloat_op_bool a b op =
   match (a, b) with
   | Parse.EFloat x, Parse.EFloat y ->
-          if op x y then Parse.True else Parse.False
+      if op x y then Parse.True else Parse.False
   | _ ->
       Parse.Nil
 
@@ -43,5 +43,13 @@ let rec eval exp =
       efloat_op_bool (eval left) (eval right) ( > )
   | Parse.Binary (left, Lex.GreaterEqual, right) ->
       efloat_op_bool (eval left) (eval right) ( >= )
+  | Parse.Binary (left, Lex.BangEqual, right) ->
+      efloat_op_bool (eval left) (eval right) ( != )
+  | Parse.Binary (left, Lex.EqualEqual, right) ->
+      efloat_op_bool (eval left) (eval right) ( == )
   | _ ->
       Nil
+
+let%test _ =
+  "(-1 + 3 * 5) == (2*5 + 4)" |> Lex.lex |> Parse.expression |> fst |> eval
+  = True
