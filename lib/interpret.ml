@@ -46,7 +46,7 @@ let rec eval exp =
   | Parse.Binary (left, Lex.BangEqual, right) ->
       efloat_op_bool (eval left) (eval right) ( != )
   | Parse.Binary (left, Lex.EqualEqual, right) ->
-      efloat_op_bool (eval left) (eval right) ( == )
+      efloat_op_bool (eval left) (eval right) ( Float.equal )
   | _ ->
       Nil
 
