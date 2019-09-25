@@ -17,6 +17,19 @@ let is_truthy e =
 
 let bool_not b = if b == Parse.True then Parse.False else Parse.True
 
+let is_equal l1 l2 =
+  match (l1, l2) with
+  | Parse.Nil, Parse.Nil ->
+      Parse.True
+  | Parse.Nil, _ | _, Parse.Nil ->
+      Parse.False
+  | Parse.EFloat _, Parse.EFloat _ ->
+      efloat_op_bool l1 l2 Float.equal
+  | Parse.EString a, Parse.EString b ->
+      if a == b then Parse.True else Parse.False
+  | _ ->
+      Parse.False
+
 let rec eval exp =
   match exp with
   | Parse.Grouping e ->
@@ -53,7 +66,7 @@ let rec eval exp =
   | Parse.Binary (left, Lex.BangEqual, right) ->
       efloat_op_bool (eval left) (eval right) ( != )
   | Parse.Binary (left, Lex.EqualEqual, right) ->
-      efloat_op_bool (eval left) (eval right) Float.equal
+      is_equal (eval left) (eval right) 
   | _ ->
       Nil
 
