@@ -58,3 +58,9 @@ let rec eval exp =
 let%test _ =
   "(-1 + 3 * 5) == (2*5 + 4)" |> Lex.lex |> Parse.expression |> fst |> eval
   = True
+
+let%test _ =
+  "!(-1 + 3 * 5)" |> Lex.lex |> Parse.expression |> fst |> eval = False
+
+let%test _ =
+  "!(-1 + 2*3 -5)" |> Lex.lex |> Parse.expression |> fst |> eval = True
