@@ -12,6 +12,9 @@ let efloat_op_bool a b op =
   | _ ->
       Parse.Nil
 
+let is_truthy e =
+  match e with Parse.True | Parse.EFloat 0. -> Parse.True | _ -> Parse.False
+
 let rec eval exp =
   match exp with
   | Parse.Grouping e ->
@@ -21,6 +24,8 @@ let rec eval exp =
       match (v, t) with
       | Parse.EFloat f, Lex.Minus ->
           Parse.EFloat (-.f)
+      | _, Lex.Bang ->
+          is_truthy v
       | _ ->
           v )
   | Parse.Literal (True as b) | Parse.Literal (False as b) ->
@@ -46,7 +51,7 @@ let rec eval exp =
   | Parse.Binary (left, Lex.BangEqual, right) ->
       efloat_op_bool (eval left) (eval right) ( != )
   | Parse.Binary (left, Lex.EqualEqual, right) ->
-      efloat_op_bool (eval left) (eval right) ( Float.equal )
+      efloat_op_bool (eval left) (eval right) Float.equal
   | _ ->
       Nil
 
