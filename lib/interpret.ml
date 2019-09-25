@@ -26,7 +26,7 @@ let is_equal l1 l2 =
   | Parse.EFloat _, Parse.EFloat _ ->
       efloat_op_bool l1 l2 Float.equal
   | Parse.EString a, Parse.EString b ->
-      if a == b then Parse.True else Parse.False
+      if String.equal a b then Parse.True else Parse.False
   | _ ->
       Parse.False
 
@@ -43,10 +43,8 @@ let rec eval exp =
           bool_not (is_truthy v)
       | _ ->
           v )
-  | Parse.Literal (True as b) | Parse.Literal (False as b) ->
-      b
-  | Parse.Literal (Parse.EFloat f) ->
-      Parse.EFloat f
+  | Parse.Literal l ->
+      l
   | Parse.Binary (left, Lex.Plus, right) ->
       efloat_op_float (eval left) (eval right) ( +. )
   | Parse.Binary (left, Lex.Minus, right) ->
@@ -64,9 +62,9 @@ let rec eval exp =
   | Parse.Binary (left, Lex.GreaterEqual, right) ->
       efloat_op_bool (eval left) (eval right) ( >= )
   | Parse.Binary (left, Lex.BangEqual, right) ->
-      efloat_op_bool (eval left) (eval right) ( != )
+      bool_not (is_equal (eval left) (eval right))
   | Parse.Binary (left, Lex.EqualEqual, right) ->
-      is_equal (eval left) (eval right) 
+      is_equal (eval left) (eval right)
   | _ ->
       Nil
 
@@ -83,3 +81,9 @@ let%test _ = "!(1 == 1)" |> Lex.lex |> Parse.expression |> fst |> eval = False
 let%test _ = "!nil" |> Lex.lex |> Parse.expression |> fst |> eval = True
 
 let%test _ = "!!nil" |> Lex.lex |> Parse.expression |> fst |> eval = False
+
+let%test _ =
+  "\"hey\" == \"hello\"" |> Lex.lex |> Parse.expression |> fst |> eval = False
+
+let%test _ =
+  "\"hey\" == \"hey\"" |> Lex.lex |> Parse.expression |> fst |> eval = True
