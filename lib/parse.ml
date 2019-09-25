@@ -1,4 +1,4 @@
-type literal_value = Bool of bool | EFloat of float | Nil | EString of string
+type literal_value = True | False | EFloat of float | Nil | EString of string
 
 type expr =
   | Binary of expr * Lex.lex_token * expr
@@ -13,9 +13,9 @@ let rec primary = function
     | [] ->
         (Error, [])
     | Lex.False :: rest ->
-        (Literal (Bool false), rest)
+        (Literal False, rest)
     | Lex.True :: rest ->
-        (Literal (Bool true), rest)
+        (Literal True, rest)
     | Lex.Nil :: rest ->
         (Literal Nil, rest)
     | Lex.LexNumber f :: rest ->
@@ -88,9 +88,9 @@ and expression = function tokens -> equality tokens
 
 let literal_to_s l =
   match l with
-  | Bool false ->
+  | False ->
       "false"
-  | Bool true ->
+  | True ->
       "true"
   | EFloat f ->
       Float.to_string f
@@ -112,9 +112,9 @@ let rec expr_to_s e =
   | Error ->
       "(Error)"
 
-let%test _ = expression [Lex.False] = (Literal (Bool false), [])
+let%test _ = expression [Lex.False] = (Literal False, [])
 
-let%test _ = expression [Lex.True] = (Literal (Bool true), [])
+let%test _ = expression [Lex.True] = (Literal True, [])
 
 let%test _ = expression [Lex.Nil] = (Literal Nil, [])
 

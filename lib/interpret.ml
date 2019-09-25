@@ -8,7 +8,7 @@ let efloat_op_float a b op =
 let efloat_op_bool a b op =
   match (a, b) with
   | Parse.EFloat x, Parse.EFloat y ->
-      Parse.Bool (op x y)
+          if op x y then Parse.True else Parse.False
   | _ ->
       Parse.Nil
 
@@ -23,7 +23,7 @@ let rec eval exp =
           Parse.EFloat (-.f)
       | _ ->
           v )
-  | Parse.Literal (Bool true as b) | Parse.Literal (Bool false as b) ->
+  | Parse.Literal (True as b) | Parse.Literal (False as b) ->
       b
   | Parse.Literal (Parse.EFloat f) ->
       Parse.EFloat f
