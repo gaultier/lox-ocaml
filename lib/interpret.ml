@@ -13,7 +13,9 @@ let efloat_op_bool a b op =
       Parse.Nil
 
 let is_truthy e =
-  match e with Parse.True | Parse.EFloat 0. -> Parse.True | _ -> Parse.False
+  match e with Parse.False | Parse.Nil -> Parse.False | _ -> Parse.True
+
+let bool_not b = if b == Parse.True then Parse.False else Parse.True
 
 let rec eval exp =
   match exp with
@@ -25,7 +27,7 @@ let rec eval exp =
       | Parse.EFloat f, Lex.Minus ->
           Parse.EFloat (-.f)
       | _, Lex.Bang ->
-          is_truthy v
+          bool_not (is_truthy v)
       | _ ->
           v )
   | Parse.Literal (True as b) | Parse.Literal (False as b) ->
@@ -59,8 +61,12 @@ let%test _ =
   "(-1 + 3 * 5) == (2*5 + 4)" |> Lex.lex |> Parse.expression |> fst |> eval
   = True
 
-let%test _ =
-  "!(-1 + 3 * 5)" |> Lex.lex |> Parse.expression |> fst |> eval = False
+let%test _ = "!true" |> Lex.lex |> Parse.expression |> fst |> eval = False
 
-let%test _ =
-  "!(-1 + 2*3 -5)" |> Lex.lex |> Parse.expression |> fst |> eval = True
+let%test _ = "!false" |> Lex.lex |> Parse.expression |> fst |> eval = True
+
+let%test _ = "!(1 == 1)" |> Lex.lex |> Parse.expression |> fst |> eval = False
+
+let%test _ = "!nil" |> Lex.lex |> Parse.expression |> fst |> eval = True
+
+let%test _ = "!!nil" |> Lex.lex |> Parse.expression |> fst |> eval = False
