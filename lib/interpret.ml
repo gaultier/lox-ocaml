@@ -56,11 +56,10 @@ let rec eval exp =
       | _ ->
           failwith
             ( "Not implemented yet: "
-            ^ Sexplib.Std.string_of_sexp (sexp_of_expr exp) ) )
+            ^ Base.Sexp.to_string_hum (sexp_of_expr exp) ) )
   | _ ->
       failwith
-        ( "Not implemented yet: "
-        ^ Sexplib.Std.string_of_sexp (sexp_of_expr exp) )
+        ("Not implemented yet: " ^ Base.Sexp.to_string_hum (sexp_of_expr exp))
 
 let%test _ = "1 + 3" |> Lex.lex |> expression |> fst |> eval = Number 4.
 
@@ -90,3 +89,6 @@ let%test _ =
 
 let%test _ =
   "\"hey\" == \"hey\"" |> Lex.lex |> expression |> fst |> eval = Bool true
+
+let%test _ =
+  "\"hel\" + \"lo\"" |> Lex.lex |> expression |> fst |> eval = String "hello"
