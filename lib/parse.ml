@@ -145,11 +145,11 @@ let%test _ =
   statement [Lex.String "ab"; Lex.SemiColon] = (Literal (String "ab"), [])
 
 let%test _ =
-  unary [Lex.Bang; Lex.Number 1.; Lex.SemiColon]
+  statement [Lex.Bang; Lex.Number 1.; Lex.SemiColon]
   = (Unary (Lex.Bang, Literal (Number 1.)), [])
 
 let%test _ =
-  unary [Lex.Minus; Lex.Number 1.; Lex.SemiColon]
+  statement [Lex.Minus; Lex.Number 1.; Lex.SemiColon]
   = (Unary (Lex.Minus, Literal (Number 1.)), [])
 
 let%test _ =
