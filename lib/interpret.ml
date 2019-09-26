@@ -3,13 +3,6 @@ open Parse
 let efloat_op_float a b op =
   match (a, b) with Number x, Number y -> Number (op x y) | _ -> Nil
 
-let efloat_op_bool a b op =
-  match (a, b) with
-  | Number x, Number y ->
-      if op x y then Bool true else Bool false
-  | _ ->
-      Nil
-
 let is_truthy e =
   match e with Bool false | Nil -> Bool false | _ -> Bool true
 
@@ -21,8 +14,8 @@ let is_equal l1 l2 =
       Bool true
   | Nil, _ | _, Nil ->
       Bool false
-  | Number _, Number _ ->
-      efloat_op_bool l1 l2 Float.equal
+  | Number a, Number b ->
+      Bool (Float.equal a b)
   | String a, String b ->
       if String.equal a b then Bool true else Bool false
   | _ ->
@@ -47,22 +40,22 @@ let rec eval exp =
       efloat_op_float (eval left) (eval right) ( +. )
   | Binary (Literal (Number a), Lex.Minus, Literal (Number b)) ->
       Number (a -. b)
-  | Binary (left, Lex.Slash, right) ->
-      efloat_op_float (eval left) (eval right) ( /. )
-  | Binary (left, Lex.Star, right) ->
-      efloat_op_float (eval left) (eval right) ( *. )
-  | Binary (left, Lex.Less, right) ->
-      efloat_op_bool (eval left) (eval right) ( < )
-  | Binary (left, Lex.LessEqual, right) ->
-      efloat_op_bool (eval left) (eval right) ( <= )
-  | Binary (left, Lex.Greater, right) ->
-      efloat_op_bool (eval left) (eval right) ( > )
-  | Binary (left, Lex.GreaterEqual, right) ->
-      efloat_op_bool (eval left) (eval right) ( >= )
-  | Binary (left, Lex.BangEqual, right) ->
-      bool_not (is_equal (eval left) (eval right))
-  | Binary (left, Lex.EqualEqual, right) ->
-      is_equal (eval left) (eval right)
+  | Binary (Literal (Number a), Lex.Slash, Literal (Number b)) ->
+      Number (a /. b)
+  | Binary (Literal (Number a), Lex.Star, Literal (Number b)) ->
+      Number (a *. b)
+  | Binary (Literal (Number a), Lex.Less, Literal (Number b)) ->
+      Bool (a < b)
+  | Binary (Literal (Number a), Lex.LessEqual, Literal (Number b)) ->
+      Bool (a <= b)
+  | Binary (Literal (Number a), Lex.Greater, Literal (Number b)) ->
+      Bool (a > b)
+  | Binary (Literal (Number a), Lex.GreaterEqual, Literal (Number b)) ->
+      Bool (a >= b)
+  | Binary (Literal (Number a), Lex.BangEqual, Literal (Number b)) ->
+      Bool (a != b)
+  | Binary (Literal (Number a), Lex.EqualEqual, Literal (Number b)) ->
+      Bool (Float.equal a b)
   | _ ->
       Nil
 
