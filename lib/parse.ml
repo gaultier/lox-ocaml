@@ -98,12 +98,10 @@ let%test _ = expression [Lex.Nil] = (Literal Nil, [])
 
 let%test _ = expression [Lex.Number 3.] = (Literal (Number 3.), [])
 
-let%test _ =
-  expression [Lex.String "ab"] = (Literal (String "ab"), [])
+let%test _ = expression [Lex.String "ab"] = (Literal (String "ab"), [])
 
 let%test _ =
-  unary [Lex.Bang; Lex.Number 1.]
-  = (Unary (Lex.Bang, Literal (Number 1.)), [])
+  unary [Lex.Bang; Lex.Number 1.] = (Unary (Lex.Bang, Literal (Number 1.)), [])
 
 let%test _ =
   unary [Lex.Minus; Lex.Number 1.]

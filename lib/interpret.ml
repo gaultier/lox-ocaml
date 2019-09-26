@@ -13,9 +13,14 @@ let efloat_op_bool a b op =
       Parse.Nil
 
 let is_truthy e =
-  match e with Parse.Bool false | Parse.Nil -> Parse.Bool false | _ -> Parse.Bool true
+  match e with
+  | Parse.Bool false | Parse.Nil ->
+      Parse.Bool false
+  | _ ->
+      Parse.Bool true
 
-let bool_not b = if b == Parse.Bool true then Parse.Bool false else Parse.Bool true
+let bool_not b =
+  if b == Parse.Bool true then Parse.Bool false else Parse.Bool true
 
 let is_equal l1 l2 =
   match (l1, l2) with
@@ -72,18 +77,25 @@ let%test _ =
   "(-1 + 3 * 5) == (2*5 + 4)" |> Lex.lex |> Parse.expression |> fst |> eval
   = Parse.Bool true
 
-let%test _ = "!true" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool false
-
-let%test _ = "!false" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool true
-
-let%test _ = "!(1 == 1)" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool false
-
-let%test _ = "!nil" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool true
-
-let%test _ = "!!nil" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool false
+let%test _ =
+  "!true" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool false
 
 let%test _ =
-  "\"hey\" == \"hello\"" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool false
+  "!false" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool true
 
 let%test _ =
-  "\"hey\" == \"hey\"" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool true
+  "!(1 == 1)" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool false
+
+let%test _ =
+  "!nil" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool true
+
+let%test _ =
+  "!!nil" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool false
+
+let%test _ =
+  "\"hey\" == \"hello\"" |> Lex.lex |> Parse.expression |> fst |> eval
+  = Parse.Bool false
+
+let%test _ =
+  "\"hey\" == \"hey\"" |> Lex.lex |> Parse.expression |> fst |> eval
+  = Parse.Bool true

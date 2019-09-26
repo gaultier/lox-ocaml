@@ -16,5 +16,5 @@ print_endline ""
 
 ;;
 "\"hey\" == \"hey\"" |> Lox.Lex.lex |> Lox.Parse.expression |> fst
-|> Lox.Interpret.eval |> Lox.Parse.sexp_of_literal_value |> Base.Sexp.to_string_hum
-|> print_endline
+|> Lox.Interpret.eval |> Lox.Parse.sexp_of_literal_value
+|> Base.Sexp.to_string_hum |> print_endline
