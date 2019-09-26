@@ -44,7 +44,7 @@ let rec eval exp =
   | Binary (Literal (Number a), Lex.EqualEqual, Literal (Number b)) ->
       Bool (Float.equal a b)
   | Binary (Literal (String a), Lex.EqualEqual, Literal (String b)) ->
-      Bool (a == b)
+      Bool (String.equal a b)
   | Binary (Literal (Bool a), Lex.EqualEqual, Literal (Bool b)) ->
       Bool (a == b)
   | Binary (Literal Nil, Lex.EqualEqual, Literal Nil) ->
@@ -54,7 +54,7 @@ let rec eval exp =
   | Binary (_, Lex.EqualEqual, Literal Nil) ->
       Bool false
   | _ ->
-      failwith "Not implemented yet"
+      failwith ("Not implemented yet: " ^ Sexplib.Std.string_of_sexp (sexp_of_expr exp))
 
 let%test _ =
   "(-1 + 3 * 5) == (2*5 + 4)" |> Lex.lex |> expression |> fst |> eval
