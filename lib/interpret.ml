@@ -11,10 +11,10 @@ let rec eval exp =
       eval e
   | Unary (t, e) -> (
       let v = eval e in
-      match (v, t) with
-      | Number f, Lex.Minus ->
+      match (t, v) with
+      | Lex.Minus, Number f ->
           Number (-.f)
-      | _, Lex.Bang ->
+      | Lex.Bang, _ ->
           bool_not (is_truthy v)
       | _ ->
           v )
