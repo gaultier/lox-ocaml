@@ -1,6 +1,6 @@
 open Sexplib.Std
 
-type literal_value = True | False | Number of float | Nil | String of string
+type literal_value = Bool of bool | Number of float | Nil | String of string
 [@@deriving sexp]
 
 type expr =
@@ -17,9 +17,9 @@ let rec primary = function
     | [] ->
         (Error, [])
     | Lex.False :: rest ->
-        (Literal False, rest)
+        (Literal (Bool false), rest)
     | Lex.True :: rest ->
-        (Literal True, rest)
+        (Literal (Bool true), rest)
     | Lex.Nil :: rest ->
         (Literal Nil, rest)
     | Lex.Number f :: rest ->
@@ -90,9 +90,9 @@ and equality = function
 
 and expression = function tokens -> equality tokens
 
-let%test _ = expression [Lex.False] = (Literal False, [])
+let%test _ = expression [Lex.False] = (Literal (Bool false), [])
 
-let%test _ = expression [Lex.True] = (Literal True, [])
+let%test _ = expression [Lex.True] = (Literal (Bool true), [])
 
 let%test _ = expression [Lex.Nil] = (Literal Nil, [])
 

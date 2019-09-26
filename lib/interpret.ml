@@ -8,27 +8,27 @@ let efloat_op_float a b op =
 let efloat_op_bool a b op =
   match (a, b) with
   | Parse.Number x, Parse.Number y ->
-      if op x y then Parse.True else Parse.False
+      if op x y then Parse.Bool true else Parse.Bool false
   | _ ->
       Parse.Nil
 
 let is_truthy e =
-  match e with Parse.False | Parse.Nil -> Parse.False | _ -> Parse.True
+  match e with Parse.Bool false | Parse.Nil -> Parse.Bool false | _ -> Parse.Bool true
 
-let bool_not b = if b == Parse.True then Parse.False else Parse.True
+let bool_not b = if b == Parse.Bool true then Parse.Bool false else Parse.Bool true
 
 let is_equal l1 l2 =
   match (l1, l2) with
   | Parse.Nil, Parse.Nil ->
-      Parse.True
+      Parse.Bool true
   | Parse.Nil, _ | _, Parse.Nil ->
-      Parse.False
+      Parse.Bool false
   | Parse.Number _, Parse.Number _ ->
       efloat_op_bool l1 l2 Float.equal
   | Parse.String a, Parse.String b ->
-      if String.equal a b then Parse.True else Parse.False
+      if String.equal a b then Parse.Bool true else Parse.Bool false
   | _ ->
-      Parse.False
+      Parse.Bool false
 
 let rec eval exp =
   match exp with
@@ -70,20 +70,20 @@ let rec eval exp =
 
 let%test _ =
   "(-1 + 3 * 5) == (2*5 + 4)" |> Lex.lex |> Parse.expression |> fst |> eval
-  = True
+  = Parse.Bool true
 
-let%test _ = "!true" |> Lex.lex |> Parse.expression |> fst |> eval = False
+let%test _ = "!true" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool false
 
-let%test _ = "!false" |> Lex.lex |> Parse.expression |> fst |> eval = True
+let%test _ = "!false" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool true
 
-let%test _ = "!(1 == 1)" |> Lex.lex |> Parse.expression |> fst |> eval = False
+let%test _ = "!(1 == 1)" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool false
 
-let%test _ = "!nil" |> Lex.lex |> Parse.expression |> fst |> eval = True
+let%test _ = "!nil" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool true
 
-let%test _ = "!!nil" |> Lex.lex |> Parse.expression |> fst |> eval = False
-
-let%test _ =
-  "\"hey\" == \"hello\"" |> Lex.lex |> Parse.expression |> fst |> eval = False
+let%test _ = "!!nil" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool false
 
 let%test _ =
-  "\"hey\" == \"hey\"" |> Lex.lex |> Parse.expression |> fst |> eval = True
+  "\"hey\" == \"hello\"" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool false
+
+let%test _ =
+  "\"hey\" == \"hey\"" |> Lex.lex |> Parse.expression |> fst |> eval = Parse.Bool true
