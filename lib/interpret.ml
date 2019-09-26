@@ -14,7 +14,9 @@ let rec eval exp =
       | Lex.Bang, _ ->
           Bool false
       | _ ->
-          v )
+          failwith
+            ("Unary not allowed: " ^ Base.Sexp.to_string_hum (sexp_of_expr exp))
+      )
   | Literal l ->
       l
   | Binary (l, t, r) -> (
