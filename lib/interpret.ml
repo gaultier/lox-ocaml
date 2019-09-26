@@ -56,8 +56,10 @@ let rec eval exp =
       Bool (a != b)
   | Binary (Literal (Number a), Lex.EqualEqual, Literal (Number b)) ->
       Bool (Float.equal a b)
+  | Binary (Literal (String a), Lex.EqualEqual, Literal (String b)) ->
+      Bool (a == b)
   | _ ->
-      Nil
+      failwith "Not implemented yet"
 
 let%test _ =
   "(-1 + 3 * 5) == (2*5 + 4)" |> Lex.lex |> expression |> fst |> eval
