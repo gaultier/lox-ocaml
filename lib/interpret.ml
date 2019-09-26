@@ -23,8 +23,8 @@ let rec eval exp =
           v )
   | Literal l ->
       l
-  | Binary (left, Lex.Plus, right) ->
-      efloat_op_float (eval left) (eval right) ( +. )
+  | Binary (Literal (Number a), Lex.Plus, Literal (Number b)) ->
+      Number (a +. b)
   | Binary (Literal (Number a), Lex.Minus, Literal (Number b)) ->
       Number (a -. b)
   | Binary (Literal (Number a), Lex.Slash, Literal (Number b)) ->
