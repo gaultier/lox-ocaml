@@ -38,7 +38,7 @@ type lex_token =
   | While
   | String of string
   | Number of float
-  | LexIdentifier of string
+  | Identifier of string
   | Unknown of char list
 [@@deriving sexp]
 
@@ -138,7 +138,7 @@ let rec lex_r acc rest =
       | Some k ->
           lex_r (k :: acc) r
       | _ ->
-          lex_r (LexIdentifier s :: acc) r )
+          lex_r (Identifier s :: acc) r )
   | x :: irest ->
       lex_r (Unknown [x] :: acc) irest
 
@@ -168,7 +168,7 @@ let%test _ =
   lex ".!====<=<>>=// foo"
   = [Dot; BangEqual; EqualEqual; Equal; LessEqual; Less; Greater; GreaterEqual]
 
-let%test _ = lex " abc\n" = [LexIdentifier "abc"]
+let%test _ = lex " abc\n" = [Identifier "abc"]
 
 let%test _ = lex "!\"hey\"!" = [Bang; String "hey"; Bang]
 
