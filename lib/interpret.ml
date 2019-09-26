@@ -58,6 +58,8 @@ let rec eval exp =
       Bool (Float.equal a b)
   | Binary (Literal (String a), Lex.EqualEqual, Literal (String b)) ->
       Bool (a == b)
+  | Binary (Literal (Bool a), Lex.EqualEqual, Literal (Bool b)) ->
+      Bool (a == b)
   | _ ->
       failwith "Not implemented yet"
 
