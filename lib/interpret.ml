@@ -20,47 +20,58 @@ let rec eval exp =
           v )
   | Literal l ->
       l
-  | Binary (Literal (Number a), Lex.Plus, Literal (Number b)) ->
-      Number (a +. b)
-  | Binary (Literal (Number a), Lex.Minus, Literal (Number b)) ->
-      Number (a -. b)
-  | Binary (Literal (Number a), Lex.Slash, Literal (Number b)) ->
-      Number (a /. b)
-  | Binary (Literal (Number a), Lex.Star, Literal (Number b)) ->
-      Number (a *. b)
-  | Binary (Literal (Number a), Lex.Less, Literal (Number b)) ->
-      Bool (a < b)
-  | Binary (Literal (Number a), Lex.LessEqual, Literal (Number b)) ->
-      Bool (a <= b)
-  | Binary (Literal (Number a), Lex.Greater, Literal (Number b)) ->
-      Bool (a > b)
-  | Binary (Literal (Number a), Lex.GreaterEqual, Literal (Number b)) ->
-      Bool (a >= b)
-  | Binary (Literal (Number a), Lex.BangEqual, Literal (Number b)) ->
-      Bool (a != b)
-  | Binary (Literal (Number a), Lex.EqualEqual, Literal (Number b)) ->
-      Bool (Float.equal a b)
-  | Binary (Literal (String a), Lex.EqualEqual, Literal (String b)) ->
-      Bool (String.equal a b)
-  | Binary (Literal (Bool a), Lex.EqualEqual, Literal (Bool b)) ->
-      Bool (a == b)
-  | Binary (Literal Nil, Lex.EqualEqual, Literal Nil) ->
-      Bool true
-  | Binary (Literal Nil, Lex.EqualEqual, _) ->
-      Bool false
-  | Binary (_, Lex.EqualEqual, Literal Nil) ->
-      Bool false
+  | Binary (l, t, r) -> (
+      let x = eval l and y = eval r in
+      match (x, t, y) with
+      | Number a, Lex.Plus, Number b ->
+          Number (a +. b)
+      | Number a, Lex.Minus, Number b ->
+          Number (a -. b)
+      | Number a, Lex.Slash, Number b ->
+          Number (a /. b)
+      | Number a, Lex.Star, Number b ->
+          Number (a *. b)
+      | Number a, Lex.Less, Number b ->
+          Bool (a < b)
+      | Number a, Lex.LessEqual, Number b ->
+          Bool (a <= b)
+      | Number a, Lex.Greater, Number b ->
+          Bool (a > b)
+      | Number a, Lex.GreaterEqual, Number b ->
+          Bool (a >= b)
+      | Number a, Lex.BangEqual, Number b ->
+          Bool (a != b)
+      | Number a, Lex.EqualEqual, Number b ->
+          Bool (Float.equal a b)
+      | String a, Lex.EqualEqual, String b ->
+          Bool (String.equal a b)
+      | Bool a, Lex.EqualEqual, Bool b ->
+          Bool (a == b)
+      | Nil, Lex.EqualEqual, Nil ->
+          Bool true
+      | Nil, Lex.EqualEqual, _ ->
+          Bool false
+      | _, Lex.EqualEqual, Nil ->
+          Bool false
+      | _ ->
+          failwith
+            ( "Not implemented yet: "
+            ^ Sexplib.Std.string_of_sexp (sexp_of_expr exp) ) )
   | _ ->
       failwith
         ( "Not implemented yet: "
         ^ Sexplib.Std.string_of_sexp (sexp_of_expr exp) )
 
-let%test _ =
-  "(-1 + 3 * 5)" |> Lex.lex |> expression |> fst |> eval = Number 14.
+let%test _ = "1 + 3" |> Lex.lex |> expression |> fst |> eval = Number 4.
 
-let%test _ =
-  "(-1 + 3 * 5) == (2*5 + 4)" |> Lex.lex |> expression |> fst |> eval
-  = Bool true
+let%test _ = "-1 + 3" |> Lex.lex |> expression |> fst |> eval = Number 2.
+
+(* let%test _ = *)
+(*   "(-1 + 3 * 5)" |> Lex.lex |> expression |> fst |> eval = Number 14. *)
+
+(* let%test _ = *)
+(*   "(-1 + 3 * 5) == (2*5 + 4)" |> Lex.lex |> expression |> fst |> eval *)
+(*   = Bool true *)
 
 let%test _ = "!true" |> Lex.lex |> expression |> fst |> eval = Bool false
 
