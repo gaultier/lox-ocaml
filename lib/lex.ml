@@ -39,7 +39,6 @@ type lex_token =
   | String of string
   | Number of float
   | Identifier of string
-  | Unknown of char list
 [@@deriving sexp]
 
 let keywords =
@@ -120,7 +119,7 @@ let rec lex_r acc rest =
       | '"' :: rrest ->
           lex_r (String (Base.String.of_char_list s) :: acc) rrest
       | _ ->
-          lex_r (Unknown ('"' :: s) :: acc) r )
+          failwith ("Missing closing quote: " ^ Base.String.of_char_list r) )
   | x :: _ when Base.Char.is_digit x ->
       (* trailing dot is allowed for now *)
       let digits, r =
@@ -139,8 +138,8 @@ let rec lex_r acc rest =
           lex_r (k :: acc) r
       | _ ->
           lex_r (Identifier s :: acc) r )
-  | x :: irest ->
-      lex_r (Unknown [x] :: acc) irest
+  | x :: _ ->
+      failwith ("Unkown token: " ^ String.make 1 x)
 
 let lex s = lex_r [] (Base.String.to_list s) |> List.rev
 
@@ -161,8 +160,7 @@ let%test _ =
     ; Dot ]
 
 let%test _ =
-  lex "-+;*/@!.!="
-  = [Minus; Plus; SemiColon; Star; Slash; Unknown ['@']; Bang; Dot; BangEqual]
+  lex "-+;*/!.!=" = [Minus; Plus; SemiColon; Star; Slash; Bang; Dot; BangEqual]
 
 let%test _ =
   lex ".!====<=<>>=// foo"
@@ -171,5 +169,3 @@ let%test _ =
 let%test _ = lex " abc\n" = [Identifier "abc"]
 
 let%test _ = lex "!\"hey\"!" = [Bang; String "hey"; Bang]
-
-let%test _ = lex "\"a!" = [Unknown ['"'; 'a'; '!']]
