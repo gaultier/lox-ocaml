@@ -45,6 +45,8 @@ let rec eval exp =
           Bool (Float.equal a b)
       | String a, Lex.EqualEqual, String b ->
           Bool (String.equal a b)
+      | String a, Lex.Plus, String b ->
+          String (a ^ b)
       | Bool a, Lex.EqualEqual, Bool b ->
           Bool (a == b)
       | Nil, Lex.EqualEqual, Nil ->
