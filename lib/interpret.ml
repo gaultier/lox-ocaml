@@ -1,8 +1,5 @@
 open Parse
 
-let efloat_op_float a b op =
-  match (a, b) with Number x, Number y -> Number (op x y) | _ -> Nil
-
 let is_truthy e =
   match e with Bool false | Nil -> Bool false | _ -> Bool true
 
