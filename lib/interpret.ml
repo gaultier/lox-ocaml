@@ -8,19 +8,6 @@ let is_truthy e =
 
 let bool_not b = if b == Bool true then Bool false else Bool true
 
-let is_equal l1 l2 =
-  match (l1, l2) with
-  | Nil, Nil ->
-      Bool true
-  | Nil, _ | _, Nil ->
-      Bool false
-  | Number a, Number b ->
-      Bool (Float.equal a b)
-  | String a, String b ->
-      if String.equal a b then Bool true else Bool false
-  | _ ->
-      Bool false
-
 let rec eval exp =
   match exp with
   | Grouping e ->
