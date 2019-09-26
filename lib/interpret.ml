@@ -25,7 +25,7 @@ let is_equal l1 l2 =
       Parse.False
   | Parse.Number _, Parse.Number _ ->
       efloat_op_bool l1 l2 Float.equal
-  | Parse.EString a, Parse.EString b ->
+  | Parse.String a, Parse.String b ->
       if String.equal a b then Parse.True else Parse.False
   | _ ->
       Parse.False

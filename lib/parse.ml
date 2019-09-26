@@ -1,6 +1,6 @@
 open Sexplib.Std
 
-type literal_value = True | False | Number of float | Nil | EString of string
+type literal_value = True | False | Number of float | Nil | String of string
 [@@deriving sexp]
 
 type expr =
@@ -25,7 +25,7 @@ let rec primary = function
     | Lex.Number f :: rest ->
         (Literal (Number f), rest)
     | Lex.String s :: rest ->
-        (Literal (EString s), rest)
+        (Literal (String s), rest)
     | Lex.ParenLeft :: rest -> (
         let e, rrest = expression rest in
         match rrest with
@@ -99,7 +99,7 @@ let%test _ = expression [Lex.Nil] = (Literal Nil, [])
 let%test _ = expression [Lex.Number 3.] = (Literal (Number 3.), [])
 
 let%test _ =
-  expression [Lex.String "ab"] = (Literal (EString "ab"), [])
+  expression [Lex.String "ab"] = (Literal (String "ab"), [])
 
 let%test _ =
   unary [Lex.Bang; Lex.Number 1.]
