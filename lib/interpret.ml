@@ -3,15 +3,15 @@ open Parse
 let print e =
   match e with
   | String s ->
-      Printf.printf "%s" s
+      Printf.printf "%s\n" s
   | Number f ->
-      Printf.printf "%f" f
+      Printf.printf "%f\n" f
   | Bool true ->
-      Printf.printf "true"
+      Printf.printf "true\n"
   | Bool false ->
-      Printf.printf "false"
+      Printf.printf "false\n"
   | Nil ->
-      Printf.printf "nil"
+      Printf.printf "nil\n"
 
 let rec eval exp =
   match exp with
