@@ -60,6 +60,12 @@ let rec eval exp =
       Bool (a == b)
   | Binary (Literal (Bool a), Lex.EqualEqual, Literal (Bool b)) ->
       Bool (a == b)
+  | Binary (Literal Nil, Lex.EqualEqual, Literal Nil) ->
+      Bool true
+  | Binary (Literal Nil, Lex.EqualEqual, _) ->
+      Bool false
+  | Binary (_, Lex.EqualEqual, Literal Nil) ->
+      Bool false
   | _ ->
       failwith "Not implemented yet"
 
