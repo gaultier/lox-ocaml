@@ -1,5 +1,18 @@
 open Parse
 
+let print e =
+  match e with
+  | String s ->
+      Printf.printf "%s" s
+  | Number f ->
+      Printf.printf "%f" f
+  | Bool true ->
+      Printf.printf "true"
+  | Bool false ->
+      Printf.printf "false"
+  | Nil ->
+      Printf.printf "nil"
+
 let rec eval exp =
   match exp with
   | Grouping e ->
@@ -62,6 +75,9 @@ let rec eval exp =
           failwith
             ( "Binary expression not allowed: "
             ^ Base.Sexp.to_string_hum (sexp_of_expr exp) ) )
+  | Print e ->
+      let v = eval e in
+      print v ; v
 
 let%test _ = "1 + 3" |> Lex.lex |> expression |> fst |> eval = Number 4.
 

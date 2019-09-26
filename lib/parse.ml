@@ -8,6 +8,7 @@ type expr =
   | Grouping of expr
   | Literal of literal_value
   | Unary of Lex.lex_token * expr
+  | Print of expr
 [@@deriving sexp]
 
 let rec primary = function
@@ -108,7 +109,28 @@ and expression_stmt = function
         | _ ->
             failwith "Missing semicolon after statement: no more tokens " ) )
 
-let parse tokens = expression_stmt tokens |> fst
+and print_stmt = function
+  | [] ->
+      failwith "No more tokens to match for a print statement"
+  | Lex.Print :: rest ->
+      let expr, rrest = expression_stmt rest in
+      (Print expr, rrest)
+  | x :: _ ->
+      failwith
+        ( "Missing print to match a print statement: "
+        ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
+
+and statement = function
+  | tokens -> (
+    match tokens with
+    | [] ->
+        failwith "No more tokens to match for a statement"
+    | Lex.Print :: _ ->
+        print_stmt tokens
+    | _ ->
+        expression_stmt tokens )
+
+let parse tokens = statement tokens |> fst
 
 let%test _ = expression [Lex.False] = (Literal (Bool false), [])
 
@@ -205,3 +227,7 @@ let%test _ =
         , Grouping
             (Binary (Literal (Number 1.), Lex.Plus, Literal (Number 1.))) )
     , [] )
+
+let%test _ =
+  "print (1+2);" |> Lex.lex |> expression
+  = (Print (Binary (Literal (Number 1.), Lex.Plus, Literal (Number 2.))), [])
