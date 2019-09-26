@@ -36,7 +36,7 @@ type lex_token =
   | True
   | Var
   | While
-  | LexString of string
+  | String of string
   | LexNumber of float
   | LexIdentifier of string
   | Unknown of char list
@@ -118,7 +118,7 @@ let rec lex_r acc rest =
       let s, r = Base.List.split_while irest ~f:(fun c -> c != '"') in
       match r with
       | '"' :: rrest ->
-          lex_r (LexString (Base.String.of_char_list s) :: acc) rrest
+          lex_r (String (Base.String.of_char_list s) :: acc) rrest
       | _ ->
           lex_r (Unknown ('"' :: s) :: acc) r )
   | x :: _ when Base.Char.is_digit x ->
@@ -170,6 +170,6 @@ let%test _ =
 
 let%test _ = lex " abc\n" = [LexIdentifier "abc"]
 
-let%test _ = lex "!\"hey\"!" = [Bang; LexString "hey"; Bang]
+let%test _ = lex "!\"hey\"!" = [Bang; String "hey"; Bang]
 
 let%test _ = lex "\"a!" = [Unknown ['"'; 'a'; '!']]
