@@ -58,9 +58,6 @@ let rec eval exp =
           failwith
             ( "Not implemented yet: "
             ^ Base.Sexp.to_string_hum (sexp_of_expr exp) ) )
-  | _ ->
-      failwith
-        ("Not implemented yet: " ^ Base.Sexp.to_string_hum (sexp_of_expr exp))
 
 let%test _ = "1 + 3" |> Lex.lex |> expression |> fst |> eval = Number 4.
 

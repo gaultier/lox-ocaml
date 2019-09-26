@@ -8,14 +8,13 @@ type expr =
   | Grouping of expr
   | Literal of literal_value
   | Unary of Lex.lex_token * expr
-  | Error
 [@@deriving sexp]
 
 let rec primary = function
   | tokens -> (
     match tokens with
     | [] ->
-        (Error, [])
+        failwith "No more tokens to match"
     | Lex.False :: rest ->
         (Literal (Bool false), rest)
     | Lex.True :: rest ->
@@ -32,9 +31,11 @@ let rec primary = function
         | Lex.ParenRight :: rrrest ->
             (Grouping e, rrrest)
         | _ ->
-            (Error, rrest) )
-    | _ :: rest ->
-        (Error, rest) )
+            failwith "Missing closing parenthesis" )
+    | x :: _ ->
+        failwith
+          ( "Not a primary: "
+          ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) ) )
 
 and unary = function
   | tokens -> (
