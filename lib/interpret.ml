@@ -29,8 +29,7 @@ let rec eval exp =
       | Number _, Lex.Slash, Number 0. ->
           failwith
             ( "Division by zero not allowed: "
-            ^ Base.Sexp.to_string_hum
-                (sexp_of_expr (Binary (Literal x, t, Literal y))) )
+            ^ Base.Sexp.to_string_hum (sexp_of_expr exp) )
       | Number a, Lex.Slash, Number b ->
           Number (a /. b)
       | Number a, Lex.Star, Number b ->
