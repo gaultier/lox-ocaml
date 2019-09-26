@@ -15,7 +15,7 @@ let rec eval exp =
           Bool false
       | _ ->
           failwith
-            ("Unary not allowed: " ^ Base.Sexp.to_string_hum (sexp_of_expr e))
+            ("Unary expression not allowed: " ^ Base.Sexp.to_string_hum (sexp_of_expr e))
       )
   | Literal l ->
       l
@@ -56,7 +56,7 @@ let rec eval exp =
           Bool false
       | _ ->
           failwith
-            ( "Not implemented yet: "
+            ( "Binary expression not allowed: "
             ^ Base.Sexp.to_string_hum (sexp_of_expr exp) ) )
 
 let%test _ = "1 + 3" |> Lex.lex |> expression |> fst |> eval = Number 4.
