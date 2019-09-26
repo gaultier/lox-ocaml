@@ -54,7 +54,9 @@ let rec eval exp =
   | Binary (_, Lex.EqualEqual, Literal Nil) ->
       Bool false
   | _ ->
-      failwith ("Not implemented yet: " ^ Sexplib.Std.string_of_sexp (sexp_of_expr exp))
+      failwith
+        ( "Not implemented yet: "
+        ^ Sexplib.Std.string_of_sexp (sexp_of_expr exp) )
 
 let%test _ =
   "(-1 + 3 * 5) == (2*5 + 4)" |> Lex.lex |> expression |> fst |> eval
