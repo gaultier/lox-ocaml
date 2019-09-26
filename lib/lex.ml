@@ -37,7 +37,7 @@ type lex_token =
   | Var
   | While
   | String of string
-  | LexNumber of float
+  | Number of float
   | LexIdentifier of string
   | Unknown of char list
 [@@deriving sexp]
@@ -128,7 +128,7 @@ let rec lex_r acc rest =
             Base.Char.is_digit c || c == '.')
       in
       let f = digits |> Base.String.of_char_list |> Float.of_string in
-      lex_r (LexNumber f :: acc) r
+      lex_r (Number f :: acc) r
   | x :: _ when Base.Char.is_alpha x -> (
       let identifier, r =
         Base.List.split_while rest ~f:Base.Char.is_alphanum
@@ -151,7 +151,7 @@ let%test _ =
 let%test _ =
   lex "and 123.4 or (){},."
   = [ And
-    ; LexNumber 123.4
+    ; Number 123.4
     ; Or
     ; ParenLeft
     ; ParenRight

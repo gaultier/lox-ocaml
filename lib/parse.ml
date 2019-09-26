@@ -22,7 +22,7 @@ let rec primary = function
         (Literal True, rest)
     | Lex.Nil :: rest ->
         (Literal Nil, rest)
-    | Lex.LexNumber f :: rest ->
+    | Lex.Number f :: rest ->
         (Literal (EFloat f), rest)
     | Lex.String s :: rest ->
         (Literal (EString s), rest)
@@ -96,41 +96,41 @@ let%test _ = expression [Lex.True] = (Literal True, [])
 
 let%test _ = expression [Lex.Nil] = (Literal Nil, [])
 
-let%test _ = expression [Lex.LexNumber 3.] = (Literal (EFloat 3.), [])
+let%test _ = expression [Lex.Number 3.] = (Literal (EFloat 3.), [])
 
 let%test _ =
   expression [Lex.String "ab"] = (Literal (EString "ab"), [])
 
 let%test _ =
-  unary [Lex.Bang; Lex.LexNumber 1.]
+  unary [Lex.Bang; Lex.Number 1.]
   = (Unary (Lex.Bang, Literal (EFloat 1.)), [])
 
 let%test _ =
-  unary [Lex.Minus; Lex.LexNumber 1.]
+  unary [Lex.Minus; Lex.Number 1.]
   = (Unary (Lex.Minus, Literal (EFloat 1.)), [])
 
-let%test _ = expression [Lex.LexNumber 1.] = (Literal (EFloat 1.), [])
+let%test _ = expression [Lex.Number 1.] = (Literal (EFloat 1.), [])
 
-let%test _ = expression [Lex.LexNumber 1.] = (Literal (EFloat 1.), [])
+let%test _ = expression [Lex.Number 1.] = (Literal (EFloat 1.), [])
 
 let%test _ =
-  expression [Lex.LexNumber 1.; Lex.Star; Lex.LexNumber 2.]
+  expression [Lex.Number 1.; Lex.Star; Lex.Number 2.]
   = (Binary (Literal (EFloat 1.), Lex.Star, Literal (EFloat 2.)), [])
 
 let%test _ =
-  expression [Lex.LexNumber 1.; Lex.Star; Lex.Minus; Lex.LexNumber 2.]
+  expression [Lex.Number 1.; Lex.Star; Lex.Minus; Lex.Number 2.]
   = ( Binary
         (Literal (EFloat 1.), Lex.Star, Unary (Lex.Minus, Literal (EFloat 2.)))
     , [] )
 
 let%test _ =
-  expression [Lex.LexNumber 1.; Lex.Slash; Lex.Minus; Lex.LexNumber 2.]
+  expression [Lex.Number 1.; Lex.Slash; Lex.Minus; Lex.Number 2.]
   = ( Binary
         (Literal (EFloat 1.), Lex.Slash, Unary (Lex.Minus, Literal (EFloat 2.)))
     , [] )
 
 let%test _ =
-  expression [Lex.LexNumber 1.; Lex.Plus; Lex.Minus; Lex.LexNumber 2.]
+  expression [Lex.Number 1.; Lex.Plus; Lex.Minus; Lex.Number 2.]
   = ( Binary
         (Literal (EFloat 1.), Lex.Plus, Unary (Lex.Minus, Literal (EFloat 2.)))
     , [] )
