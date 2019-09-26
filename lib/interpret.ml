@@ -1,13 +1,13 @@
 let efloat_op_float a b op =
   match (a, b) with
-  | Parse.EFloat x, Parse.EFloat y ->
-      Parse.EFloat (op x y)
+  | Parse.Number x, Parse.Number y ->
+      Parse.Number (op x y)
   | _ ->
       Parse.Nil
 
 let efloat_op_bool a b op =
   match (a, b) with
-  | Parse.EFloat x, Parse.EFloat y ->
+  | Parse.Number x, Parse.Number y ->
       if op x y then Parse.True else Parse.False
   | _ ->
       Parse.Nil
@@ -23,7 +23,7 @@ let is_equal l1 l2 =
       Parse.True
   | Parse.Nil, _ | _, Parse.Nil ->
       Parse.False
-  | Parse.EFloat _, Parse.EFloat _ ->
+  | Parse.Number _, Parse.Number _ ->
       efloat_op_bool l1 l2 Float.equal
   | Parse.EString a, Parse.EString b ->
       if String.equal a b then Parse.True else Parse.False
@@ -37,8 +37,8 @@ let rec eval exp =
   | Parse.Unary (t, e) -> (
       let v = eval e in
       match (v, t) with
-      | Parse.EFloat f, Lex.Minus ->
-          Parse.EFloat (-.f)
+      | Parse.Number f, Lex.Minus ->
+          Parse.Number (-.f)
       | _, Lex.Bang ->
           bool_not (is_truthy v)
       | _ ->

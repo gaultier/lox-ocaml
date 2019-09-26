@@ -1,6 +1,6 @@
 open Sexplib.Std
 
-type literal_value = True | False | EFloat of float | Nil | EString of string
+type literal_value = True | False | Number of float | Nil | EString of string
 [@@deriving sexp]
 
 type expr =
@@ -23,7 +23,7 @@ let rec primary = function
     | Lex.Nil :: rest ->
         (Literal Nil, rest)
     | Lex.Number f :: rest ->
-        (Literal (EFloat f), rest)
+        (Literal (Number f), rest)
     | Lex.String s :: rest ->
         (Literal (EString s), rest)
     | Lex.ParenLeft :: rest -> (
@@ -96,94 +96,94 @@ let%test _ = expression [Lex.True] = (Literal True, [])
 
 let%test _ = expression [Lex.Nil] = (Literal Nil, [])
 
-let%test _ = expression [Lex.Number 3.] = (Literal (EFloat 3.), [])
+let%test _ = expression [Lex.Number 3.] = (Literal (Number 3.), [])
 
 let%test _ =
   expression [Lex.String "ab"] = (Literal (EString "ab"), [])
 
 let%test _ =
   unary [Lex.Bang; Lex.Number 1.]
-  = (Unary (Lex.Bang, Literal (EFloat 1.)), [])
+  = (Unary (Lex.Bang, Literal (Number 1.)), [])
 
 let%test _ =
   unary [Lex.Minus; Lex.Number 1.]
-  = (Unary (Lex.Minus, Literal (EFloat 1.)), [])
+  = (Unary (Lex.Minus, Literal (Number 1.)), [])
 
-let%test _ = expression [Lex.Number 1.] = (Literal (EFloat 1.), [])
+let%test _ = expression [Lex.Number 1.] = (Literal (Number 1.), [])
 
-let%test _ = expression [Lex.Number 1.] = (Literal (EFloat 1.), [])
+let%test _ = expression [Lex.Number 1.] = (Literal (Number 1.), [])
 
 let%test _ =
   expression [Lex.Number 1.; Lex.Star; Lex.Number 2.]
-  = (Binary (Literal (EFloat 1.), Lex.Star, Literal (EFloat 2.)), [])
+  = (Binary (Literal (Number 1.), Lex.Star, Literal (Number 2.)), [])
 
 let%test _ =
   expression [Lex.Number 1.; Lex.Star; Lex.Minus; Lex.Number 2.]
   = ( Binary
-        (Literal (EFloat 1.), Lex.Star, Unary (Lex.Minus, Literal (EFloat 2.)))
+        (Literal (Number 1.), Lex.Star, Unary (Lex.Minus, Literal (Number 2.)))
     , [] )
 
 let%test _ =
   expression [Lex.Number 1.; Lex.Slash; Lex.Minus; Lex.Number 2.]
   = ( Binary
-        (Literal (EFloat 1.), Lex.Slash, Unary (Lex.Minus, Literal (EFloat 2.)))
+        (Literal (Number 1.), Lex.Slash, Unary (Lex.Minus, Literal (Number 2.)))
     , [] )
 
 let%test _ =
   expression [Lex.Number 1.; Lex.Plus; Lex.Minus; Lex.Number 2.]
   = ( Binary
-        (Literal (EFloat 1.), Lex.Plus, Unary (Lex.Minus, Literal (EFloat 2.)))
+        (Literal (Number 1.), Lex.Plus, Unary (Lex.Minus, Literal (Number 2.)))
     , [] )
 
 let%test _ =
   "1 + -2" |> Lex.lex |> expression
   = ( Binary
-        (Literal (EFloat 1.), Lex.Plus, Unary (Lex.Minus, Literal (EFloat 2.)))
+        (Literal (Number 1.), Lex.Plus, Unary (Lex.Minus, Literal (Number 2.)))
     , [] )
 
 let%test _ =
   "1 < -2" |> Lex.lex |> expression
   = ( Binary
-        (Literal (EFloat 1.), Lex.Less, Unary (Lex.Minus, Literal (EFloat 2.)))
+        (Literal (Number 1.), Lex.Less, Unary (Lex.Minus, Literal (Number 2.)))
     , [] )
 
 let%test _ =
   "1 == -2" |> Lex.lex |> expression
   = ( Binary
-        ( Literal (EFloat 1.)
+        ( Literal (Number 1.)
         , Lex.EqualEqual
-        , Unary (Lex.Minus, Literal (EFloat 2.)) )
+        , Unary (Lex.Minus, Literal (Number 2.)) )
     , [] )
 
 let%test _ =
   "1 != 3" |> Lex.lex |> expression
-  = (Binary (Literal (EFloat 1.), Lex.BangEqual, Literal (EFloat 3.)), [])
+  = (Binary (Literal (Number 1.), Lex.BangEqual, Literal (Number 3.)), [])
 
 let%test _ =
   "1 != 3 == -2" |> Lex.lex |> expression
   = ( Binary
-        ( Literal (EFloat 1.)
+        ( Literal (Number 1.)
         , Lex.BangEqual
         , Binary
-            ( Literal (EFloat 3.)
+            ( Literal (Number 3.)
             , Lex.EqualEqual
-            , Unary (Lex.Minus, Literal (EFloat 2.)) ) )
+            , Unary (Lex.Minus, Literal (Number 2.)) ) )
     , [] )
 
 let%test _ =
   "(1 != 3) == -2" |> Lex.lex |> expression
   = ( Binary
         ( Grouping
-            (Binary (Literal (EFloat 1.), Lex.BangEqual, Literal (EFloat 3.)))
+            (Binary (Literal (Number 1.), Lex.BangEqual, Literal (Number 3.)))
         , Lex.EqualEqual
-        , Unary (Lex.Minus, Literal (EFloat 2.)) )
+        , Unary (Lex.Minus, Literal (Number 2.)) )
     , [] )
 
 let%test _ =
   "2 >= (1 + 1) " |> Lex.lex |> expression
   = ( Binary
-        ( Literal (EFloat 2.)
+        ( Literal (Number 2.)
         , Lex.GreaterEqual
         , Grouping
-            (Binary (Literal (EFloat 1.), Lex.Plus, Literal (EFloat 1.))) )
+            (Binary (Literal (Number 1.), Lex.Plus, Literal (Number 1.))) )
     , [] )
