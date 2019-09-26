@@ -12,7 +12,7 @@ let rec eval exp =
       | Lex.Bang, Nil | Lex.Bang, Bool false ->
           Bool true
       | Lex.Bang, _ ->
-          Bool true
+          Bool false
       | _ ->
           v )
   | Literal l ->
