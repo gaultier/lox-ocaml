@@ -1,10 +1,5 @@
 open Parse
 
-let is_truthy e =
-  match e with Bool false | Nil -> Bool false | _ -> Bool true
-
-let bool_not b = if b == Bool true then Bool false else Bool true
-
 let rec eval exp =
   match exp with
   | Grouping e ->
@@ -14,8 +9,10 @@ let rec eval exp =
       match (t, v) with
       | Lex.Minus, Number f ->
           Number (-.f)
+      | Lex.Bang, Nil | Lex.Bang, Bool false ->
+          Bool true
       | Lex.Bang, _ ->
-          bool_not (is_truthy v)
+          Bool true
       | _ ->
           v )
   | Literal l ->
