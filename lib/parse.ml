@@ -1,4 +1,7 @@
+open Sexplib.Std
+
 type literal_value = True | False | EFloat of float | Nil | EString of string
+[@@deriving sexp]
 
 type expr =
   | Binary of expr * Lex.lex_token * expr
@@ -6,6 +9,7 @@ type expr =
   | Literal of literal_value
   | Unary of Lex.lex_token * expr
   | Error
+[@@deriving sexp]
 
 let rec primary = function
   | tokens -> (
@@ -85,32 +89,6 @@ and equality = function
           (left, rest) )
 
 and expression = function tokens -> equality tokens
-
-let literal_to_s l =
-  match l with
-  | False ->
-      "false"
-  | True ->
-      "true"
-  | EFloat f ->
-      Float.to_string f
-  | EString s ->
-      s
-  | Nil ->
-      "nil"
-
-let rec expr_to_s e =
-  match e with
-  | Binary (l, t, r) ->
-      "(" ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s l ^ " " ^ expr_to_s r ^ ")"
-  | Grouping m ->
-      "(Grouping " ^ expr_to_s m ^ ")"
-  | Literal v ->
-      literal_to_s v
-  | Unary (t, r) ->
-      "(" ^ Lex.lex_token_to_s t ^ " " ^ expr_to_s r ^ ")"
-  | Error ->
-      "(Error)"
 
 let%test _ = expression [Lex.False] = (Literal False, [])
 
