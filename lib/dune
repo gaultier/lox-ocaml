@@ -1,6 +1,6 @@
 (library
  (name lox)
- (libraries base)
+ (libraries base sexplib)
  (inline_tests)
  (preprocess
-  (pps ppx_inline_test)))
+  (pps ppx_inline_test ppx_sexp_conv)))
