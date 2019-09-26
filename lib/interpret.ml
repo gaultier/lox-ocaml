@@ -15,7 +15,7 @@ let rec eval exp =
           Bool false
       | _ ->
           failwith
-            ("Unary not allowed: " ^ Base.Sexp.to_string_hum (sexp_of_expr exp))
+            ("Unary not allowed: " ^ Base.Sexp.to_string_hum (sexp_of_expr e))
       )
   | Literal l ->
       l
