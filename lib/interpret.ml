@@ -73,9 +73,7 @@ let%test _ =
   "(-1 + 3 * 5) == (2*5 + 4)" |> Lex.lex |> expression |> fst |> eval
   = Bool true
 
-let%test _ =
-  "10/5" |> Lex.lex |> expression |> fst |> eval
-  = Number 2.
+let%test _ = "10/5" |> Lex.lex |> expression |> fst |> eval = Number 2.
 
 let%test _ = "!true" |> Lex.lex |> expression |> fst |> eval = Bool false
 
