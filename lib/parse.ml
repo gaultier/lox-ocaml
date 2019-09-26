@@ -25,7 +25,7 @@ let rec primary = function
     | Lex.LexNumber f :: rest ->
         (Literal (EFloat f), rest)
     | Lex.LexString s :: rest ->
-        (Literal (EString (Base.String.of_char_list s)), rest)
+        (Literal (EString s), rest)
     | Lex.ParenLeft :: rest -> (
         let e, rrest = expression rest in
         match rrest with
@@ -99,7 +99,7 @@ let%test _ = expression [Lex.Nil] = (Literal Nil, [])
 let%test _ = expression [Lex.LexNumber 3.] = (Literal (EFloat 3.), [])
 
 let%test _ =
-  expression [Lex.LexString ['a'; 'b']] = (Literal (EString "ab"), [])
+  expression [Lex.LexString "ab"] = (Literal (EString "ab"), [])
 
 let%test _ =
   unary [Lex.Bang; Lex.LexNumber 1.]
