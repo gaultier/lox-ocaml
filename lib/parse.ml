@@ -14,7 +14,7 @@ let rec primary = function
   | tokens -> (
     match tokens with
     | [] ->
-        failwith "No more tokens to match"
+        failwith "No more tokens to match for a primary"
     | Lex.False :: rest ->
         (Literal (Bool false), rest)
     | Lex.True :: rest ->
@@ -91,7 +91,24 @@ and equality = function
 
 and expression = function tokens -> equality tokens
 
-let parse tokens = expression tokens |> fst
+and expression_stmt = function
+  | tokens -> (
+    match tokens with
+    | [] ->
+        failwith "No more tokens to match for an expression statement"
+    | _ -> (
+        let stmt, rest = expression tokens in
+        match rest with
+        | Lex.SemiColon :: rrest ->
+            (stmt, rrest)
+        | x :: _ ->
+            failwith
+              ( "Missing semicolon after statement: expected `;`, got: "
+              ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
+        | _ ->
+            failwith "Missing semicolon after statement: no more tokens " ) )
+
+let parse tokens = expression_stmt tokens |> fst
 
 let%test _ = expression [Lex.False] = (Literal (Bool false), [])
 
