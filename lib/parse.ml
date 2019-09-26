@@ -91,6 +91,8 @@ and equality = function
 
 and expression = function tokens -> equality tokens
 
+let parse tokens = expression tokens |> fst
+
 let%test _ = expression [Lex.False] = (Literal (Bool false), [])
 
 let%test _ = expression [Lex.True] = (Literal (Bool true), [])
