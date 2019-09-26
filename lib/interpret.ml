@@ -15,8 +15,8 @@ let rec eval exp =
           Bool false
       | _ ->
           failwith
-            ("Unary expression not allowed: " ^ Base.Sexp.to_string_hum (sexp_of_expr e))
-      )
+            ( "Unary expression not allowed: "
+            ^ Base.Sexp.to_string_hum (sexp_of_expr e) ) )
   | Literal l ->
       l
   | Binary (l, t, r) -> (
