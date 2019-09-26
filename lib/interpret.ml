@@ -91,3 +91,15 @@ let%test _ =
 
 let%test _ =
   "\"hel\" + \"lo\"" |> Lex.lex |> expression |> fst |> eval = String "hello"
+
+let%test _ = "1 >= 2" |> Lex.lex |> expression |> fst |> eval = Bool false
+
+let%test _ = "1 > 2" |> Lex.lex |> expression |> fst |> eval = Bool false
+
+let%test _ = "2 > 2" |> Lex.lex |> expression |> fst |> eval = Bool false
+
+let%test _ = "1 <= 2" |> Lex.lex |> expression |> fst |> eval = Bool true
+
+let%test _ = "1 < 2" |> Lex.lex |> expression |> fst |> eval = Bool true
+
+let%test _ = "2 < 2" |> Lex.lex |> expression |> fst |> eval = Bool false
