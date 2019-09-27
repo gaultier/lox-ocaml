@@ -76,7 +76,15 @@ let rec eval_exp exp =
             ( "Binary expression not allowed: "
             ^ Base.Sexp.to_string_hum (sexp_of_expr exp) ) )
 
-let interpret stmts = Stack.fold (fun acc s -> eval_exp s :: acc) [] stmts
+let eval s =
+  match s with
+  | Expr e ->
+      eval_exp e
+  | Print e ->
+      let v = eval_exp e in
+      print v ; Nil
+
+let interpret stmts = Stack.fold (fun acc s -> eval s :: acc) [] stmts
 
 let%test _ = "1 + 3" |> Lex.lex |> expression |> fst |> eval_exp = Number 4.
 
