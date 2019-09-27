@@ -130,7 +130,15 @@ and statement = function
     | _ ->
         expression_stmt tokens )
 
-let parse tokens = statement tokens |> fst
+and program stmts tokens =
+  match tokens with
+  | [] ->
+      stmts
+  | _ ->
+      let stmt, rest = statement tokens in
+      Stack.push stmt stmts ; program stmts rest
+
+let parse tokens = let stmts = Stack.create() in program stmts tokens 
 
 let%test _ = statement [Lex.False; Lex.SemiColon] = (Literal (Bool false), [])
 
