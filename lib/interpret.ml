@@ -77,7 +77,7 @@ let rec eval exp =
             ^ Base.Sexp.to_string_hum (sexp_of_expr exp) ) )
   | Print e ->
       let v = eval e in
-      print v ; v
+      print v ; Nil
 
 let interpret stmts = Stack.fold (fun acc s -> eval s :: acc) [] stmts
 

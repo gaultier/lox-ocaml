@@ -8,8 +8,9 @@ type expr =
   | Grouping of expr
   | Literal of literal_value
   | Unary of Lex.lex_token * expr
-  | Print of expr
 [@@deriving sexp]
+
+type statement = Expr of expr | Print of expr
 
 let rec primary = function
   | tokens -> (
@@ -128,7 +129,8 @@ and statement = function
     | Lex.Print :: _ ->
         print_stmt tokens
     | _ ->
-        expression_stmt tokens )
+        let e, rest = expression_stmt tokens in
+        (Expr e, rest) )
 
 and program stmts tokens =
   match tokens with
@@ -142,105 +144,128 @@ let parse tokens =
   let stmts = Stack.create () in
   program stmts tokens
 
-let%test _ = statement [Lex.False; Lex.SemiColon] = (Literal (Bool false), [])
-
-let%test _ = statement [Lex.True; Lex.SemiColon] = (Literal (Bool true), [])
-
-let%test _ = statement [Lex.Nil; Lex.SemiColon] = (Literal Nil, [])
+let%test _ =
+  statement [Lex.False; Lex.SemiColon] = (Expr (Literal (Bool false)), [])
 
 let%test _ =
-  statement [Lex.Number 3.; Lex.SemiColon] = (Literal (Number 3.), [])
+  statement [Lex.True; Lex.SemiColon] = (Expr (Literal (Bool true)), [])
+
+let%test _ = statement [Lex.Nil; Lex.SemiColon] = (Expr (Literal Nil), [])
 
 let%test _ =
-  statement [Lex.String "ab"; Lex.SemiColon] = (Literal (String "ab"), [])
+  statement [Lex.Number 3.; Lex.SemiColon] = (Expr (Literal (Number 3.)), [])
+
+let%test _ =
+  statement [Lex.String "ab"; Lex.SemiColon]
+  = (Expr (Literal (String "ab")), [])
 
 let%test _ =
   statement [Lex.Bang; Lex.Number 1.; Lex.SemiColon]
-  = (Unary (Lex.Bang, Literal (Number 1.)), [])
+  = (Expr (Unary (Lex.Bang, Literal (Number 1.))), [])
 
 let%test _ =
   statement [Lex.Minus; Lex.Number 1.; Lex.SemiColon]
-  = (Unary (Lex.Minus, Literal (Number 1.)), [])
+  = (Expr (Unary (Lex.Minus, Literal (Number 1.))), [])
 
 let%test _ =
-  statement [Lex.Number 1.; Lex.SemiColon] = (Literal (Number 1.), [])
+  statement [Lex.Number 1.; Lex.SemiColon] = (Expr (Literal (Number 1.)), [])
 
 let%test _ =
-  statement [Lex.Number 1.; Lex.SemiColon] = (Literal (Number 1.), [])
+  statement [Lex.Number 1.; Lex.SemiColon] = (Expr (Literal (Number 1.)), [])
 
 let%test _ =
   statement [Lex.Number 1.; Lex.Star; Lex.Number 2.; Lex.SemiColon]
-  = (Binary (Literal (Number 1.), Lex.Star, Literal (Number 2.)), [])
+  = (Expr (Binary (Literal (Number 1.), Lex.Star, Literal (Number 2.))), [])
 
 let%test _ =
   statement [Lex.Number 1.; Lex.Star; Lex.Minus; Lex.Number 2.; Lex.SemiColon]
-  = ( Binary
-        (Literal (Number 1.), Lex.Star, Unary (Lex.Minus, Literal (Number 2.)))
+  = ( Expr
+        (Binary
+           ( Literal (Number 1.)
+           , Lex.Star
+           , Unary (Lex.Minus, Literal (Number 2.)) ))
     , [] )
 
 let%test _ =
   statement [Lex.Number 1.; Lex.Slash; Lex.Minus; Lex.Number 2.; Lex.SemiColon]
-  = ( Binary
-        (Literal (Number 1.), Lex.Slash, Unary (Lex.Minus, Literal (Number 2.)))
+  = ( Expr
+        (Binary
+           ( Literal (Number 1.)
+           , Lex.Slash
+           , Unary (Lex.Minus, Literal (Number 2.)) ))
     , [] )
 
 let%test _ =
   statement [Lex.Number 1.; Lex.Plus; Lex.Minus; Lex.Number 2.; Lex.SemiColon]
-  = ( Binary
-        (Literal (Number 1.), Lex.Plus, Unary (Lex.Minus, Literal (Number 2.)))
+  = ( Expr
+        (Binary
+           ( Literal (Number 1.)
+           , Lex.Plus
+           , Unary (Lex.Minus, Literal (Number 2.)) ))
     , [] )
 
 let%test _ =
   "1 + -2;" |> Lex.lex |> statement
-  = ( Binary
-        (Literal (Number 1.), Lex.Plus, Unary (Lex.Minus, Literal (Number 2.)))
+  = ( Expr
+        (Binary
+           ( Literal (Number 1.)
+           , Lex.Plus
+           , Unary (Lex.Minus, Literal (Number 2.)) ))
     , [] )
 
 let%test _ =
   "1 < -2;" |> Lex.lex |> statement
-  = ( Binary
-        (Literal (Number 1.), Lex.Less, Unary (Lex.Minus, Literal (Number 2.)))
+  = ( Expr
+        (Binary
+           ( Literal (Number 1.)
+           , Lex.Less
+           , Unary (Lex.Minus, Literal (Number 2.)) ))
     , [] )
 
 let%test _ =
   "1 == -2;" |> Lex.lex |> statement
-  = ( Binary
-        ( Literal (Number 1.)
-        , Lex.EqualEqual
-        , Unary (Lex.Minus, Literal (Number 2.)) )
+  = ( Expr
+        (Binary
+           ( Literal (Number 1.)
+           , Lex.EqualEqual
+           , Unary (Lex.Minus, Literal (Number 2.)) ))
     , [] )
 
 let%test _ =
   "1 != 3;" |> Lex.lex |> statement
-  = (Binary (Literal (Number 1.), Lex.BangEqual, Literal (Number 3.)), [])
+  = ( Expr (Binary (Literal (Number 1.), Lex.BangEqual, Literal (Number 3.)))
+    , [] )
 
 let%test _ =
   "1 != 3 == -2;" |> Lex.lex |> statement
-  = ( Binary
-        ( Literal (Number 1.)
-        , Lex.BangEqual
-        , Binary
-            ( Literal (Number 3.)
-            , Lex.EqualEqual
-            , Unary (Lex.Minus, Literal (Number 2.)) ) )
+  = ( Expr
+        (Binary
+           ( Literal (Number 1.)
+           , Lex.BangEqual
+           , Binary
+               ( Literal (Number 3.)
+               , Lex.EqualEqual
+               , Unary (Lex.Minus, Literal (Number 2.)) ) ))
     , [] )
 
 let%test _ =
   "(1 != 3) == -2;" |> Lex.lex |> statement
-  = ( Binary
-        ( Grouping
-            (Binary (Literal (Number 1.), Lex.BangEqual, Literal (Number 3.)))
-        , Lex.EqualEqual
-        , Unary (Lex.Minus, Literal (Number 2.)) )
+  = ( Expr
+        (Binary
+           ( Grouping
+               (Binary (Literal (Number 1.), Lex.BangEqual, Literal (Number 3.)))
+           , Lex.EqualEqual
+           , Unary (Lex.Minus, Literal (Number 2.)) ))
     , [] )
 
 let%test _ =
   "2 >= (1 + 1); " |> Lex.lex |> statement
-  = ( Binary
-        ( Literal (Number 2.)
-        , Lex.GreaterEqual
-        , Grouping
-            (Binary (Literal (Number 1.), Lex.Plus, Literal (Number 1.))) )
+  = ( Expr
+        (Binary
+           ( Literal (Number 2.)
+           , Lex.GreaterEqual
+           , Grouping
+               (Binary (Literal (Number 1.), Lex.Plus, Literal (Number 1.))) ))
     , [] )
 
 let%test _ =
