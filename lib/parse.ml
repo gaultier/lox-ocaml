@@ -138,7 +138,9 @@ and program stmts tokens =
       let stmt, rest = statement tokens in
       Stack.push stmt stmts ; program stmts rest
 
-let parse tokens = let stmts = Stack.create() in program stmts tokens 
+let parse tokens =
+  let stmts = Stack.create () in
+  program stmts tokens
 
 let%test _ = statement [Lex.False; Lex.SemiColon] = (Literal (Bool false), [])
 
