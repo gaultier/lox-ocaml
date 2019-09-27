@@ -79,6 +79,8 @@ let rec eval exp =
       let v = eval e in
       print v ; v
 
+let interpret stmts = Stack.fold (fun acc s -> eval s :: acc) [] stmts
+
 let%test _ = "1 + 3" |> Lex.lex |> expression |> fst |> eval = Number 4.
 
 let%test _ = "-1 + 3" |> Lex.lex |> expression |> fst |> eval = Number 2.
