@@ -13,12 +13,12 @@ let print e =
   | Nil ->
       Printf.printf "nil\n"
 
-let rec eval exp =
+let rec eval_exp exp =
   match exp with
   | Grouping e ->
-      eval e
+      eval_exp e
   | Unary (t, e) -> (
-      let v = eval e in
+      let v = eval_exp e in
       match (t, v) with
       | Lex.Minus, Number f ->
           Number (-.f)
@@ -33,7 +33,7 @@ let rec eval exp =
   | Literal l ->
       l
   | Binary (l, t, r) -> (
-      let x = eval l and y = eval r in
+      let x = eval_exp l and y = eval_exp r in
       match (x, t, y) with
       | Number a, Lex.Plus, Number b ->
           Number (a +. b)
@@ -75,52 +75,52 @@ let rec eval exp =
           failwith
             ( "Binary expression not allowed: "
             ^ Base.Sexp.to_string_hum (sexp_of_expr exp) ) )
-  | Print e ->
-      let v = eval e in
-      print v ; Nil
 
-let interpret stmts = Stack.fold (fun acc s -> eval s :: acc) [] stmts
+let interpret stmts = Stack.fold (fun acc s -> eval_exp s :: acc) [] stmts
 
-let%test _ = "1 + 3" |> Lex.lex |> expression |> fst |> eval = Number 4.
+let%test _ = "1 + 3" |> Lex.lex |> expression |> fst |> eval_exp = Number 4.
 
-let%test _ = "-1 + 3" |> Lex.lex |> expression |> fst |> eval = Number 2.
+let%test _ = "-1 + 3" |> Lex.lex |> expression |> fst |> eval_exp = Number 2.
 
 let%test _ =
-  "(-1 + 3 * 5)" |> Lex.lex |> expression |> fst |> eval = Number 14.
+  "(-1 + 3 * 5)" |> Lex.lex |> expression |> fst |> eval_exp = Number 14.
 
 let%test _ =
-  "(-1 + 3 * 5) == (2*5 + 4)" |> Lex.lex |> expression |> fst |> eval
+  "(-1 + 3 * 5) == (2*5 + 4)" |> Lex.lex |> expression |> fst |> eval_exp
   = Bool true
 
-let%test _ = "10/5" |> Lex.lex |> expression |> fst |> eval = Number 2.
+let%test _ = "10/5" |> Lex.lex |> expression |> fst |> eval_exp = Number 2.
 
-let%test _ = "!true" |> Lex.lex |> expression |> fst |> eval = Bool false
+let%test _ = "!true" |> Lex.lex |> expression |> fst |> eval_exp = Bool false
 
-let%test _ = "!false" |> Lex.lex |> expression |> fst |> eval = Bool true
-
-let%test _ = "!(1 == 1)" |> Lex.lex |> expression |> fst |> eval = Bool false
-
-let%test _ = "!nil" |> Lex.lex |> expression |> fst |> eval = Bool true
-
-let%test _ = "!!nil" |> Lex.lex |> expression |> fst |> eval = Bool false
+let%test _ = "!false" |> Lex.lex |> expression |> fst |> eval_exp = Bool true
 
 let%test _ =
-  "\"hey\" == \"hello\"" |> Lex.lex |> expression |> fst |> eval = Bool false
+  "!(1 == 1)" |> Lex.lex |> expression |> fst |> eval_exp = Bool false
+
+let%test _ = "!nil" |> Lex.lex |> expression |> fst |> eval_exp = Bool true
+
+let%test _ = "!!nil" |> Lex.lex |> expression |> fst |> eval_exp = Bool false
 
 let%test _ =
-  "\"hey\" == \"hey\"" |> Lex.lex |> expression |> fst |> eval = Bool true
+  "\"hey\" == \"hello\"" |> Lex.lex |> expression |> fst |> eval_exp
+  = Bool false
 
 let%test _ =
-  "\"hel\" + \"lo\"" |> Lex.lex |> expression |> fst |> eval = String "hello"
+  "\"hey\" == \"hey\"" |> Lex.lex |> expression |> fst |> eval_exp = Bool true
 
-let%test _ = "1 >= 2" |> Lex.lex |> expression |> fst |> eval = Bool false
+let%test _ =
+  "\"hel\" + \"lo\"" |> Lex.lex |> expression |> fst |> eval_exp
+  = String "hello"
 
-let%test _ = "1 > 2" |> Lex.lex |> expression |> fst |> eval = Bool false
+let%test _ = "1 >= 2" |> Lex.lex |> expression |> fst |> eval_exp = Bool false
 
-let%test _ = "2 > 2" |> Lex.lex |> expression |> fst |> eval = Bool false
+let%test _ = "1 > 2" |> Lex.lex |> expression |> fst |> eval_exp = Bool false
 
-let%test _ = "1 <= 2" |> Lex.lex |> expression |> fst |> eval = Bool true
+let%test _ = "2 > 2" |> Lex.lex |> expression |> fst |> eval_exp = Bool false
 
-let%test _ = "1 < 2" |> Lex.lex |> expression |> fst |> eval = Bool true
+let%test _ = "1 <= 2" |> Lex.lex |> expression |> fst |> eval_exp = Bool true
 
-let%test _ = "2 < 2" |> Lex.lex |> expression |> fst |> eval = Bool false
+let%test _ = "1 < 2" |> Lex.lex |> expression |> fst |> eval_exp = Bool true
+
+let%test _ = "2 < 2" |> Lex.lex |> expression |> fst |> eval_exp = Bool false
