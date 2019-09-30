@@ -1,12 +1,12 @@
 open Sexplib.Std
 
-type literal_value = Bool of bool | Number of float | Nil | String of string
+type value = Bool of bool | Number of float | Nil | String of string
 [@@deriving sexp]
 
 type expr =
   | Binary of expr * Lex.lex_token * expr
   | Grouping of expr
-  | Literal of literal_value
+  | Literal of value
   | Unary of Lex.lex_token * expr
 [@@deriving sexp]
 
