@@ -13,40 +13,35 @@ type expr =
 type statement = Expr of expr | Print of expr
 
 let rec primary = function
-  | tokens -> (
-    match tokens with
-    | [] ->
-        failwith "No more tokens to match for a primary"
-    | Lex.False :: rest ->
-        (Literal (Bool false), rest)
-    | Lex.True :: rest ->
-        (Literal (Bool true), rest)
-    | Lex.Nil :: rest ->
-        (Literal Nil, rest)
-    | Lex.Number f :: rest ->
-        (Literal (Number f), rest)
-    | Lex.String s :: rest ->
-        (Literal (String s), rest)
-    | Lex.ParenLeft :: rest -> (
-        let e, rrest = expression rest in
-        match rrest with
-        | Lex.ParenRight :: rrrest ->
-            (Grouping e, rrrest)
-        | _ ->
-            failwith "Missing closing parenthesis" )
-    | x :: _ ->
-        failwith
-          ( "Not a primary: "
-          ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) ) )
+  | [] ->
+      failwith "No more tokens to match for a primary"
+  | Lex.False :: rest ->
+      (Literal (Bool false), rest)
+  | Lex.True :: rest ->
+      (Literal (Bool true), rest)
+  | Lex.Nil :: rest ->
+      (Literal Nil, rest)
+  | Lex.Number f :: rest ->
+      (Literal (Number f), rest)
+  | Lex.String s :: rest ->
+      (Literal (String s), rest)
+  | Lex.ParenLeft :: rest -> (
+      let e, rrest = expression rest in
+      match rrest with
+      | Lex.ParenRight :: rrrest ->
+          (Grouping e, rrrest)
+      | _ ->
+          failwith "Missing closing parenthesis" )
+  | x :: _ ->
+      failwith
+        ("Not a primary: " ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x))
 
 and unary = function
-  | tokens -> (
-    match tokens with
-    | (Lex.Bang as t) :: rest | (Lex.Minus as t) :: rest ->
-        let right, rrest = unary rest in
-        (Unary (t, right), rrest)
-    | _ ->
-        primary tokens )
+  | (Lex.Bang as t) :: rest | (Lex.Minus as t) :: rest ->
+      let right, rrest = unary rest in
+      (Unary (t, right), rrest)
+  | _ as t ->
+      primary t
 
 and multiplication = function
   | tokens -> (
@@ -94,21 +89,19 @@ and equality = function
 and expression = function tokens -> equality tokens
 
 and expression_stmt = function
-  | tokens -> (
-    match tokens with
-    | [] ->
-        failwith "No more tokens to match for an expression statement"
-    | _ -> (
-        let stmt, rest = expression tokens in
-        match rest with
-        | Lex.SemiColon :: rrest ->
-            (stmt, rrest)
-        | x :: _ ->
-            failwith
-              ( "Missing semicolon after statement: expected `;`, got: "
-              ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
-        | _ ->
-            failwith "Missing semicolon after statement: no more tokens " ) )
+  | [] ->
+      failwith "No more tokens to match for an expression statement"
+  | _ as t -> (
+      let stmt, rest = expression t in
+      match rest with
+      | Lex.SemiColon :: rrest ->
+          (stmt, rrest)
+      | x :: _ ->
+          failwith
+            ( "Missing semicolon after statement: expected `;`, got: "
+            ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
+      | _ ->
+          failwith "Missing semicolon after statement: no more tokens " )
 
 and print_stmt = function
   | [] ->
@@ -122,15 +115,13 @@ and print_stmt = function
         ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
 
 and statement = function
-  | tokens -> (
-    match tokens with
-    | [] ->
-        failwith "No more tokens to match for a statement"
-    | Lex.Print :: _ ->
-        print_stmt tokens
-    | _ ->
-        let e, rest = expression_stmt tokens in
-        (Expr e, rest) )
+  | [] ->
+      failwith "No more tokens to match for a statement"
+  | Lex.Print :: _ as t ->
+      print_stmt t
+  | _ as t ->
+      let e, rest = expression_stmt t in
+      (Expr e, rest)
 
 and program stmts tokens =
   match tokens with
