@@ -37,7 +37,7 @@ let rec eval_exp exp env =
     | Some v ->
         v
     | None ->
-        failwith ("Accessing unkown variable " ^ n) )
+        failwith ("Accessing unkown variable `" ^ n ^ "`") )
   | Variable _ ->
       failwith "Badly constructed var"
   | Binary (l, t, r) -> (
@@ -91,8 +91,10 @@ let eval s env =
       let v = eval_exp e env in
       print v ; Nil
   | Var (Lex.Identifier n, e) ->
+      print_endline ("Log: defining var " ^ n) ;
       let e = eval_exp e env in
       let _ = Base.Hashtbl.set env ~key:n ~data:e in
+      let e = Base.Hashtbl.find_exn env n in
       e
   | Var _ ->
       failwith "Badly constructed var"
