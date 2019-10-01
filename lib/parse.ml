@@ -119,12 +119,14 @@ and statement = function
       let e, rest = expression_stmt t in
       (Expr e, rest)
 
-and program stmts = function
+and declaration d = statement d
+
+and program decls = function
   | [] ->
-      stmts
-  | _ as t ->
-      let stmt, rest = statement t in
-      Stack.push stmt stmts ; program stmts rest
+      decls
+  | _ as d ->
+      let stmt, rest = declaration d in
+      Stack.push stmt decls ; program decls rest
 
 let parse tokens =
   let stmts = Stack.create () in
