@@ -82,7 +82,8 @@ let eval s =
   | Print e ->
       let v = eval_exp e in
       print v ; Nil
-  | Var (_, _) -> failwith "not implemented yet"
+  | Var (_, _) ->
+      failwith "not implemented yet"
 
 let interpret stmts = Stack.fold (fun acc s -> eval s :: acc) [] stmts
 

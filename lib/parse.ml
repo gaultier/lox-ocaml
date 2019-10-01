@@ -119,11 +119,17 @@ and statement = function
       let e, rest = expression_stmt t in
       (Expr e, rest)
 
-and var_decl _ = (Expr (Literal Nil), [])
+and var_decl = function
+  | [] ->
+      failwith "No more tokens to match for a variable declaration"
+  | Lex.Var :: Lex.Identifier n:: rest ->
+      let d = Var (Lex.Identifier n, Literal Nil) in
+      (d, rest)
+  | _ ->
+      failwith "Not a valid variable declaration"
 
-and declaration d = match d with 
- | Lex.Identifier _ :: _ -> var_decl d
- | _ -> statement d
+and declaration d =
+  match d with Lex.Var :: _ -> var_decl d | _ -> statement d
 
 and program decls = function
   | [] ->
