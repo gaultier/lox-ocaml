@@ -119,12 +119,11 @@ and statement = function
       let e, rest = expression_stmt t in
       (Expr e, rest)
 
-and program stmts tokens =
-  match tokens with
+and program stmts = function
   | [] ->
       stmts
-  | _ ->
-      let stmt, rest = statement tokens in
+  | _ as t ->
+      let stmt, rest = statement t in
       Stack.push stmt stmts ; program stmts rest
 
 let parse tokens =
