@@ -122,9 +122,13 @@ and statement = function
 and var_decl = function
   | [] ->
       failwith "No more tokens to match for a variable declaration"
-  | Lex.Var :: Lex.Identifier n :: Lex.Equal :: rest ->
+  | Lex.Var :: Lex.Identifier n :: Lex.Equal :: rest -> (
       let e, rrest = expression rest in
-      (Var (Lex.Identifier n, e), rrest)
+      match rrest with
+      | Lex.SemiColon :: rrrest ->
+          (Var (Lex.Identifier n, e), rrrest)
+      | _ ->
+          failwith "Missing terminating semicolon after variable declaration" )
   | Lex.Var :: Lex.Identifier n :: Lex.SemiColon :: rest ->
       (Var (Lex.Identifier n, Literal Nil), rest)
   | _ ->
