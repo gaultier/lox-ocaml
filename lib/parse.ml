@@ -10,7 +10,7 @@ type expr =
   | Unary of Lex.lex_token * expr
 [@@deriving sexp]
 
-type statement = Expr of expr | Print of expr
+type statement = Expr of expr | Print of expr | Var of Lex.lex_token * expr
 
 let rec primary = function
   | [] ->
@@ -119,14 +119,18 @@ and statement = function
       let e, rest = expression_stmt t in
       (Expr e, rest)
 
-and declaration d = statement d
+and var_decl _ = (Expr (Literal Nil), [])
+
+and declaration d = match d with 
+ | Lex.Identifier _ :: _ -> var_decl d
+ | _ -> statement d
 
 and program decls = function
   | [] ->
       decls
-  | _ as d ->
-      let stmt, rest = declaration d in
-      Stack.push stmt decls ; program decls rest
+  | _ as t ->
+      let decl, rest = declaration t in
+      Stack.push decl decls ; program decls rest
 
 let parse tokens =
   let stmts = Stack.create () in
