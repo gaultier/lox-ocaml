@@ -77,17 +77,26 @@ let rec eval_exp exp =
           ( "Binary expression not allowed: "
           ^ Base.Sexp.to_string_hum (sexp_of_expr exp) ) )
 
-let eval s =
+let eval s env =
   match s with
   | Expr e ->
-      eval_exp e
+      (eval_exp e, env)
   | Print e ->
       let v = eval_exp e in
-      print v ; Nil
-  | Var (_, _) ->
-      failwith "not implemented yet"
+      print v ; (Nil, env)
+  | Var (Lex.Identifier _, e) ->
+      let e = eval_exp e in
+      (e, env)
+  | Var _ ->
+      failwith "Badly constructed var"
 
-let interpret stmts = Stack.fold (fun acc s -> eval s :: acc) [] stmts
+let interpret stmts =
+  Stack.fold
+    (fun context s ->
+      let acc, env = context in
+      let e, env = eval s env in
+      (e :: acc, env))
+    ([], Base.Hashtbl.create) stmts
 
 let%test _ = "1 + 3" |> Lex.lex |> expression |> fst |> eval_exp = Number 4.
 
