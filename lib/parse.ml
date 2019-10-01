@@ -8,6 +8,7 @@ type expr =
   | Grouping of expr
   | Literal of value
   | Unary of Lex.lex_token * expr
+  | Variable of Lex.lex_token
 [@@deriving sexp]
 
 type statement = Expr of expr | Print of expr | Var of Lex.lex_token * expr
@@ -32,6 +33,8 @@ let rec primary = function
           (Grouping e, rrrest)
       | _ ->
           failwith "Missing closing parenthesis" )
+  | (Lex.Identifier _ as i) :: rest ->
+      (Variable i, rest)
   | x :: _ ->
       failwith
         ("Not a primary: " ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x))

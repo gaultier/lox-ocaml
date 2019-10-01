@@ -32,6 +32,8 @@ let rec eval_exp exp =
             ^ Base.Sexp.to_string_hum (sexp_of_expr e) ) )
   | Literal l ->
       l
+  | Variable _ ->
+      failwith "Not implemented yet"
   | Binary (l, t, r) -> (
     match (eval_exp l, t, eval_exp r) with
     | Number a, Lex.Plus, Number b ->
