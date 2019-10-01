@@ -43,50 +43,46 @@ and unary = function
   | _ as t ->
       primary t
 
-and multiplication = function
-  | tokens -> (
-      let left, rest = unary tokens in
-      match rest with
-      | (Lex.Star as t) :: rrest | (Lex.Slash as t) :: rrest ->
-          let right, rrrest = multiplication rrest in
-          (Binary (left, t, right), rrrest)
-      | _ ->
-          (left, rest) )
+and multiplication tokens =
+  let left, rest = unary tokens in
+  match rest with
+  | (Lex.Star as t) :: rrest | (Lex.Slash as t) :: rrest ->
+      let right, rrrest = multiplication rrest in
+      (Binary (left, t, right), rrrest)
+  | _ ->
+      (left, rest)
 
-and addition = function
-  | tokens -> (
-      let left, rest = multiplication tokens in
-      match rest with
-      | (Lex.Plus as t) :: rrest | (Lex.Minus as t) :: rrest ->
-          let right, rrrest = addition rrest in
-          (Binary (left, t, right), rrrest)
-      | _ ->
-          (left, rest) )
+and addition tokens =
+  let left, rest = multiplication tokens in
+  match rest with
+  | (Lex.Plus as t) :: rrest | (Lex.Minus as t) :: rrest ->
+      let right, rrrest = addition rrest in
+      (Binary (left, t, right), rrrest)
+  | _ ->
+      (left, rest)
 
-and comparison = function
-  | tokens -> (
-      let left, rest = addition tokens in
-      match rest with
-      | (Lex.Greater as t) :: rrest
-      | (Lex.GreaterEqual as t) :: rrest
-      | (Lex.Less as t) :: rrest
-      | (Lex.LessEqual as t) :: rrest ->
-          let right, rrrest = comparison rrest in
-          (Binary (left, t, right), rrrest)
-      | _ ->
-          (left, rest) )
+and comparison tokens =
+  let left, rest = addition tokens in
+  match rest with
+  | (Lex.Greater as t) :: rrest
+  | (Lex.GreaterEqual as t) :: rrest
+  | (Lex.Less as t) :: rrest
+  | (Lex.LessEqual as t) :: rrest ->
+      let right, rrrest = comparison rrest in
+      (Binary (left, t, right), rrrest)
+  | _ ->
+      (left, rest)
 
-and equality = function
-  | tokens -> (
-      let left, rest = comparison tokens in
-      match rest with
-      | (Lex.BangEqual as t) :: rrest | (Lex.EqualEqual as t) :: rrest ->
-          let right, rrrest = equality rrest in
-          (Binary (left, t, right), rrrest)
-      | _ ->
-          (left, rest) )
+and equality tokens =
+  let left, rest = comparison tokens in
+  match rest with
+  | (Lex.BangEqual as t) :: rrest | (Lex.EqualEqual as t) :: rrest ->
+      let right, rrrest = equality rrest in
+      (Binary (left, t, right), rrrest)
+  | _ ->
+      (left, rest)
 
-and expression = function tokens -> equality tokens
+and expression tokens = equality tokens
 
 and expression_stmt = function
   | [] ->
