@@ -86,26 +86,24 @@ let rec eval_exp exp env =
 let eval s env =
   match s with
   | Expr e ->
-      (eval_exp e env, env)
+      eval_exp e env
   | Print e ->
       let v = eval_exp e env in
-      print v ; (Nil, env)
+      print v ; Nil
   | Var (Lex.Identifier n, e) ->
       let e = eval_exp e env in
       let _ = Base.Hashtbl.set env ~key:n ~data:e in
-      (e, env)
+      e
   | Var _ ->
       failwith "Badly constructed var"
 
 let interpret stmts =
+  let env = Base.Hashtbl.create (module Base.String) in
   Stack.fold
-    (fun context s ->
-      let acc, env = context in
-      let e, env = eval s env in
-      (e :: acc, env))
-    ([], Base.Hashtbl.create (module Base.String))
-    stmts
-  |> fst
+    (fun acc s ->
+      let e = eval s env in
+      e :: acc)
+    [] stmts
 
 (* let%test _ = "1 + 3" |> Lex.lex |> expression |> fst |> eval_exp = Number 4. *)
 
