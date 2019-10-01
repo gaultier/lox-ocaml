@@ -125,7 +125,7 @@ and var_decl = function
   | Lex.Var :: Lex.Identifier n :: Lex.Equal :: rest ->
       let e, rrest = expression rest in
       (Var (Lex.Identifier n, e), rrest)
-  | Lex.Var :: Lex.Identifier n :: rest ->
+  | Lex.Var :: Lex.Identifier n :: Lex.SemiColon :: rest ->
       (Var (Lex.Identifier n, Literal Nil), rest)
   | _ ->
       failwith "Not a valid variable declaration"
