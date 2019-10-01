@@ -122,9 +122,11 @@ and statement = function
 and var_decl = function
   | [] ->
       failwith "No more tokens to match for a variable declaration"
-  | Lex.Var :: Lex.Identifier n:: rest ->
-      let d = Var (Lex.Identifier n, Literal Nil) in
-      (d, rest)
+  | Lex.Var :: Lex.Identifier n :: Lex.Equal :: rest ->
+      let e, rrest = expression rest in
+      (Var (Lex.Identifier n, e), rrest)
+  | Lex.Var :: Lex.Identifier n :: rest ->
+      (Var (Lex.Identifier n, Literal Nil), rest)
   | _ ->
       failwith "Not a valid variable declaration"
 
