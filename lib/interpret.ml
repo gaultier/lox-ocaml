@@ -33,48 +33,47 @@ let rec eval_exp exp =
   | Literal l ->
       l
   | Binary (l, t, r) -> (
-      let x = eval_exp l and y = eval_exp r in
-      match (x, t, y) with
-      | Number a, Lex.Plus, Number b ->
-          Number (a +. b)
-      | Number a, Lex.Minus, Number b ->
-          Number (a -. b)
-      | Number _, Lex.Slash, Number 0. ->
-          failwith
-            ( "Division by zero not allowed: "
-            ^ Base.Sexp.to_string_hum (sexp_of_expr exp) )
-      | Number a, Lex.Slash, Number b ->
-          Number (a /. b)
-      | Number a, Lex.Star, Number b ->
-          Number (a *. b)
-      | Number a, Lex.Less, Number b ->
-          Bool (a < b)
-      | Number a, Lex.LessEqual, Number b ->
-          Bool (a <= b)
-      | Number a, Lex.Greater, Number b ->
-          Bool (a > b)
-      | Number a, Lex.GreaterEqual, Number b ->
-          Bool (a >= b)
-      | Number a, Lex.BangEqual, Number b ->
-          Bool (a != b)
-      | Number a, Lex.EqualEqual, Number b ->
-          Bool (Float.equal a b)
-      | String a, Lex.EqualEqual, String b ->
-          Bool (String.equal a b)
-      | String a, Lex.Plus, String b ->
-          String (a ^ b)
-      | Bool a, Lex.EqualEqual, Bool b ->
-          Bool (a == b)
-      | Nil, Lex.EqualEqual, Nil ->
-          Bool true
-      | Nil, Lex.EqualEqual, _ ->
-          Bool false
-      | _, Lex.EqualEqual, Nil ->
-          Bool false
-      | _ ->
-          failwith
-            ( "Binary expression not allowed: "
-            ^ Base.Sexp.to_string_hum (sexp_of_expr exp) ) )
+    match (eval_exp l, t, eval_exp r) with
+    | Number a, Lex.Plus, Number b ->
+        Number (a +. b)
+    | Number a, Lex.Minus, Number b ->
+        Number (a -. b)
+    | Number _, Lex.Slash, Number 0. ->
+        failwith
+          ( "Division by zero not allowed: "
+          ^ Base.Sexp.to_string_hum (sexp_of_expr exp) )
+    | Number a, Lex.Slash, Number b ->
+        Number (a /. b)
+    | Number a, Lex.Star, Number b ->
+        Number (a *. b)
+    | Number a, Lex.Less, Number b ->
+        Bool (a < b)
+    | Number a, Lex.LessEqual, Number b ->
+        Bool (a <= b)
+    | Number a, Lex.Greater, Number b ->
+        Bool (a > b)
+    | Number a, Lex.GreaterEqual, Number b ->
+        Bool (a >= b)
+    | Number a, Lex.BangEqual, Number b ->
+        Bool (a != b)
+    | Number a, Lex.EqualEqual, Number b ->
+        Bool (Float.equal a b)
+    | String a, Lex.EqualEqual, String b ->
+        Bool (String.equal a b)
+    | String a, Lex.Plus, String b ->
+        String (a ^ b)
+    | Bool a, Lex.EqualEqual, Bool b ->
+        Bool (a == b)
+    | Nil, Lex.EqualEqual, Nil ->
+        Bool true
+    | Nil, Lex.EqualEqual, _ ->
+        Bool false
+    | _, Lex.EqualEqual, Nil ->
+        Bool false
+    | _ ->
+        failwith
+          ( "Binary expression not allowed: "
+          ^ Base.Sexp.to_string_hum (sexp_of_expr exp) ) )
 
 let eval s =
   match s with
