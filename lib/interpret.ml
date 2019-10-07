@@ -1,4 +1,5 @@
 open Parse
+module StringMap = Map.Make (String)
 
 let print e =
   match e with
@@ -36,7 +37,7 @@ let rec eval_exp exp env =
   | Literal l ->
       (l, env)
   | Variable (Lex.Identifier n) -> (
-    match Base.Map.find env n with
+    match StringMap.find_opt n env with
     | Some v ->
         (v, env)
     | None ->
@@ -93,24 +94,22 @@ let eval s env =
   | Expr e ->
       eval_exp e env
   | Print e ->
-      let v = eval_exp e env in
+      let v, env = eval_exp e env in
       print v ; (Nil, env)
   | Var (Lex.Identifier n, e) ->
-      print_endline ("Log: defining var " ^ n) ;
-      let e = eval_exp e env in
-      let env_env = Base.Map.set env ~key:n ~data:e in
-      let e = Base.Map.find_exn env n in
+      let e, env = eval_exp e env in
+      let env = StringMap.add n e env in
       (e, env)
   | Var _ ->
       failwith "Badly constructed var"
 
 let interpret stmts =
-  let env = Base.Map.create (module Base.String) in
-  Stack.fold
+  Queue.fold
     (fun (acc, env) s ->
       let e, env = eval s env in
       (e :: acc, env))
-    ([], env) stmts
+    ([], StringMap.empty) stmts
+  |> fst
 
 (* let%test _ = "1 + 3" |> Lex.lex |> expression |> fst |> eval_exp = Number 4. *)
 

@@ -145,10 +145,10 @@ and program decls = function
       decls
   | _ as t ->
       let decl, rest = declaration t in
-      Stack.push decl decls ; program decls rest
+      Queue.push decl decls ; program decls rest
 
 let parse tokens =
-  let stmts = Stack.create () in
+  let stmts = Queue.create () in
   program stmts tokens
 
 let%test _ =
