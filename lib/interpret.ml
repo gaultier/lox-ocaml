@@ -103,13 +103,12 @@ let eval s env =
   | Var _ ->
       failwith "Badly constructed var"
 
-let interpret stmts =
+let interpret env stmts =
   Queue.fold
     (fun (acc, env) s ->
       let e, env = eval s env in
       (e :: acc, env))
-    ([], StringMap.empty) stmts
-  |> fst
+    ([], env) stmts
 
 (* let%test _ = "1 + 3" |> Lex.lex |> expression |> fst |> eval_exp = Number 4. *)
 
