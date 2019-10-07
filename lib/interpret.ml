@@ -17,71 +17,76 @@ let rec eval_exp exp env =
   match exp with
   | Grouping e ->
       eval_exp e env
-  | Unary (t, e) -> (
-      let v = eval_exp e env in
-      match (t, v) with
-      | Lex.Minus, Number f ->
-          Number (-.f)
-      | Lex.Bang, Nil | Lex.Bang, Bool false ->
-          Bool true
-      | Lex.Bang, _ ->
-          Bool false
-      | _ ->
-          failwith
-            ( "Unary expression not allowed: "
-            ^ Base.Sexp.to_string_hum (sexp_of_expr e) ) )
+  | Unary (t, e) ->
+      let v, env = eval_exp e env in
+      let res =
+        match (t, v) with
+        | Lex.Minus, Number f ->
+            Number (-.f)
+        | Lex.Bang, Nil | Lex.Bang, Bool false ->
+            Bool true
+        | Lex.Bang, _ ->
+            Bool false
+        | _ ->
+            failwith
+              ( "Unary expression not allowed: "
+              ^ Base.Sexp.to_string_hum (sexp_of_expr e) )
+      in
+      (res, env)
   | Literal l ->
-      l
+      (l, env)
   | Variable (Lex.Identifier n) -> (
-    match Base.Hashtbl.find env n with
+    match Base.Map.find env n with
     | Some v ->
-        v
+        (v, env)
     | None ->
         failwith ("Accessing unkown variable `" ^ n ^ "`") )
   | Variable _ ->
       failwith "Badly constructed var"
   | Binary (l, t, r) -> (
-    match (eval_exp l env, t, eval_exp r env) with
-    | Number a, Lex.Plus, Number b ->
-        Number (a +. b)
-    | Number a, Lex.Minus, Number b ->
-        Number (a -. b)
-    | Number _, Lex.Slash, Number 0. ->
-        failwith
-          ( "Division by zero not allowed: "
-          ^ Base.Sexp.to_string_hum (sexp_of_expr exp) )
-    | Number a, Lex.Slash, Number b ->
-        Number (a /. b)
-    | Number a, Lex.Star, Number b ->
-        Number (a *. b)
-    | Number a, Lex.Less, Number b ->
-        Bool (a < b)
-    | Number a, Lex.LessEqual, Number b ->
-        Bool (a <= b)
-    | Number a, Lex.Greater, Number b ->
-        Bool (a > b)
-    | Number a, Lex.GreaterEqual, Number b ->
-        Bool (a >= b)
-    | Number a, Lex.BangEqual, Number b ->
-        Bool (a != b)
-    | Number a, Lex.EqualEqual, Number b ->
-        Bool (Float.equal a b)
-    | String a, Lex.EqualEqual, String b ->
-        Bool (String.equal a b)
-    | String a, Lex.Plus, String b ->
-        String (a ^ b)
-    | Bool a, Lex.EqualEqual, Bool b ->
-        Bool (a == b)
-    | Nil, Lex.EqualEqual, Nil ->
-        Bool true
-    | Nil, Lex.EqualEqual, _ ->
-        Bool false
-    | _, Lex.EqualEqual, Nil ->
-        Bool false
-    | _ ->
-        failwith
-          ( "Binary expression not allowed: "
-          ^ Base.Sexp.to_string_hum (sexp_of_expr exp) ) )
+      let l, env = eval_exp l env in
+      let r, env = eval_exp r env in
+      match (l, t, r) with
+      | Number a, Lex.Plus, Number b ->
+          (Number (a +. b), env)
+      | Number a, Lex.Minus, Number b ->
+          (Number (a -. b), env)
+      | Number _, Lex.Slash, Number 0. ->
+          failwith
+            ( "Division by zero not allowed: "
+            ^ Base.Sexp.to_string_hum (sexp_of_expr exp) )
+      | Number a, Lex.Slash, Number b ->
+          (Number (a /. b), env)
+      | Number a, Lex.Star, Number b ->
+          (Number (a *. b), env)
+      | Number a, Lex.Less, Number b ->
+          (Bool (a < b), env)
+      | Number a, Lex.LessEqual, Number b ->
+          (Bool (a <= b), env)
+      | Number a, Lex.Greater, Number b ->
+          (Bool (a > b), env)
+      | Number a, Lex.GreaterEqual, Number b ->
+          (Bool (a >= b), env)
+      | Number a, Lex.BangEqual, Number b ->
+          (Bool (a != b), env)
+      | Number a, Lex.EqualEqual, Number b ->
+          (Bool (Float.equal a b), env)
+      | String a, Lex.EqualEqual, String b ->
+          (Bool (String.equal a b), env)
+      | String a, Lex.Plus, String b ->
+          (String (a ^ b), env)
+      | Bool a, Lex.EqualEqual, Bool b ->
+          (Bool (a == b), env)
+      | Nil, Lex.EqualEqual, Nil ->
+          (Bool true, env)
+      | Nil, Lex.EqualEqual, _ ->
+          (Bool false, env)
+      | _, Lex.EqualEqual, Nil ->
+          (Bool false, env)
+      | _ ->
+          failwith
+            ( "Binary expression not allowed: "
+            ^ Base.Sexp.to_string_hum (sexp_of_expr exp) ) )
 
 let eval s env =
   match s with
@@ -89,23 +94,23 @@ let eval s env =
       eval_exp e env
   | Print e ->
       let v = eval_exp e env in
-      print v ; Nil
+      print v ; (Nil, env)
   | Var (Lex.Identifier n, e) ->
       print_endline ("Log: defining var " ^ n) ;
       let e = eval_exp e env in
-      let _ = Base.Hashtbl.set env ~key:n ~data:e in
-      let e = Base.Hashtbl.find_exn env n in
-      e
+      let env_env = Base.Map.set env ~key:n ~data:e in
+      let e = Base.Map.find_exn env n in
+      (e, env)
   | Var _ ->
       failwith "Badly constructed var"
 
 let interpret stmts =
-  let env = Base.Hashtbl.create (module Base.String) in
+  let env = Base.Map.create (module Base.String) in
   Stack.fold
-    (fun acc s ->
-      let e = eval s env in
-      e :: acc)
-    [] stmts
+    (fun (acc, env) s ->
+      let e, env = eval s env in
+      (e :: acc, env))
+    ([], env) stmts
 
 (* let%test _ = "1 + 3" |> Lex.lex |> expression |> fst |> eval_exp = Number 4. *)
 
