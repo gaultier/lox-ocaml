@@ -6,7 +6,7 @@ let rec repl env =
     read_line () |> Lox.Lex.lex |> Lox.Parse.parse
     |> Lox.Interpret.interpret env
   in
-  List.iter Lox.Interpret.print stmts ;
+  Array.iter Lox.Interpret.print stmts ;
   print_endline "" ;
   repl env
 

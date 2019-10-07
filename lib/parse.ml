@@ -145,10 +145,11 @@ and program decls = function
       decls
   | _ as t ->
       let decl, rest = declaration t in
-      Queue.push decl decls ; program decls rest
+      let decls = Base.Array.append decls [|decl|] in
+      program decls rest
 
 let parse tokens =
-  let stmts = Queue.create () in
+  let stmts = [||] in
   program stmts tokens
 
 let%test _ =
