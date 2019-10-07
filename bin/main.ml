@@ -7,7 +7,6 @@ let rec repl env =
     |> Lox.Interpret.interpret env
   in
   Array.iter Lox.Interpret.print stmts ;
-  print_endline "" ;
   repl env
 
 ;;
