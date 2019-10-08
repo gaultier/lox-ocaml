@@ -1,5 +1,3 @@
-module StringMap = Map.Make (String)
-
 let rec repl env =
   Printf.printf "> " ;
   let stmts, env =
@@ -10,4 +8,4 @@ let rec repl env =
   repl env
 
 ;;
-repl StringMap.empty
+repl Lox.Interpret.StringMap.empty
