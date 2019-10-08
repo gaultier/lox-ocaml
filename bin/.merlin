@@ -9,7 +9,7 @@ B /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/ppx_inline_test/runti
 B /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/ppx_sexp_conv/runtime-lib
 B /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/sexplib
 B /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/sexplib0
-B ../_build/default/bin/.lox.eobjs/byte
+B ../_build/default/bin/.main.eobjs/byte
 B ../_build/default/lib/.lox.objs/byte
 S /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/base
 S /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/base/caml
