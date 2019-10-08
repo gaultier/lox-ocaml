@@ -1,7 +1,7 @@
 build:
 	dune build
 
-run-compile:
+run-build:
 	./_build/default/bin/main.exe build $(FILE)
 
 run-repl:

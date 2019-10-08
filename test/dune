@@ -1,2 +1,6 @@
-(test
- (name lox))
+(rule
+ (with-stdout-to test.output (run ../bin/main.exe build ../../../test/hello_world.lox)))
+
+(alias
+ (name runtest)
+ (action (diff test.expected test.output)))
