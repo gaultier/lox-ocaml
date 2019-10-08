@@ -1,8 +1,11 @@
 build:
 	dune build
 
-run:
-	./_build/default/bin/main.exe
+run-compile:
+	./_build/default/bin/main.exe build $(FILE)
+
+run-repl:
+	./_build/default/bin/main.exe repl
 
 fmt:
 	dune build @fmt --auto-promote

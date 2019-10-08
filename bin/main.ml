@@ -10,8 +10,8 @@ let buf = Buffer.create 16 in
 in
   loop (); buf
 
-let loxc () =
-  read_lines "./hello_world.lox" |> Base.Buffer.contents |> Lox.Lex.lex |> Lox.Parse.parse
+let loxc filename =
+  read_lines filename|> Base.Buffer.contents |> Lox.Lex.lex |> Lox.Parse.parse
     |> Lox.Interpret.interpret Lox.Interpret.StringMap.empty
 
 let rec repl env =
@@ -23,7 +23,11 @@ let rec repl env =
   Array.iter Lox.Interpret.print stmts ;
   repl env
 
-;;
-loxc ();;
+let main () =
+  match Sys.argv with
+| [|_; "repl"|] -> repl Lox.Interpret.StringMap.empty
+| [|_; "build"; filename|] -> loxc filename
+| _ -> failwith "Bad CLI invocation"
 
-repl Lox.Interpret.StringMap.empty
+;;
+main ()
