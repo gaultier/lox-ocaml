@@ -1,13 +1,13 @@
 
 let read_lines name=
-let buf = Buffer.create 0 in
+let buf = Buffer.create 16 in
   let ic = open_in name in
   let try_read () =
     try Some (input_line ic) with End_of_file -> None in
-  let rec loop acc = match try_read () with
-    | Some s ->  Buffer.add_string acc s;  loop acc
-    | None -> close_in ic; acc
-  loop buf
+  let rec loop () = match try_read () with
+    | Some s ->  Buffer.add_string buf s;  loop ()
+    | None -> close_in ic; 
+  loop ()
 
 let loxc env =
   
