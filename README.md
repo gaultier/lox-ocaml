@@ -24,3 +24,9 @@ $ ./lox repl
 - Arithmetic, strings, boolean logic, nil
 - Statements & print
 - Global variables
+
+## Test
+
+`make test`
+
+You can `opam install patdiff` for a better output, by default it uses `diff`.
