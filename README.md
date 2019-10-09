@@ -25,6 +25,8 @@ $ ./lox repl
 - Statements & print
 - Global variables
 
+Note: On error, it will abort with an exception and a stacktrace of the interpreter.
+
 ## Test
 
 `make test`
