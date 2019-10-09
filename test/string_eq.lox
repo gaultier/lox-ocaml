@@ -1,0 +1,1 @@
+print ("hel" + "l" + "o!") == "hello!";

@@ -133,26 +133,3 @@ let interpret env stmts =
 (* let%test _ = "!nil" |> Lex.lex |> expression |> fst |> eval_exp = Bool true *)
 
 (* let%test _ = "!!nil" |> Lex.lex |> expression |> fst |> eval_exp = Bool false *)
-
-(* let%test _ = *)
-(*   "\"hey\" == \"hello\"" |> Lex.lex |> expression |> fst |> eval_exp *)
-(*   = Bool false *)
-
-(* let%test _ = *)
-(*   "\"hey\" == \"hey\"" |> Lex.lex |> expression |> fst |> eval_exp = Bool true *)
-
-(* let%test _ = *)
-(*   "\"hel\" + \"lo\"" |> Lex.lex |> expression |> fst |> eval_exp *)
-(*   = String "hello" *)
-
-(* let%test _ = "1 >= 2" |> Lex.lex |> expression |> fst |> eval_exp = Bool false *)
-
-(* let%test _ = "1 > 2" |> Lex.lex |> expression |> fst |> eval_exp = Bool false *)
-
-(* let%test _ = "2 > 2" |> Lex.lex |> expression |> fst |> eval_exp = Bool false *)
-
-(* let%test _ = "1 <= 2" |> Lex.lex |> expression |> fst |> eval_exp = Bool true *)
-
-(* let%test _ = "1 < 2" |> Lex.lex |> expression |> fst |> eval_exp = Bool true *)
-
-(* let%test _ = "2 < 2" |> Lex.lex |> expression |> fst |> eval_exp = Bool false *)
