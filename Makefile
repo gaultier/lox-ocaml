@@ -1,4 +1,4 @@
-build:
+build: fmt
 	dune build
 
 run-build:

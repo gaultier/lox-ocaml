@@ -142,30 +142,3 @@ let rec lex_r acc rest =
       failwith ("Unkown token: " ^ String.make 1 x)
 
 let lex s = lex_r [] (Base.String.to_list s) |> List.rev
-
-let%test _ =
-  lex "and or class fun true false class for nil"
-  = [And; Or; Class; Fun; True; False; Class; For; Nil]
-
-let%test _ =
-  lex "and 123.4 or (){},."
-  = [ And
-    ; Number 123.4
-    ; Or
-    ; ParenLeft
-    ; ParenRight
-    ; CurlyBraceLeft
-    ; CurlyBraceRight
-    ; Comma
-    ; Dot ]
-
-let%test _ =
-  lex "-+;*/!.!=" = [Minus; Plus; SemiColon; Star; Slash; Bang; Dot; BangEqual]
-
-let%test _ =
-  lex ".!====<=<>>=// foo"
-  = [Dot; BangEqual; EqualEqual; Equal; LessEqual; Less; Greater; GreaterEqual]
-
-let%test _ = lex " abc\n" = [Identifier "abc"]
-
-let%test _ = lex "!\"hey\"!" = [Bang; String "hey"; Bang]
