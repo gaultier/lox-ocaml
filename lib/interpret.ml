@@ -109,27 +109,3 @@ let interpret env stmts =
     ~f:(fun (acc, env) s ->
       let e, env = eval s env in
       (Array.append acc [|e|], env))
-
-(* let%test _ = "1 + 3" |> Lex.lex |> expression |> fst |> eval_exp = Number 4. *)
-
-(* let%test _ = "-1 + 3" |> Lex.lex |> expression |> fst |> eval_exp = Number 2. *)
-
-(* let%test _ = *)
-(*   "(-1 + 3 * 5)" |> Lex.lex |> expression |> fst |> eval_exp = Number 14. *)
-
-(* let%test _ = *)
-(*   "(-1 + 3 * 5) == (2*5 + 4)" |> Lex.lex |> expression |> fst |> eval_exp *)
-(*   = Bool true *)
-
-(* let%test _ = "10/5" |> Lex.lex |> expression |> fst |> eval_exp = Number 2. *)
-
-(* let%test _ = "!true" |> Lex.lex |> expression |> fst |> eval_exp = Bool false *)
-
-(* let%test _ = "!false" |> Lex.lex |> expression |> fst |> eval_exp = Bool true *)
-
-(* let%test _ = *)
-(*   "!(1 == 1)" |> Lex.lex |> expression |> fst |> eval_exp = Bool false *)
-
-(* let%test _ = "!nil" |> Lex.lex |> expression |> fst |> eval_exp = Bool true *)
-
-(* let%test _ = "!!nil" |> Lex.lex |> expression |> fst |> eval_exp = Bool false *)

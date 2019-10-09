@@ -1,0 +1,6 @@
+var a = 5*2; var b =20; var c= b /2;
+
+print a; print b;
+print c;
+
+print a == c;
