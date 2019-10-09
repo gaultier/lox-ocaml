@@ -1,8 +1,8 @@
 build: fmt
 	dune build
 
-run-build:
-	./_build/default/bin/main.exe build $(FILE)
+run:
+	./_build/default/bin/main.exe run $(FILE)
 
 run-repl:
 	./_build/default/bin/main.exe repl

@@ -5,7 +5,7 @@ let read_lines name =
   let _ = input ic buf 0 200 in
   Bytes.to_string buf
 
-let loxc filename =
+let lox_run filename =
   read_lines filename |> Lox.Lex.lex |> Lox.Parse.parse
   |> Lox.Interpret.interpret Lox.Interpret.StringMap.empty
 
@@ -22,8 +22,8 @@ let main () =
   match Sys.argv with
   | [|_; "repl"|] ->
       repl Lox.Interpret.StringMap.empty
-  | [|_; "build"; filename|] ->
-      loxc filename
+  | [|_; "run"; filename|] ->
+      lox_run filename
   | _ ->
       failwith "Bad CLI invocation"
 
