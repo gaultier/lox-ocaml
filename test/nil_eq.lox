@@ -1,0 +1,10 @@
+print nil == nil;
+
+print nil == 1;
+
+print nil == 0;
+
+print nil == false; // nil is only equal to nil
+
+print nil == !!nil;
+

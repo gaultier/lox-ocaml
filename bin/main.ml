@@ -1,18 +1,12 @@
+(* FIXME *)
 let read_lines name =
-  let buf = Buffer.create 16 in
+  let buf = Bytes.create 200 in
   let ic = open_in name in
-  let try_read () = try Some (input_line ic) with End_of_file -> None in
-  let rec loop () =
-    match try_read () with
-    | Some s ->
-        Buffer.add_string buf s ; loop ()
-    | None ->
-        close_in ic
-  in
-  loop () ; buf
+  let _ = input ic buf 0 200 in
+  Bytes.to_string buf
 
 let loxc filename =
-  read_lines filename |> Base.Buffer.contents |> Lox.Lex.lex |> Lox.Parse.parse
+  read_lines filename |> Lox.Lex.lex |> Lox.Parse.parse
   |> Lox.Interpret.interpret Lox.Interpret.StringMap.empty
 
 let rec repl env =

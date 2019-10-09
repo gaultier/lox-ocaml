@@ -138,6 +138,8 @@ let rec lex_r acc rest =
           lex_r (k :: acc) r
       | _ ->
           lex_r (Identifier s :: acc) r )
+  | '\000' :: _ ->
+      acc
   | x :: _ ->
       failwith ("Unkown token: " ^ String.make 1 x)
 
