@@ -1,6 +1,13 @@
 # Lox
 
+Implementation of the [Lox language](http://www.craftinginterpreters.com/) in OCaml.
+Big thanks to [Bob Nystrom](https://github.com/munificent)!! You're amazing.
+
+## Quickstart
+
 ```sh
+$ brew install ocaml dune
+$ make build
 $ ./lox run test/hello_world.lox
 hello, world
 
@@ -10,3 +17,9 @@ $ ./lox repl
 >
 
 ```
+
+## Implemented
+
+- Arithmetic & strings
+- Statements & print
+- Global variables
