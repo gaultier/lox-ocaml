@@ -48,6 +48,8 @@ let rec eval_exp exp env =
       let l, env = eval_exp l env in
       let r, env = eval_exp r env in
       match (l, t, r) with
+      | String a, Lex.Plus, String b ->
+          (String (a ^ b), env)
       | Number a, Lex.Plus, Number b ->
           (Number (a +. b), env)
       | Number a, Lex.Minus, Number b ->
@@ -74,8 +76,6 @@ let rec eval_exp exp env =
           (Bool (Float.equal a b), env)
       | String a, Lex.EqualEqual, String b ->
           (Bool (String.equal a b), env)
-      | String a, Lex.Plus, String b ->
-          (String (a ^ b), env)
       | Bool a, Lex.EqualEqual, Bool b ->
           (Bool (a == b), env)
       | Nil, Lex.EqualEqual, Nil ->

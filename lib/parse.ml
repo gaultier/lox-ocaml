@@ -265,22 +265,3 @@ let%test _ =
            , Lex.EqualEqual
            , Unary (Lex.Minus, Literal (Number 2.)) ))
     , [] )
-
-let%test _ =
-  "2 >= (1 + 1); " |> Lex.lex |> statement
-  = ( Expr
-        (Binary
-           ( Literal (Number 2.)
-           , Lex.GreaterEqual
-           , Grouping
-               (Binary (Literal (Number 1.), Lex.Plus, Literal (Number 1.))) ))
-    , [] )
-
-let%test _ =
-  "print (1+2);" |> Lex.lex |> statement
-  = ( Print
-        (Grouping (Binary (Literal (Number 1.), Lex.Plus, Literal (Number 2.))))
-    , [] )
-
-let%test _ =
-  "print 1;" |> Lex.lex |> statement = (Print (Literal (Number 1.)), [])
