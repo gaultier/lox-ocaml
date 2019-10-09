@@ -7,6 +7,7 @@ Big thanks to [Bob Nystrom](https://github.com/munificent)!! You're amazing.
 
 ```sh
 $ brew install ocaml dune
+$ opam install base
 $ make build
 $ ./lox run test/hello_world.lox
 hello, world
@@ -20,6 +21,6 @@ $ ./lox repl
 
 ## Implemented
 
-- Arithmetic & strings
+- Arithmetic, strings, boolean logic, nil
 - Statements & print
 - Global variables
