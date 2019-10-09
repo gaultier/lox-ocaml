@@ -1,12 +1,6 @@
 build: fmt
 	dune build
 
-run:
-	./_build/default/bin/main.exe run $(FILE)
-
-run-repl:
-	./_build/default/bin/main.exe repl
-
 fmt: clean
 	dune build @fmt --auto-promote
 
