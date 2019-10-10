@@ -5,11 +5,10 @@ Big thanks to [Bob Nystrom](https://github.com/munificent)!! You're amazing.
 
 ## Quickstart
 
-Assuming `ocaml` and `opam` are installed and setup:
+Assuming `ocaml`, `opam` and `dune` are installed and setup:
 
 ```sh
-$ opam install dune fmt base -y
-$ make build
+$ dune build @install
 $ ./lox run test/hello_world.lox
 hello, world
 
