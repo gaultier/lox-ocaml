@@ -1,12 +1,10 @@
-(* FIXME *)
-let read_lines name =
-  let buf = Bytes.create 200 in
-  let ic = open_in name in
-  let _ = input ic buf 0 200 in
-  Bytes.to_string buf
+let read_whole_file filename =
+  let ch = open_in filename in
+  let s = really_input_string ch (in_channel_length ch) in
+  close_in ch ; s
 
 let lox_run filename =
-  read_lines filename |> Lox.Lex.lex |> Lox.Parse.parse
+  read_whole_file filename |> Lox.Lex.lex |> Lox.Parse.parse
   |> Lox.Interpret.interpret Lox.Interpret.StringMap.empty
 
 let rec repl env =

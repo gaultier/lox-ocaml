@@ -6,3 +6,6 @@ lib: [
 bin: [
   "_build/install/default/bin/lox"
 ]
+doc: [
+  "_build/install/default/doc/lox/README.md"
+]
