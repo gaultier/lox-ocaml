@@ -8,6 +8,7 @@ type expr =
   | Grouping of expr
   | Literal of value
   | Unary of Lex.lex_token * expr
+  | Assign of Lex.lex_token * expr
   | Variable of Lex.lex_token
   | LogicalOr of expr * expr
   | LogicalAnd of expr * expr
@@ -96,7 +97,21 @@ and equality tokens =
 
 and expression tokens = assignment tokens
 
-and assignment tokens = logic_or tokens
+and assignment = function
+  | [] ->
+      failwith "No more tokens to match for assignement"
+  | _ as t -> (
+      let e, rest = equality t in
+      match e with
+      | Variable v -> (
+        match rest with
+        | Lex.Equal :: rest ->
+            let a, rest = assignment rest in
+            (Assign (v, a), rest)
+        | _ ->
+            failwith "Invalid assignment target" )
+      | _ ->
+          (e, rest) )
 
 and logic_and tokens =
   let l, rest = equality tokens in
@@ -130,10 +145,11 @@ and expression_stmt = function
           (stmt, rrest)
       | x :: _ ->
           failwith
-            ( "Missing semicolon after statement: expected `;`, got: "
+            ( "Missing semicolon after expression statement: expected `;`, got: "
             ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
       | _ ->
-          failwith "Missing semicolon after statement: no more tokens " )
+          failwith
+            "Missing semicolon after expression statement: no more tokens " )
 
 and print_stmt = function
   | [] ->
