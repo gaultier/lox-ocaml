@@ -188,19 +188,20 @@ and for_stmt = function
       let s, rest = statement rest in
       (WhileStmt (Literal (Bool true), s), rest)
   | Lex.For :: Lex.ParenLeft :: Lex.Var :: rest -> (
-      (* FIXME *)
-      let _, rest = var_decl rest in
+      let v, rest = var_decl rest in
       match rest with
       | Lex.SemiColon :: rest -> (
-          let e, rest = expression rest in
+          let stop_cond, rest = expression rest in
           match rest with
           | Lex.SemiColon :: rest -> (
-              (* FIXME *)
-              let _, rest = statement rest in
+              let increment, rest = expression rest in
               match rest with
               | Lex.ParenRight :: rest ->
                   let body, rest = statement rest in
-                  (WhileStmt (e, body), rest)
+                  let enclosed_body =
+                    Block [|v; WhileStmt (stop_cond, body); Expr increment|]
+                  in
+                  (enclosed_body, rest)
               | _ ->
                   failwith "Missing closing parenthesis in if statement" )
           | _ ->
