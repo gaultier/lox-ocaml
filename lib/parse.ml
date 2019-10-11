@@ -208,6 +208,12 @@ and for_stmt = function
        :: Lex.SemiColon :: Lex.SemiColon :: Lex.ParenRight :: rest ->
       let s, rest = statement rest in
       (WhileStmt (Literal (Bool true), s), rest)
+  (* TODO: partial for-loop declaration e.g *)
+  (* for (;i; i = i+1) *)
+  (* for (;i;) *)
+  (* or for (i;;i=i+1)  *)
+  (* or for (;;i=i+1)  *)
+
   (* for (var i = 0; i < 5; i = i + 1) *)
   | Lex.For :: Lex.ParenLeft :: (Lex.Var :: _ as var) -> (
       let v, rest = var_decl var in
@@ -225,11 +231,12 @@ and for_stmt = function
               (enclosed_body, rest)
           | x :: _ ->
               failwith
-                ( "Missing closing parenthesis in if statement, got: "
+                ( "Missing closing parenthesis in for-loop declaration, got: "
                 ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
           | [] ->
               failwith
-                "Missing closing parenthesis in if statement, no more tokens" )
+                "Missing closing parenthesis in for-loop declaration, no more \
+                 tokens" )
       | _ ->
           failwith "Missing semicolon after condition in for-loop declaration"
       )
