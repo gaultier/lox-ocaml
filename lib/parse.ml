@@ -186,6 +186,21 @@ and for_stmt = function
        :: Lex.SemiColon :: Lex.SemiColon :: Lex.ParenRight :: rest ->
       let s, rest = statement rest in
       (WhileStmt (Literal (Bool true), s), rest)
+  (* | Lex.For :: Lex.ParenLeft :: Lex.SemiColon :: Lex.Var :: rest -> (
+   *     let v, rest = var_decl rest in
+   *     match rest with
+   *     | Lex.SemiColon :: rest -> (
+   *         let e, rest = expression rest in
+   *         match rest with
+   *         | Lex.SemiColon :: rest ->
+   *             let s, rest = statement rest in
+   *             (WhileStmt (e, s), rest)
+   *         | _ ->
+   *             failwith
+   *               "Missing semicolon after condition in for-loop declaration" )
+   *     | _ ->
+   *         failwith
+   *           "Missing semicolon after var assignement in for-loop declaration" ) *)
   | _ ->
       failwith "Wrong call to loop_stmt: not an llop statement"
 
