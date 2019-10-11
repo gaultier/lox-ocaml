@@ -118,8 +118,21 @@ let rec eval s env =
   | IfStmt (e, then_stmt) -> (
       let e, env = eval_exp e env in
       match e with Bool false | Nil -> (Nil, env) | _ -> eval then_stmt env )
-  | WhileStmt (_, _) ->
-      failwith "Not interpreted yet"
+  | WhileStmt _ ->
+      eval_while s env
+
+and eval_while w env =
+  match w with
+  | WhileStmt (e, s) -> (
+      let e, env = eval_exp e env in
+      match e with
+      | Bool false | Nil ->
+          (Nil, env)
+      | _ ->
+          let _, env = eval s env in
+          eval_while w env )
+  | _ ->
+      failwith "Wrong call"
 
 let interpret env stmts =
   Base.Array.fold stmts
