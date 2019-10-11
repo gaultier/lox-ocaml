@@ -15,7 +15,8 @@ type statement =
   | Expr of expr
   | Print of expr
   | Var of Lex.lex_token * expr
-  | IfStmt of expr * statement * statement
+  | IfStmt of expr * statement
+  | IfElseStmt of expr * statement * statement
 
 let rec primary = function
   | [] ->
@@ -123,10 +124,14 @@ and if_stmt = function
   | Lex.If :: Lex.ParenLeft :: rest -> (
       let e, rest = expression rest in
       match rest with
-      | Lex.ParenRight :: rest ->
+      | Lex.ParenRight :: rest -> (
           let then_stmt, rest = statement rest in
-          let else_stmt, rest = statement rest in
-          (IfStmt (e, then_stmt, else_stmt), rest)
+          match rest with
+          | Lex.Else :: rest ->
+              let else_stmt, rest = statement rest in
+              (IfElseStmt (e, then_stmt, else_stmt), rest)
+          | _ ->
+              (IfStmt (e, then_stmt), rest) )
       | _ ->
           failwith "Missing closing parenthesis in if statement" )
   | _ ->

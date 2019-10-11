@@ -102,13 +102,16 @@ let rec eval s env =
       (e, env)
   | Var _ ->
       failwith "Badly constructed var"
-  | IfStmt (e, then_stmt, else_stmt) -> (
+  | IfElseStmt (e, then_stmt, else_stmt) -> (
       let e, env = eval_exp e env in
       match e with
       | Bool false | Nil ->
           eval else_stmt env
       | _ ->
           eval then_stmt env )
+  | IfStmt (e, then_stmt) -> (
+      let e, env = eval_exp e env in
+      match e with Bool false | Nil -> (Nil, env) | _ -> eval then_stmt env )
 
 let interpret env stmts =
   Base.Array.fold stmts
