@@ -10,6 +10,7 @@ type expr =
   | Unary of Lex.lex_token * expr
   | Variable of Lex.lex_token
   | LogicalOr of expr * expr
+  | LogicalAnd of expr * expr
 [@@deriving sexp]
 
 type statement =
@@ -95,8 +96,19 @@ and expression tokens = assignment tokens
 
 and assignment tokens = logic_or tokens
 
-and logic_or tokens =
+and logic_and tokens =
   let l, rest = equality tokens in
+  match rest with
+  | Lex.And :: rest ->
+      let r, rest = logic_and rest in
+      (LogicalAnd (l, r), rest)
+  | [] ->
+      failwith "No more tokens to match for a logic_or expression"
+  | _ ->
+      (l, rest)
+
+and logic_or tokens =
+  let l, rest = logic_and tokens in
   match rest with
   | Lex.Or :: rest ->
       let r, rest = logic_or rest in

@@ -39,6 +39,9 @@ let rec eval_exp exp env =
   | LogicalOr (l, r) -> (
       let e, env = eval_exp l env in
       match e with Bool false | Nil -> eval_exp r env | _ -> (e, env) )
+  | LogicalAnd (l, r) -> (
+      let e, env = eval_exp l env in
+      match e with Bool false | Nil -> (e, env) | _ -> eval_exp r env )
   | Variable (Lex.Identifier n) -> (
     match StringMap.find_opt n env with
     | Some v ->
