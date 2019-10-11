@@ -205,17 +205,23 @@ and for_stmt = function
   | _ ->
       failwith "Wrong call to loop_stmt: not an loop statement"
 
-and block_stmt_inner 
+and block_stmt_inner tokens acc =
+  match tokens with
+  | [] ->
+      failwith "No more tokens to match for a block statement"
+  | Lex.CurlyBraceRight :: rest ->
+      (acc, rest)
+  | _ ->
+      let s, rest = statement tokens in
+      let acc = Array.append acc [|s|] in
+      block_stmt_inner rest acc
 
 and block_stmt = function
   | [] ->
       failwith "No more tokens to match for a block statement"
   | Lex.CurlyBraceLeft :: rest ->
-      let s, rest = statement rest in begin match rest with
-| Lex.CurlyBraceRight :: rest -> (Block [|s|], rest)
-| ->  _ ->   
-end
-      
+      let stmts, rest = block_stmt_inner rest [||] in
+      (Block stmts, rest)
   | _ ->
       failwith "Wrong call to block_stmt: not a block statement"
 
