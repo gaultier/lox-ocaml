@@ -10,8 +10,12 @@ let lox_run filename =
 let rec repl env =
   Printf.printf "> " ;
   let stmts, env =
-    read_line () |> Lox.Lex.lex |> Lox.Parse.parse
-    |> Lox.Interpret.interpret env
+    try
+      read_line () |> Lox.Lex.lex |> Lox.Parse.parse
+      |> Lox.Interpret.interpret env
+    with Failure msg ->
+      print_endline ("Error: " ^ msg) ;
+      ([||], env)
   in
   Array.iter Lox.Interpret.print stmts ;
   repl env
