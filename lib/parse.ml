@@ -91,7 +91,21 @@ and equality tokens =
   | _ ->
       (left, rest)
 
-and expression tokens = equality tokens
+and expression tokens = assignment tokens
+
+and assignment tokens = logic_or tokens
+
+and logic_or = function
+  | [] ->
+      failwith "No more tokens to match for a logic_or expression"
+  | _ as t -> (
+      let l, rest = equality t in
+      match rest with
+      | Lex.Or :: rest ->
+          let r, rest = equality rest in
+          (Logical (l, Lex.Or, r), rest)
+      | _ ->
+          failwith "Missing `or` token in a logic_or expression" )
 
 and expression_stmt = function
   | [] ->
