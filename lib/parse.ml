@@ -105,7 +105,7 @@ and assignment = function
   | [] ->
       failwith "No more tokens to match for assignement"
   | _ as t -> (
-      let e, rest = equality t in
+      let e, rest = logic_or t in
       match rest with
       | Lex.Equal :: rest -> (
           let a, rest = assignment rest in
