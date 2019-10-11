@@ -149,7 +149,7 @@ and statement = function
       let e, rest = expression_stmt t in
       (Expr e, rest)
 
-and assignment = function
+and var_decl = function
   | [] ->
       failwith "No more tokens to match for a variable declaration"
   | Lex.Var :: Lex.Identifier n :: Lex.Equal :: rest -> (
@@ -165,7 +165,7 @@ and assignment = function
       failwith "Not a valid variable declaration"
 
 and declaration d =
-  match d with Lex.Var :: _ -> assignment d | _ -> statement d
+  match d with Lex.Var :: _ -> var_decl d | _ -> statement d
 
 and program decls = function
   | [] ->
