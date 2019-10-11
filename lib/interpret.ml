@@ -36,9 +36,9 @@ let rec eval_exp exp env =
       (res, env)
   | Literal l ->
       (l, env)
-  | Logical (l, Lex.Or, _) ->
+  | Logical (l, Lex.Or, r) -> (
       let e, env = eval_exp l env in
-      (e, env)
+      match e with Bool false | Nil -> eval_exp r env | _ -> (e, env) )
   | Logical _ ->
       failwith "Malformed logic or"
   | Variable (Lex.Identifier n) -> (
