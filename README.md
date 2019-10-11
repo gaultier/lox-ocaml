@@ -9,7 +9,7 @@ Assuming `ocaml` and `opam` are installed and setup:
 
 ```sh
 $  opam install dune base ppx_sexp_conv sexplib
-$ make
+$ dune build
 $ ./lox run test/hello_world.lox
 hello, world
 
