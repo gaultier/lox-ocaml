@@ -89,7 +89,7 @@ let rec eval_exp exp env =
             ( "Binary expression not allowed: "
             ^ Base.Sexp.to_string_hum (sexp_of_expr exp) ) )
 
-let eval s env =
+let rec eval s env =
   match s with
   | Expr e ->
       eval_exp e env
@@ -102,6 +102,13 @@ let eval s env =
       (e, env)
   | Var _ ->
       failwith "Badly constructed var"
+  | IfStmt (e, then_stmt, else_stmt) -> (
+      let e, env = eval_exp e env in
+      match e with
+      | Bool false | Nil ->
+          eval else_stmt env
+      | _ ->
+          eval then_stmt env )
 
 let interpret env stmts =
   Base.Array.fold stmts

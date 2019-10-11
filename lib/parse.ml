@@ -11,7 +11,11 @@ type expr =
   | Variable of Lex.lex_token
 [@@deriving sexp]
 
-type statement = Expr of expr | Print of expr | Var of Lex.lex_token * expr
+type statement =
+  | Expr of expr
+  | Print of expr
+  | Var of Lex.lex_token * expr
+  | IfStmt of expr * statement * statement
 
 let rec primary = function
   | [] ->
@@ -113,11 +117,28 @@ and print_stmt = function
         ( "Missing print to match a print statement: "
         ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
 
+and if_stmt = function
+  | [] ->
+      failwith "No more tokens to match for a statement"
+  | Lex.If :: Lex.ParenLeft :: rest -> (
+      let e, rest = expression rest in
+      match rest with
+      | Lex.ParenRight :: rest ->
+          let then_stmt, rest = statement rest in
+          let else_stmt, rest = statement rest in
+          (IfStmt (e, then_stmt, else_stmt), rest)
+      | _ ->
+          failwith "Missing closing parenthesis in if statement" )
+  | _ ->
+      failwith "Wrong call to if_stmt: not an if statement"
+
 and statement = function
   | [] ->
       failwith "No more tokens to match for a statement"
   | Lex.Print :: _ as t ->
       print_stmt t
+  | Lex.If :: _ as t ->
+      if_stmt t
   | _ as t ->
       let e, rest = expression_stmt t in
       (Expr e, rest)
