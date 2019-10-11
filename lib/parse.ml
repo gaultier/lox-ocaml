@@ -213,7 +213,8 @@ and for_stmt = function
           | Lex.ParenRight :: rest ->
               let body, rest = statement rest in
               let enclosed_body =
-                Block [|v; WhileStmt (stop_cond, body); Expr increment|]
+                Block
+                  [|v; WhileStmt (stop_cond, Block [|body; Expr increment|])|]
               in
               (enclosed_body, rest)
           | x :: _ ->
