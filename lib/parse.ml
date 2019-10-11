@@ -9,7 +9,7 @@ type expr =
   | Literal of value
   | Unary of Lex.lex_token * expr
   | Variable of Lex.lex_token
-  | Logical of expr * Lex.lex_token * expr
+  | LogicalOr of expr * expr
 [@@deriving sexp]
 
 type statement =
@@ -103,7 +103,7 @@ and logic_or = function
       match rest with
       | Lex.Or :: rest ->
           let r, rest = equality rest in
-          (Logical (l, Lex.Or, r), rest)
+          (LogicalOr (l, r), rest)
       | _ ->
           failwith "Missing `or` token in a logic_or expression" )
 
