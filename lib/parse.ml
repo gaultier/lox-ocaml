@@ -9,6 +9,7 @@ type expr =
   | Literal of value
   | Unary of Lex.lex_token * expr
   | Variable of Lex.lex_token
+  | Logical of expr * Lex.lex_token * expr
 [@@deriving sexp]
 
 type statement =
@@ -148,7 +149,7 @@ and statement = function
       let e, rest = expression_stmt t in
       (Expr e, rest)
 
-and var_decl = function
+and assignment = function
   | [] ->
       failwith "No more tokens to match for a variable declaration"
   | Lex.Var :: Lex.Identifier n :: Lex.Equal :: rest -> (
@@ -164,7 +165,7 @@ and var_decl = function
       failwith "Not a valid variable declaration"
 
 and declaration d =
-  match d with Lex.Var :: _ -> var_decl d | _ -> statement d
+  match d with Lex.Var :: _ -> assignment d | _ -> statement d
 
 and program decls = function
   | [] ->
