@@ -13,9 +13,12 @@ let rec repl env =
     try
       read_line () |> Lox.Lex.lex |> Lox.Parse.parse
       |> Lox.Interpret.interpret env
-    with Failure msg ->
-      print_endline ("Error: " ^ msg) ;
-      ([||], env)
+    with
+    | Failure msg ->
+        print_endline ("Error: " ^ msg) ;
+        ([||], env)
+    | End_of_file ->
+        print_endline "Bye!" ; exit 0
   in
   Array.iter Lox.Interpret.print stmts ;
   repl env
