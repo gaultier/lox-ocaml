@@ -258,8 +258,13 @@ and var_decl = function
       match rrest with
       | Lex.SemiColon :: rrrest ->
           (Var (Lex.Identifier n, e), rrrest)
-      | _ ->
-          failwith "Missing terminating semicolon after variable declaration" )
+      | x :: _ ->
+          failwith
+            ( "Missing semicolon after variable declaration, got: "
+            ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
+      | [] ->
+          failwith
+            "Missing semicolon after variable declaration, no more tokens" )
   | Lex.Var :: Lex.Identifier n :: Lex.SemiColon :: rest ->
       (Var (Lex.Identifier n, Literal Nil), rest)
   | x :: _ ->
