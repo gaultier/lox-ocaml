@@ -33,3 +33,11 @@ Note: On error, it will abort with an exception and a stacktrace of the interpre
 `make test`
 
 You can `opam install patdiff` for a better output, by default it uses `diff`.
+
+
+## Docker
+
+```sh
+$ make docker
+$ docker run -it lox
+```

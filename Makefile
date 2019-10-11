@@ -10,4 +10,7 @@ test: clean
 clean:
 	rm -f test/*.output
 
-.PHONY: build run-build run-repl fmt test clean
+docker:
+	docker build -t lox .
+
+.PHONY: build run-build run-repl fmt test clean docker
