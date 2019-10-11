@@ -25,6 +25,7 @@ $ ./lox repl
 - Arithmetic, strings, boolean logic, nil
 - Statements & print
 - Global variables
+- Conditions (if/else)
 
 Note: On error, it will abort with an exception and a stacktrace of the interpreter.
 
