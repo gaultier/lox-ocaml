@@ -187,29 +187,29 @@ and for_stmt = function
        :: Lex.SemiColon :: Lex.SemiColon :: Lex.ParenRight :: rest ->
       let s, rest = statement rest in
       (WhileStmt (Literal (Bool true), s), rest)
-  | Lex.For :: Lex.ParenLeft :: Lex.Var :: rest -> (
-      let v, rest = var_decl rest in
+  | Lex.For :: Lex.ParenLeft :: (Lex.Var :: _ as var) -> (
+      let v, rest = var_decl var in
+      let stop_cond, rest = expression rest in
       match rest with
       | Lex.SemiColon :: rest -> (
-          let stop_cond, rest = expression rest in
+          let increment, rest = expression rest in
           match rest with
-          | Lex.SemiColon :: rest -> (
-              let increment, rest = expression rest in
-              match rest with
-              | Lex.ParenRight :: rest ->
-                  let body, rest = statement rest in
-                  let enclosed_body =
-                    Block [|v; WhileStmt (stop_cond, body); Expr increment|]
-                  in
-                  (enclosed_body, rest)
-              | _ ->
-                  failwith "Missing closing parenthesis in if statement" )
-          | _ ->
+          | Lex.ParenRight :: rest ->
+              let body, rest = statement rest in
+              let enclosed_body =
+                Block [|v; WhileStmt (stop_cond, body); Expr increment|]
+              in
+              (enclosed_body, rest)
+          | x :: _ ->
               failwith
-                "Missing semicolon after condition in for-loop declaration" )
+                ( "Missing closing parenthesis in if statement, got: "
+                ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
+          | [] ->
+              failwith
+                "Missing closing parenthesis in if statement, no more tokens" )
       | _ ->
-          failwith
-            "Missing semicolon after var assignement in for-loop declaration" )
+          failwith "Missing semicolon after condition in for-loop declaration"
+      )
   | _ ->
       failwith "Wrong call to loop_stmt: not an loop statement"
 
@@ -262,8 +262,10 @@ and var_decl = function
           failwith "Missing terminating semicolon after variable declaration" )
   | Lex.Var :: Lex.Identifier n :: Lex.SemiColon :: rest ->
       (Var (Lex.Identifier n, Literal Nil), rest)
-  | _ ->
-      failwith "Not a valid variable declaration"
+  | x :: _ ->
+      failwith
+        ( "Malformed variable declaration: "
+        ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
 
 and declaration d =
   match d with Lex.Var :: _ -> var_decl d | _ -> statement d
