@@ -50,6 +50,12 @@ let rec eval_exp exp env =
         failwith ("Accessing unkown variable `" ^ n ^ "`") )
   | Variable _ ->
       failwith "Badly constructed var"
+  | Assign (Lex.Identifier n, e) ->
+      let e, env = eval_exp e env in
+      let env = StringMap.add n e env in
+      (e, env)
+  | Assign _ ->
+      failwith "Badly constructed assignement"
   | Binary (l, t, r) -> (
       let l, env = eval_exp l env in
       let r, env = eval_exp r env in

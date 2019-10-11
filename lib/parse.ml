@@ -102,14 +102,14 @@ and assignment = function
       failwith "No more tokens to match for assignement"
   | _ as t -> (
       let e, rest = equality t in
-      match e with
-      | Variable v -> (
-        match rest with
-        | Lex.Equal :: rest ->
-            let a, rest = assignment rest in
-            (Assign (v, a), rest)
-        | _ ->
-            failwith "Invalid assignment target" )
+      match rest with
+      | Lex.Equal :: rest -> (
+          let a, rest = assignment rest in
+          match e with
+          | Variable v ->
+              (Assign (v, a), rest)
+          | _ ->
+              failwith "Invalid assignment target" )
       | _ ->
           (e, rest) )
 
