@@ -202,11 +202,13 @@ and while_stmt = function
 and for_stmt = function
   | [] ->
       failwith "No more tokens to match for a for-loop statement"
+  (* for (;;) *)
   | Lex.For
     :: Lex.ParenLeft
        :: Lex.SemiColon :: Lex.SemiColon :: Lex.ParenRight :: rest ->
       let s, rest = statement rest in
       (WhileStmt (Literal (Bool true), s), rest)
+  (* for (var i = 0; i < 5; i = i + 1) *)
   | Lex.For :: Lex.ParenLeft :: (Lex.Var :: _ as var) -> (
       let v, rest = var_decl var in
       let stop_cond, rest = expression rest in

@@ -27,6 +27,7 @@ $ ./lox repl
 - Global variables
 - Conditions (if/else)
 - Boolean logic (and, or, not)
+- Loops (while, for)
 
 Note: On error, it will abort with an exception and a stacktrace of the interpreter.
 
