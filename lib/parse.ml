@@ -178,6 +178,17 @@ and while_stmt = function
   | _ ->
       failwith "Wrong call to while_stmt: not an while statement"
 
+and for_stmt = function
+  | [] ->
+      failwith "No more tokens to match for a for-loop statement"
+  | Lex.For
+    :: Lex.ParenLeft
+       :: Lex.SemiColon :: Lex.SemiColon :: Lex.ParenRight :: rest ->
+      let s, rest = statement rest in
+      (WhileStmt (Literal (Bool true), s), rest)
+  | _ ->
+      failwith "Wrong call to loop_stmt: not an llop statement"
+
 and statement = function
   | [] ->
       failwith "No more tokens to match for a statement"
@@ -187,6 +198,8 @@ and statement = function
       if_stmt t
   | Lex.While :: _ as t ->
       while_stmt t
+  | Lex.For :: _ as t ->
+      for_stmt t
   | _ as t ->
       let e, rest = expression_stmt t in
       (Expr e, rest)
