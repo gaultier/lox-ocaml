@@ -108,6 +108,13 @@ let rec eval s env =
       (e, env)
   | Var _ ->
       failwith "Badly constructed var"
+  | Block stmts ->
+      ( Nil
+      , Array.fold_left
+          (fun env s ->
+            let _, env = eval s env in
+            env)
+          env stmts )
   | IfElseStmt (e, then_stmt, else_stmt) -> (
       let e, env = eval_exp e env in
       match e with

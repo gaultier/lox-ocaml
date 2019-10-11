@@ -17,6 +17,7 @@ type statement =
   | Expr of expr
   | Print of expr
   | Var of Lex.lex_token * expr
+  | Block of statement array
   | IfStmt of expr * statement
   | IfElseStmt of expr * statement * statement
   | WhileStmt of expr * statement
@@ -202,13 +203,29 @@ and for_stmt = function
    *         failwith
    *           "Missing semicolon after var assignement in for-loop declaration" ) *)
   | _ ->
-      failwith "Wrong call to loop_stmt: not an llop statement"
+      failwith "Wrong call to loop_stmt: not an loop statement"
+
+and block_stmt_inner 
+
+and block_stmt = function
+  | [] ->
+      failwith "No more tokens to match for a block statement"
+  | Lex.CurlyBraceLeft :: rest ->
+      let s, rest = statement rest in begin match rest with
+| Lex.CurlyBraceRight :: rest -> (Block [|s|], rest)
+| ->  _ ->   
+end
+      
+  | _ ->
+      failwith "Wrong call to block_stmt: not a block statement"
 
 and statement = function
   | [] ->
       failwith "No more tokens to match for a statement"
   | Lex.Print :: _ as t ->
       print_stmt t
+  | Lex.CurlyBraceLeft :: _ as t ->
+      block_stmt t
   | Lex.If :: _ as t ->
       if_stmt t
   | Lex.While :: _ as t ->
