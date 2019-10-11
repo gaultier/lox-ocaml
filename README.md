@@ -8,7 +8,8 @@ Big thanks to [Bob Nystrom](https://github.com/munificent)!! You're amazing.
 Assuming `ocaml`, `opam` and `dune` are installed and setup:
 
 ```sh
-$ dune build @install
+$  opam install base ppx_sexp_conv sexplib
+$ make
 $ ./lox run test/hello_world.lox
 hello, world
 
