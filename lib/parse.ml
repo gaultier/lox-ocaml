@@ -187,21 +187,28 @@ and for_stmt = function
        :: Lex.SemiColon :: Lex.SemiColon :: Lex.ParenRight :: rest ->
       let s, rest = statement rest in
       (WhileStmt (Literal (Bool true), s), rest)
-  (* | Lex.For :: Lex.ParenLeft :: Lex.SemiColon :: Lex.Var :: rest -> (
-   *     let v, rest = var_decl rest in
-   *     match rest with
-   *     | Lex.SemiColon :: rest -> (
-   *         let e, rest = expression rest in
-   *         match rest with
-   *         | Lex.SemiColon :: rest ->
-   *             let s, rest = statement rest in
-   *             (WhileStmt (e, s), rest)
-   *         | _ ->
-   *             failwith
-   *               "Missing semicolon after condition in for-loop declaration" )
-   *     | _ ->
-   *         failwith
-   *           "Missing semicolon after var assignement in for-loop declaration" ) *)
+  | Lex.For :: Lex.ParenLeft :: Lex.Var :: rest -> (
+      (* FIXME *)
+      let _, rest = var_decl rest in
+      match rest with
+      | Lex.SemiColon :: rest -> (
+          let e, rest = expression rest in
+          match rest with
+          | Lex.SemiColon :: rest -> (
+              (* FIXME *)
+              let _, rest = statement rest in
+              match rest with
+              | Lex.ParenRight :: rest ->
+                  let body, rest = statement rest in
+                  (WhileStmt (e, body), rest)
+              | _ ->
+                  failwith "Missing closing parenthesis in if statement" )
+          | _ ->
+              failwith
+                "Missing semicolon after condition in for-loop declaration" )
+      | _ ->
+          failwith
+            "Missing semicolon after var assignement in for-loop declaration" )
   | _ ->
       failwith "Wrong call to loop_stmt: not an loop statement"
 
@@ -212,7 +219,7 @@ and block_stmt_inner tokens acc =
   | Lex.CurlyBraceRight :: rest ->
       (acc, rest)
   | _ ->
-      let s, rest = statement tokens in
+      let s, rest = declaration tokens in
       let acc = Array.append acc [|s|] in
       block_stmt_inner rest acc
 
