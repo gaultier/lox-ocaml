@@ -19,6 +19,7 @@ type statement =
   | Var of Lex.lex_token * expr
   | IfStmt of expr * statement
   | IfElseStmt of expr * statement * statement
+  | WhileStmt of expr * statement
 
 let rec primary = function
   | [] ->
@@ -146,7 +147,7 @@ and print_stmt = function
 
 and if_stmt = function
   | [] ->
-      failwith "No more tokens to match for a statement"
+      failwith "No more tokens to match for a if statement"
   | Lex.If :: Lex.ParenLeft :: rest -> (
       let e, rest = expression rest in
       match rest with
@@ -163,6 +164,20 @@ and if_stmt = function
   | _ ->
       failwith "Wrong call to if_stmt: not an if statement"
 
+and while_stmt = function
+  | [] ->
+      failwith "No more tokens to match for a while statement"
+  | Lex.While :: Lex.ParenLeft :: rest -> (
+      let e, rest = expression rest in
+      match rest with
+      | Lex.ParenRight :: rest ->
+          let s, rest = statement rest in
+          (WhileStmt (e, s), rest)
+      | _ ->
+          failwith "Missing closing parenthesis in if statement" )
+  | _ ->
+      failwith "Wrong call to while_stmt: not an while statement"
+
 and statement = function
   | [] ->
       failwith "No more tokens to match for a statement"
@@ -170,6 +185,8 @@ and statement = function
       print_stmt t
   | Lex.If :: _ as t ->
       if_stmt t
+  | Lex.While :: _ as t ->
+      while_stmt t
   | _ as t ->
       let e, rest = expression_stmt t in
       (Expr e, rest)
