@@ -22,10 +22,11 @@ $ ./lox repl
 
 ## Implemented
 
-- Arithmetic, strings, boolean logic, nil
+- Arithmetic, strings, booleans, nil
 - Statements & print
 - Global variables
 - Conditions (if/else)
+- Boolean logic (and, or, not)
 
 Note: On error, it will abort with an exception and a stacktrace of the interpreter.
 
