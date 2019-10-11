@@ -37,10 +37,10 @@ let rec primary = function
   | Lex.String s :: rest ->
       (Literal (String s), rest)
   | Lex.ParenLeft :: rest -> (
-      let e, rrest = expression rest in
-      match rrest with
-      | Lex.ParenRight :: rrrest ->
-          (Grouping e, rrrest)
+      let e, rest = expression rest in
+      match rest with
+      | Lex.ParenRight :: rest ->
+          (Grouping e, rest)
       | x :: _ ->
           failwith
             ( "Missing closing parenthesis for primary, got: "
