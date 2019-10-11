@@ -41,8 +41,12 @@ let rec primary = function
       match rrest with
       | Lex.ParenRight :: rrrest ->
           (Grouping e, rrrest)
-      | _ ->
-          failwith "Missing closing parenthesis" )
+      | x :: _ ->
+          failwith
+            ( "Missing closing parenthesis for primary, got: "
+            ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
+      | [] ->
+          failwith "Missing closing parenthesis for primary, no more tokens" )
   | (Lex.Identifier _ as i) :: rest ->
       (Variable i, rest)
   | x :: _ ->
