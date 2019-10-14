@@ -120,7 +120,7 @@ let rec lex_r acc rest =
           lex_r (String (Base.String.of_char_list s) :: acc) rrest
       | _ ->
           failwith ("Missing closing quote: " ^ Base.String.of_char_list r) )
-  | x :: _ when Base.Char.is_digit x ->
+  | '0' .. '9' :: _ ->
       (* trailing dot is allowed for now *)
       let digits, r =
         Base.List.split_while rest ~f:(fun c ->
