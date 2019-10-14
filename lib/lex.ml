@@ -119,7 +119,7 @@ let rec lex_r acc rest =
       | '"' :: rrest ->
           lex_r (String (Base.String.of_char_list s) :: acc) rrest
       | _ ->
-          failwith ("Missing closing quote: " ^ Base.String.of_char_list r) )
+          failwith "Missing closing quote, no more tokens" )
   | '0' .. '9' :: _ ->
       (* trailing dot is allowed for now *)
       let digits, r =
