@@ -66,58 +66,61 @@ let rec lex_r acc rest =
   | [] ->
       acc
   | '{' :: irest ->
-      lex_r (CurlyBraceLeft :: acc) irest
+      (lex_r [@tailcall]) (CurlyBraceLeft :: acc) irest
   | '}' :: irest ->
-      lex_r (CurlyBraceRight :: acc) irest
+      (lex_r [@tailcall]) (CurlyBraceRight :: acc) irest
   | '(' :: irest ->
-      lex_r (ParenLeft :: acc) irest
+      (lex_r [@tailcall]) (ParenLeft :: acc) irest
   | ')' :: irest ->
-      lex_r (ParenRight :: acc) irest
+      (lex_r [@tailcall]) (ParenRight :: acc) irest
   | ',' :: irest ->
-      lex_r (Comma :: acc) irest
+      (lex_r [@tailcall]) (Comma :: acc) irest
   | '.' :: irest ->
-      lex_r (Dot :: acc) irest
+      (lex_r [@tailcall]) (Dot :: acc) irest
   | '-' :: irest ->
-      lex_r (Minus :: acc) irest
+      (lex_r [@tailcall]) (Minus :: acc) irest
   | '+' :: irest ->
-      lex_r (Plus :: acc) irest
+      (lex_r [@tailcall]) (Plus :: acc) irest
   | ';' :: irest ->
-      lex_r (SemiColon :: acc) irest
+      (lex_r [@tailcall]) (SemiColon :: acc) irest
   | '*' :: irest ->
-      lex_r (Star :: acc) irest
+      (lex_r [@tailcall]) (Star :: acc) irest
   | '/' :: '/' :: irest ->
-      lex_r acc (Base.List.drop_while irest ~f:(fun c -> c != '\n'))
+      (lex_r [@tailcall]) acc
+        (Base.List.drop_while irest ~f:(fun c -> c != '\n'))
   | '/' :: irest ->
-      lex_r (Slash :: acc) irest
+      (lex_r [@tailcall]) (Slash :: acc) irest
   | '!' :: '=' :: irest ->
-      lex_r (BangEqual :: acc) irest
+      (lex_r [@tailcall]) (BangEqual :: acc) irest
   | '!' :: irest ->
-      lex_r (Bang :: acc) irest
+      (lex_r [@tailcall]) (Bang :: acc) irest
   | '=' :: '=' :: irest ->
-      lex_r (EqualEqual :: acc) irest
+      (lex_r [@tailcall]) (EqualEqual :: acc) irest
   | '=' :: irest ->
-      lex_r (Equal :: acc) irest
+      (lex_r [@tailcall]) (Equal :: acc) irest
   | '<' :: '=' :: irest ->
-      lex_r (LessEqual :: acc) irest
+      (lex_r [@tailcall]) (LessEqual :: acc) irest
   | '<' :: irest ->
-      lex_r (Less :: acc) irest
+      (lex_r [@tailcall]) (Less :: acc) irest
   | '>' :: '=' :: irest ->
-      lex_r (GreaterEqual :: acc) irest
+      (lex_r [@tailcall]) (GreaterEqual :: acc) irest
   | '>' :: irest ->
-      lex_r (Greater :: acc) irest
+      (lex_r [@tailcall]) (Greater :: acc) irest
   | ' ' :: irest ->
-      lex_r acc irest
+      (lex_r [@tailcall]) acc irest
   | '\n' :: irest ->
-      lex_r acc irest
+      (lex_r [@tailcall]) acc irest
   | '\t' :: irest ->
-      lex_r acc irest
+      (lex_r [@tailcall]) acc irest
   | '\r' :: irest ->
-      lex_r acc irest
+      (lex_r [@tailcall]) acc irest
   | '"' :: irest -> (
       let s, r = Base.List.split_while irest ~f:(fun c -> c != '"') in
       match r with
       | '"' :: rrest ->
-          lex_r (String (Base.String.of_char_list s) :: acc) rrest
+          (lex_r [@tailcall])
+            (String (Base.String.of_char_list s) :: acc)
+            rrest
       | _ ->
           failwith "Missing closing quote, no more tokens" )
   | '0' .. '9' :: _ ->
@@ -127,7 +130,7 @@ let rec lex_r acc rest =
             Base.Char.is_digit c || c == '.')
       in
       let f = digits |> Base.String.of_char_list |> Float.of_string in
-      lex_r (Number f :: acc) r
+      (lex_r [@tailcall]) (Number f :: acc) r
   | x :: _ when Base.Char.is_alpha x -> (
       let identifier, r =
         Base.List.split_while rest ~f:Base.Char.is_alphanum
@@ -135,9 +138,9 @@ let rec lex_r acc rest =
       let s = Base.String.of_char_list identifier in
       match Base.Hashtbl.find keywords s with
       | Some k ->
-          lex_r (k :: acc) r
+          (lex_r [@tailcall]) (k :: acc) r
       | _ ->
-          lex_r (Identifier s :: acc) r )
+          (lex_r [@tailcall]) (Identifier s :: acc) r )
   | '\000' :: _ ->
       acc
   | x :: _ ->
