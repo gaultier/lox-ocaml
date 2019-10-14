@@ -114,13 +114,7 @@ let rec lex_r acc rest =
       (lex_r [@tailcall]) (GreaterEqual :: acc) rest
   | '>' :: rest ->
       (lex_r [@tailcall]) (Greater :: acc) rest
-  | ' ' :: rest ->
-      (lex_r [@tailcall]) acc rest
-  | '\n' :: rest ->
-      (lex_r [@tailcall]) acc rest
-  | '\t' :: rest ->
-      (lex_r [@tailcall]) acc rest
-  | '\r' :: rest ->
+  | ' ' :: rest | '\n' :: rest | '\t' :: rest | '\r' :: rest ->
       (lex_r [@tailcall]) acc rest
   | '"' :: rest ->
       let acc, rest = lex_string acc rest in
