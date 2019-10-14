@@ -73,55 +73,55 @@ let rec lex_r acc rest =
   match rest with
   | [] ->
       acc
-  | '{' :: irest ->
-      (lex_r [@tailcall]) (CurlyBraceLeft :: acc) irest
-  | '}' :: irest ->
-      (lex_r [@tailcall]) (CurlyBraceRight :: acc) irest
-  | '(' :: irest ->
-      (lex_r [@tailcall]) (ParenLeft :: acc) irest
-  | ')' :: irest ->
-      (lex_r [@tailcall]) (ParenRight :: acc) irest
-  | ',' :: irest ->
-      (lex_r [@tailcall]) (Comma :: acc) irest
-  | '.' :: irest ->
-      (lex_r [@tailcall]) (Dot :: acc) irest
-  | '-' :: irest ->
-      (lex_r [@tailcall]) (Minus :: acc) irest
-  | '+' :: irest ->
-      (lex_r [@tailcall]) (Plus :: acc) irest
-  | ';' :: irest ->
-      (lex_r [@tailcall]) (SemiColon :: acc) irest
-  | '*' :: irest ->
-      (lex_r [@tailcall]) (Star :: acc) irest
-  | '/' :: '/' :: irest ->
+  | '{' :: rest ->
+      (lex_r [@tailcall]) (CurlyBraceLeft :: acc) rest
+  | '}' :: rest ->
+      (lex_r [@tailcall]) (CurlyBraceRight :: acc) rest
+  | '(' :: rest ->
+      (lex_r [@tailcall]) (ParenLeft :: acc) rest
+  | ')' :: rest ->
+      (lex_r [@tailcall]) (ParenRight :: acc) rest
+  | ',' :: rest ->
+      (lex_r [@tailcall]) (Comma :: acc) rest
+  | '.' :: rest ->
+      (lex_r [@tailcall]) (Dot :: acc) rest
+  | '-' :: rest ->
+      (lex_r [@tailcall]) (Minus :: acc) rest
+  | '+' :: rest ->
+      (lex_r [@tailcall]) (Plus :: acc) rest
+  | ';' :: rest ->
+      (lex_r [@tailcall]) (SemiColon :: acc) rest
+  | '*' :: rest ->
+      (lex_r [@tailcall]) (Star :: acc) rest
+  | '/' :: '/' :: rest ->
       (lex_r [@tailcall]) acc
-        (Base.List.drop_while irest ~f:(fun c -> c != '\n'))
-  | '/' :: irest ->
-      (lex_r [@tailcall]) (Slash :: acc) irest
-  | '!' :: '=' :: irest ->
-      (lex_r [@tailcall]) (BangEqual :: acc) irest
-  | '!' :: irest ->
-      (lex_r [@tailcall]) (Bang :: acc) irest
-  | '=' :: '=' :: irest ->
-      (lex_r [@tailcall]) (EqualEqual :: acc) irest
-  | '=' :: irest ->
-      (lex_r [@tailcall]) (Equal :: acc) irest
-  | '<' :: '=' :: irest ->
-      (lex_r [@tailcall]) (LessEqual :: acc) irest
-  | '<' :: irest ->
-      (lex_r [@tailcall]) (Less :: acc) irest
-  | '>' :: '=' :: irest ->
-      (lex_r [@tailcall]) (GreaterEqual :: acc) irest
-  | '>' :: irest ->
-      (lex_r [@tailcall]) (Greater :: acc) irest
-  | ' ' :: irest ->
-      (lex_r [@tailcall]) acc irest
-  | '\n' :: irest ->
-      (lex_r [@tailcall]) acc irest
-  | '\t' :: irest ->
-      (lex_r [@tailcall]) acc irest
-  | '\r' :: irest ->
-      (lex_r [@tailcall]) acc irest
+        (Base.List.drop_while rest ~f:(fun c -> c != '\n'))
+  | '/' :: rest ->
+      (lex_r [@tailcall]) (Slash :: acc) rest
+  | '!' :: '=' :: rest ->
+      (lex_r [@tailcall]) (BangEqual :: acc) rest
+  | '!' :: rest ->
+      (lex_r [@tailcall]) (Bang :: acc) rest
+  | '=' :: '=' :: rest ->
+      (lex_r [@tailcall]) (EqualEqual :: acc) rest
+  | '=' :: rest ->
+      (lex_r [@tailcall]) (Equal :: acc) rest
+  | '<' :: '=' :: rest ->
+      (lex_r [@tailcall]) (LessEqual :: acc) rest
+  | '<' :: rest ->
+      (lex_r [@tailcall]) (Less :: acc) rest
+  | '>' :: '=' :: rest ->
+      (lex_r [@tailcall]) (GreaterEqual :: acc) rest
+  | '>' :: rest ->
+      (lex_r [@tailcall]) (Greater :: acc) rest
+  | ' ' :: rest ->
+      (lex_r [@tailcall]) acc rest
+  | '\n' :: rest ->
+      (lex_r [@tailcall]) acc rest
+  | '\t' :: rest ->
+      (lex_r [@tailcall]) acc rest
+  | '\r' :: rest ->
+      (lex_r [@tailcall]) acc rest
   | '"' :: rest ->
       let acc, rest = lex_string acc rest in
       (lex_r [@tailcall]) acc rest
