@@ -1,8 +1,8 @@
-build: fmt
+build:
 	dune build
 
-fmt: clean
-	dune build @fmt --auto-promote
+dev:
+	dune build @fmt --auto-promote @install -w
 
 test: clean
 	sh test.sh
