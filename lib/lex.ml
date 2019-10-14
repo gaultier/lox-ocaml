@@ -61,6 +61,14 @@ let keywords =
     ; ("var", Var)
     ; ("while", While) ]
 
+let lex_string acc rest =
+  let s, rest = Base.List.split_while rest ~f:(fun c -> c != '"') in
+  match rest with
+  | '"' :: rest ->
+      (String (Base.String.of_char_list s) :: acc, rest)
+  | _ ->
+      failwith "Missing closing quote, no more tokens"
+
 let rec lex_r acc rest =
   match rest with
   | [] ->
@@ -114,15 +122,9 @@ let rec lex_r acc rest =
       (lex_r [@tailcall]) acc irest
   | '\r' :: irest ->
       (lex_r [@tailcall]) acc irest
-  | '"' :: irest -> (
-      let s, r = Base.List.split_while irest ~f:(fun c -> c != '"') in
-      match r with
-      | '"' :: rrest ->
-          (lex_r [@tailcall])
-            (String (Base.String.of_char_list s) :: acc)
-            rrest
-      | _ ->
-          failwith "Missing closing quote, no more tokens" )
+  | '"' :: rest ->
+      let acc, rest = lex_string acc rest in
+      (lex_r [@tailcall]) acc rest
   | '0' .. '9' :: _ ->
       (* trailing dot is allowed for now *)
       let digits, r =
@@ -144,6 +146,6 @@ let rec lex_r acc rest =
   | '\000' :: _ ->
       acc
   | x :: _ ->
-      failwith ("Unkown token: " ^ String.make 1 x)
+      failwith (Format.sprintf "Unkown token: `%c`" x)
 
 let lex s = lex_r [] (Base.String.to_list s) |> List.rev
