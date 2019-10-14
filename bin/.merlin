@@ -1,22 +1,4 @@
 EXCLUDE_QUERY_DIR
-B /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/base
-B /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/base/caml
-B /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/base/shadow_stdlib
-B /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/ocaml
-B /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/parsexp
-B /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/ppx_sexp_conv/runtime-lib
-B /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/sexplib
-B /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/sexplib0
 B ../_build/default/bin/.main.eobjs/byte
-B ../_build/default/lib/.lox.objs/byte
-S /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/base
-S /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/base/caml
-S /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/base/shadow_stdlib
-S /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/ocaml
-S /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/parsexp
-S /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/ppx_sexp_conv/runtime-lib
-S /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/sexplib
-S /Users/pgaultier/.opam/ocaml-variants.4.07.1+flambda/lib/sexplib0
 S .
-S ../lib
 FLG -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs

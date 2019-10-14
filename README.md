@@ -1,11 +1,13 @@
 # Lox
 
-Implementation of the [Lox language](http://www.craftinginterpreters.com/) in OCaml.
+Implementation of the [Lox language](http://www.craftinginterpreters.com/) in
+OCaml, comprised of a front-end compiler and an interpreter.
+
 Big thanks to [Bob Nystrom](https://github.com/munificent)!! You're amazing.
 
 ## Quickstart
 
-Assuming `ocaml` and `opam` are installed and setup:
+Assuming `ocaml` (version `4.08.1`) and `opam` are installed and setup:
 
 ```sh
 $ opam install dune base ppx_sexp_conv sexplib
@@ -19,6 +21,11 @@ $ ./lox repl
 >
 
 ```
+
+
+Note: the `Result` module is used which was introduced in the `4.08.1` release
+hence the requirement. An earlier version can be used by using a shim: `opam
+install result`.
 
 ## Implemented
 
