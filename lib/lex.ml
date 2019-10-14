@@ -71,7 +71,7 @@ let lex_string acc rest =
 
 let rec lex_r acc rest =
   match rest with
-  | [] ->
+  | [] | '\000' :: _ ->
       acc
   | '{' :: rest ->
       (lex_r [@tailcall]) (CurlyBraceLeft :: acc) rest
@@ -137,8 +137,6 @@ let rec lex_r acc rest =
           (lex_r [@tailcall]) (k :: acc) r
       | _ ->
           (lex_r [@tailcall]) (Identifier s :: acc) r )
-  | '\000' :: _ ->
-      acc
   | x :: _ ->
       failwith (Format.sprintf "Unkown token: `%c`" x)
 
