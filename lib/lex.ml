@@ -137,8 +137,9 @@ let rec lex_r acc rest =
           (lex_r [@tailcall]) (Ok k :: acc) r
       | _ ->
           (lex_r [@tailcall]) (Ok (Identifier s) :: acc) r )
-  | x :: _ ->
-      failwith (Format.sprintf "Unkown token: `%c`" x)
+  | x :: rest ->
+      let err = Base.Result.failf "Unkown token: `%c`" x in
+      (lex_r [@tailcall]) (err :: acc) rest
 
 let lex s =
-  lex_r [] (Base.String.to_list s) |> List.rev |> List.map Result.get_ok
+  lex_r [] (Base.String.to_list s) |> List.rev |> Base.Result.combine_errors

@@ -4,14 +4,14 @@ let read_whole_file filename =
   close_in ch ; s
 
 let lox_run filename =
-  read_whole_file filename |> Lox.Lex.lex |> Lox.Parse.parse
+  read_whole_file filename |> Lox.Lex.lex |> Result.get_ok |> Lox.Parse.parse
   |> Lox.Interpret.interpret Lox.Interpret.StringMap.empty
 
 let rec repl env =
   Printf.printf "> " ;
   let stmts, env =
     try
-      read_line () |> Lox.Lex.lex |> Lox.Parse.parse
+      read_line () |> Lox.Lex.lex |> Result.get_ok |> Lox.Parse.parse
       |> Lox.Interpret.interpret env
     with
     | Failure msg ->
