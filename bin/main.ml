@@ -14,20 +14,18 @@ let lox_run filename =
   >>= Lox.Interpret.interpret Lox.Interpret.StringMap.empty
   |> iter_error ~f:print_errors
 
-let repl _ = Printf.printf "> "
-
-(* let rec repl env =
- *   Printf.printf "> " ; *)
-(* let env =
- *   read_line () |> Lox.Lex.lex >>= Lox.Parse.parse
- *   >>= Lox.Interpret.interpret env
- *   |> map_error ~f:(fun x -> print_errors x ; [])
- *   |> Result.iter (fun (stmts, env) ->
- *          Array.iter Lox.Interpret.print stmts ;
- *          env)
- *   |> Result.value env
- * in
- * repl env *)
+let rec repl env =
+  Printf.printf "> " ;
+  let env =
+    read_line () |> Lox.Lex.lex >>= Lox.Parse.parse
+    >>= Lox.Interpret.interpret env
+    >>| (fun (stmts, env) ->
+          Array.iter Lox.Interpret.print stmts ;
+          env)
+    |> map_error ~f:(fun x -> print_errors x ; [])
+    |> Result.value ~default:env
+  in
+  repl env
 
 let main () =
   match Sys.argv with
