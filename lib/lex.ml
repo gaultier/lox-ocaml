@@ -69,6 +69,14 @@ let lex_string rest =
   | _ ->
       (Error "Missing closing quote, no more tokens", rest)
 
+let lex_num rest =
+  (* trailing dot is allowed for now *)
+  let digits, rest =
+    Base.List.split_while rest ~f:(fun c -> Base.Char.is_digit c || c == '.')
+  in
+  let f = digits |> Base.String.of_char_list |> Float.of_string in
+  (Ok (Number f), rest)
+
 let rec lex_r acc rest =
   match rest with
   | [] | '\000' :: _ ->
@@ -120,13 +128,8 @@ let rec lex_r acc rest =
       let t, rest = lex_string rest in
       (lex_r [@tailcall]) (t :: acc) rest
   | '0' .. '9' :: _ ->
-      (* trailing dot is allowed for now *)
-      let digits, r =
-        Base.List.split_while rest ~f:(fun c ->
-            Base.Char.is_digit c || c == '.')
-      in
-      let f = digits |> Base.String.of_char_list |> Float.of_string in
-      (lex_r [@tailcall]) (Ok (Number f) :: acc) r
+      let t, rest = lex_num rest in
+      (lex_r [@tailcall]) (t :: acc) rest
   | x :: _ when Base.Char.is_alpha x -> (
       let identifier, r =
         Base.List.split_while rest ~f:Base.Char.is_alphanum
