@@ -77,6 +77,15 @@ let lex_num rest =
   let f = digits |> Base.String.of_char_list |> Float.of_string in
   (Ok (Number f), rest)
 
+let lex_identifier rest =
+  let identifier, rest = Base.List.split_while rest ~f:Base.Char.is_alphanum in
+  let s = Base.String.of_char_list identifier in
+  match Base.Hashtbl.find keywords s with
+  | Some k ->
+      (Ok k, rest)
+  | _ ->
+      (Ok (Identifier s), rest)
+
 let rec lex_r acc rest =
   match rest with
   | [] | '\000' :: _ ->
@@ -130,16 +139,9 @@ let rec lex_r acc rest =
   | '0' .. '9' :: _ ->
       let t, rest = lex_num rest in
       (lex_r [@tailcall]) (t :: acc) rest
-  | x :: _ when Base.Char.is_alpha x -> (
-      let identifier, r =
-        Base.List.split_while rest ~f:Base.Char.is_alphanum
-      in
-      let s = Base.String.of_char_list identifier in
-      match Base.Hashtbl.find keywords s with
-      | Some k ->
-          (lex_r [@tailcall]) (Ok k :: acc) r
-      | _ ->
-          (lex_r [@tailcall]) (Ok (Identifier s) :: acc) r )
+  | x :: _ when Base.Char.is_alpha x ->
+      let t, rest = lex_identifier rest in
+      (lex_r [@tailcall]) (t :: acc) rest
   | x :: rest ->
       let err = Base.Result.failf "Unkown token: `%c`" x in
       (lex_r [@tailcall]) (err :: acc) rest
