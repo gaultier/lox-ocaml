@@ -148,8 +148,9 @@ and eval_while w env =
       failwith "Wrong call"
 
 let interpret env stmts =
-  Base.Array.fold stmts
-    ~init:([||], env)
-    ~f:(fun (acc, env) s ->
-      let e, env = eval s env in
-      (Array.append acc [|e|], env))
+  Ok
+    (Base.Array.fold stmts
+       ~init:([||], env)
+       ~f:(fun (acc, env) s ->
+         let e, env = eval s env in
+         (Array.append acc [|e|], env)))
