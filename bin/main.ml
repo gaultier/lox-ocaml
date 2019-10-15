@@ -7,7 +7,7 @@ let read_whole_file filename =
     close_in ch ; Ok s
   with Sys_error e -> fail [e]
 
-let print_errors errors = List.rev errors |> List.iter prerr_endline
+let print_errors = List.iter prerr_endline
 
 let lox_run filename =
   read_whole_file filename >>= Lox.Lex.lex >>= Lox.Parse.parse

@@ -11,6 +11,6 @@ fi
 for i in test/*.lox
 do
     printf "Testing [%s]" "$i"
-    ./lox run "$i" > "${i%.lox}.output"
+    ./lox run "$i" > "${i%.lox}.output" 2>&1
     $DIFFTOOL "${i%.lox}.expected" "${i%.lox}.output"
 done
