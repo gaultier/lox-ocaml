@@ -61,13 +61,13 @@ let keywords =
     ; ("var", Var)
     ; ("while", While) ]
 
-let lex_string acc rest =
+let lex_string rest =
   let s, rest = Base.List.split_while rest ~f:(fun c -> c != '"') in
   match rest with
   | '"' :: rest ->
-      (Ok (String (Base.String.of_char_list s)) :: acc, rest)
+      (Ok (String (Base.String.of_char_list s)), rest)
   | _ ->
-      failwith "Missing closing quote, no more tokens"
+      (Error "Missing closing quote, no more tokens", rest)
 
 let rec lex_r acc rest =
   match rest with
@@ -117,8 +117,8 @@ let rec lex_r acc rest =
   | ' ' :: rest | '\n' :: rest | '\t' :: rest | '\r' :: rest ->
       (lex_r [@tailcall]) acc rest
   | '"' :: rest ->
-      let acc, rest = lex_string acc rest in
-      (lex_r [@tailcall]) acc rest
+      let t, rest = lex_string rest in
+      (lex_r [@tailcall]) (t :: acc) rest
   | '0' .. '9' :: _ ->
       (* trailing dot is allowed for now *)
       let digits, r =
