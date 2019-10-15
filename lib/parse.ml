@@ -1,4 +1,5 @@
 open Sexplib.Std
+open Base.Result
 
 type value = Bool of bool | Number of float | Nil | String of string
 [@@deriving sexp]
@@ -27,20 +28,20 @@ let rec primary = function
   | [] ->
       failwith "No more tokens to match for a primary"
   | Lex.False :: rest ->
-      (Literal (Bool false), rest)
+      (Ok (Literal (Bool false)), rest)
   | Lex.True :: rest ->
-      (Literal (Bool true), rest)
+      (Ok (Literal (Bool true)), rest)
   | Lex.Nil :: rest ->
-      (Literal Nil, rest)
+      (Ok (Literal Nil), rest)
   | Lex.Number f :: rest ->
-      (Literal (Number f), rest)
+      (Ok (Literal (Number f)), rest)
   | Lex.String s :: rest ->
-      (Literal (String s), rest)
+      (Ok (Literal (String s)), rest)
   | Lex.ParenLeft :: rest -> (
       let e, rest = expression rest in
       match rest with
       | Lex.ParenRight :: rest ->
-          (Grouping e, rest)
+          (map ~f:(fun x -> Grouping x) e, rest)
       | x :: _ ->
           failwith
             ( "Missing closing parenthesis for primary, got: "
@@ -48,7 +49,7 @@ let rec primary = function
       | [] ->
           failwith "Missing closing parenthesis for primary, no more tokens" )
   | (Lex.Identifier _ as i) :: rest ->
-      (Variable i, rest)
+      (Ok (Variable i), rest)
   | x :: _ ->
       failwith
         ("Not a primary: " ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x))
@@ -56,18 +57,17 @@ let rec primary = function
 and unary = function
   | (Lex.Bang as t) :: rest | (Lex.Minus as t) :: rest ->
       let right, rrest = unary rest in
-      (Unary (t, right), rrest)
+      (map ~f:(fun x -> Unary (t, x)) right, rrest)
   | _ as t ->
       primary t
 
 and multiplication tokens =
-  let left, rest = unary tokens in
+  unary tokens >>= (fun left, rest ->
   match rest with
-  | (Lex.Star as t) :: rrest | (Lex.Slash as t) :: rrest ->
-      let right, rrrest = multiplication rrest in
-      (Binary (left, t, right), rrrest)
+  | (Lex.Star as t) :: rest | (Lex.Slash as t) :: rest ->
+ multiplication rest >>| (fun right, rest -> (Binary (left, t, right), rest))
   | _ ->
-      (left, rest)
+      (Ok left, rest))
 
 and addition tokens =
   let left, rest = multiplication tokens in
@@ -76,7 +76,7 @@ and addition tokens =
       let right, rrrest = addition rrest in
       (Binary (left, t, right), rrrest)
   | _ ->
-      (left, rest)
+      (Ok left, rest)
 
 and comparison tokens =
   let left, rest = addition tokens in
@@ -88,7 +88,7 @@ and comparison tokens =
       let right, rrrest = comparison rrest in
       (Binary (left, t, right), rrrest)
   | _ ->
-      (left, rest)
+      (Ok left, rest)
 
 and equality tokens =
   let left, rest = comparison tokens in
@@ -97,7 +97,7 @@ and equality tokens =
       let right, rrrest = equality rrest in
       (Binary (left, t, right), rrrest)
   | _ ->
-      (left, rest)
+      (Ok left, rest)
 
 and expression tokens = assignment tokens
 
@@ -111,33 +111,33 @@ and assignment = function
           let a, rest = assignment rest in
           match e with
           | Variable v ->
-              (Assign (v, a), rest)
+              (Ok (Assign (v, a)), rest)
           | _ ->
               failwith "Invalid assignment target" )
       | _ ->
-          (e, rest) )
+          (Ok e, rest) )
 
 and logic_and tokens =
   let l, rest = equality tokens in
   match rest with
   | Lex.And :: rest ->
       let r, rest = logic_and rest in
-      (LogicalAnd (l, r), rest)
+      (Ok (LogicalAnd (l, r)), rest)
   | [] ->
       failwith "No more tokens to match for a logic_or expression"
   | _ ->
-      (l, rest)
+      (Ok l, rest)
 
 and logic_or tokens =
   let l, rest = logic_and tokens in
   match rest with
   | Lex.Or :: rest ->
       let r, rest = logic_or rest in
-      (LogicalOr (l, r), rest)
+      (Ok (LogicalOr (l, r)), rest)
   | [] ->
       failwith "No more tokens to match for a logic_or expression"
   | _ ->
-      (l, rest)
+      (Ok l, rest)
 
 and expression_stmt = function
   | [] ->
@@ -177,9 +177,9 @@ and if_stmt = function
           match rest with
           | Lex.Else :: rest ->
               let else_stmt, rest = statement rest in
-              (IfElseStmt (e, then_stmt, else_stmt), rest)
+              (Ok (IfElseStmt (e, then_stmt, else_stmt)), rest)
           | _ ->
-              (IfStmt (e, then_stmt), rest) )
+              (Ok (IfStmt (e, then_stmt)), rest) )
       | _ ->
           failwith "Missing closing parenthesis in if statement" )
   | _ ->
@@ -193,7 +193,7 @@ and while_stmt = function
       match rest with
       | Lex.ParenRight :: rest ->
           let s, rest = statement rest in
-          (WhileStmt (e, s), rest)
+          (Ok (WhileStmt (e, s)), rest)
       | _ ->
           failwith "Missing closing parenthesis in if statement" )
   | _ ->
@@ -207,7 +207,7 @@ and for_stmt = function
     :: Lex.ParenLeft
        :: Lex.SemiColon :: Lex.SemiColon :: Lex.ParenRight :: rest ->
       let s, rest = statement rest in
-      (WhileStmt (Literal (Bool true), s), rest)
+      (Ok (WhileStmt (Literal (Bool true), s)), rest)
   (* TODO: partial for-loop declaration e.g *)
   (* for (;i; i = i+1) *)
   (* for (;i;) *)
@@ -228,7 +228,7 @@ and for_stmt = function
                 Block
                   [|v; WhileStmt (stop_cond, Block [|body; Expr increment|])|]
               in
-              (enclosed_body, rest)
+              (Ok enclosed_body, rest)
           | x :: _ ->
               failwith
                 ( "Missing closing parenthesis in for-loop declaration, got: "
@@ -248,7 +248,7 @@ and block_stmt_inner tokens acc =
   | [] ->
       failwith "No more tokens to match for a block statement"
   | Lex.CurlyBraceRight :: rest ->
-      (acc, rest)
+      (Ok acc, rest)
   | _ ->
       let s, rest = declaration tokens in
       let acc = Array.append acc [|s|] in
@@ -259,7 +259,7 @@ and block_stmt = function
       failwith "No more tokens to match for a block statement"
   | Lex.CurlyBraceLeft :: rest ->
       let stmts, rest = block_stmt_inner rest [||] in
-      (Block stmts, rest)
+      (Ok (Block stmts), rest)
   | _ ->
       failwith "Wrong call to block_stmt: not a block statement"
 
