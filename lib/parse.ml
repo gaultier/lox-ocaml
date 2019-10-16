@@ -1,4 +1,5 @@
 open Sexplib.Std
+open Base.Result
 
 type value = Bool of bool | Number of float | Nil | String of string
 [@@deriving sexp]
@@ -22,6 +23,13 @@ type statement =
   | IfStmt of expr * statement
   | IfElseStmt of expr * statement * statement
   | WhileStmt of expr * statement
+
+let error err rest =
+  let rest =
+    Base.List.split_while rest ~f:(fun t ->
+        match t with Lex.SemiColon -> true | _ -> false)
+  in
+  (err, rest)
 
 let rec primary = function
   | [] ->
@@ -155,18 +163,19 @@ and expression_stmt = function
           failwith
             "Missing semicolon after expression statement: no more tokens " )
 
-and print_stmt = function
+and print_stmt : Lex.lex_token list -> statement * Lex.lex_token list =
+  function
   | [] ->
       failwith "No more tokens to match for a print statement"
   | Lex.Print :: rest ->
-      let expr, rrest = expression_stmt rest in
-      (Print expr, rrest)
+      let expr, rest = expression_stmt rest in
+      (Print expr, rest)
   | x :: _ ->
       failwith
         ( "Missing print to match a print statement: "
         ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
 
-and if_stmt = function
+and if_stmt : Lex.lex_token list -> statement * Lex.lex_token list = function
   | [] ->
       failwith "No more tokens to match for a if statement"
   | Lex.If :: Lex.ParenLeft :: rest -> (
@@ -185,7 +194,8 @@ and if_stmt = function
   | _ ->
       failwith "Wrong call to if_stmt: not an if statement"
 
-and while_stmt = function
+and while_stmt : Lex.lex_token list -> statement * Lex.lex_token list =
+  function
   | [] ->
       failwith "No more tokens to match for a while statement"
   | Lex.While :: Lex.ParenLeft :: rest -> (
@@ -199,7 +209,7 @@ and while_stmt = function
   | _ ->
       failwith "Wrong call to while_stmt: not an while statement"
 
-and for_stmt = function
+and for_stmt : Lex.lex_token list -> statement * Lex.lex_token list = function
   | [] ->
       failwith "No more tokens to match for a for-loop statement"
   (* for (;;) *)
@@ -217,6 +227,8 @@ and for_stmt = function
   (* for (var i = 0; i < 5; i = i + 1) *)
   | Lex.For :: Lex.ParenLeft :: (Lex.Var :: _ as var) -> (
       let v, rest = var_decl var in
+      let v = v |> Result.get_ok in
+      (* FIXME *)
       let stop_cond, rest = expression rest in
       match rest with
       | Lex.SemiColon :: rest -> (
@@ -254,7 +266,8 @@ and block_stmt_inner tokens acc =
       let acc = Array.append acc [|s|] in
       block_stmt_inner rest acc
 
-and block_stmt = function
+and block_stmt : Lex.lex_token list -> statement * Lex.lex_token list =
+  function
   | [] ->
       failwith "No more tokens to match for a block statement"
   | Lex.CurlyBraceLeft :: rest ->
@@ -263,7 +276,7 @@ and block_stmt = function
   | _ ->
       failwith "Wrong call to block_stmt: not a block statement"
 
-and statement = function
+and statement : Lex.lex_token list -> statement * Lex.lex_token list = function
   | [] ->
       failwith "No more tokens to match for a statement"
   | Lex.Print :: _ as t ->
@@ -280,14 +293,17 @@ and statement = function
       let e, rest = expression_stmt t in
       (Expr e, rest)
 
-and var_decl = function
+and var_decl :
+       Lex.lex_token list
+    -> (statement, string) Stdlib.Pervasives.result * Lex.lex_token list =
+  function
   | [] ->
       failwith "No more tokens to match for a variable declaration"
   | Lex.Var :: Lex.Identifier n :: Lex.Equal :: rest -> (
-      let e, rrest = expression rest in
-      match rrest with
-      | Lex.SemiColon :: rrrest ->
-          (Var (Lex.Identifier n, e), rrrest)
+      let e, rest = expression rest in
+      match rest with
+      | Lex.SemiColon :: rest ->
+          (Ok (Var (Lex.Identifier n, e)), rest)
       | x :: _ ->
           failwith
             ( "Missing semicolon after variable declaration, got: "
@@ -296,14 +312,15 @@ and var_decl = function
           failwith
             "Missing semicolon after variable declaration, no more tokens" )
   | Lex.Var :: Lex.Identifier n :: Lex.SemiColon :: rest ->
-      (Var (Lex.Identifier n, Literal Nil), rest)
-  | x :: _ ->
-      failwith
-        ( "Malformed variable declaration: "
-        ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
+      (Ok (Var (Lex.Identifier n, Literal Nil)), rest)
+  | x :: _ as rest ->
+      error
+        (failf "Malformed variable declaration: %s" Base.Sexp.to_string_hum
+           (Lex.sexp_of_lex_token x))
+        rest
 
 and declaration d =
-  match d with Lex.Var :: _ -> var_decl d | _ -> statement d
+  match d with Lex.Var :: _ -> var_decl d | _ -> Ok (statement d)
 
 and program decls = function
   | [] ->
@@ -315,4 +332,4 @@ and program decls = function
 
 let parse tokens =
   let stmts = [||] in
-  Ok (program stmts tokens)
+  program stmts tokens |> combine_errors
