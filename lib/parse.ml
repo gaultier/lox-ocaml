@@ -25,7 +25,7 @@ type statement =
   | WhileStmt of expr * statement
 
 let error err rest =
-  let rest =
+  let _, rest =
     Base.List.split_while rest ~f:(fun t ->
         match t with Lex.SemiColon -> true | _ -> false)
   in
@@ -315,12 +315,17 @@ and var_decl :
       (Ok (Var (Lex.Identifier n, Literal Nil)), rest)
   | x :: _ as rest ->
       error
-        (failf "Malformed variable declaration: %s" Base.Sexp.to_string_hum
-           (Lex.sexp_of_lex_token x))
+        (failf "Malformed variable declaration: %s"
+           (Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x)))
         rest
 
 and declaration d =
-  match d with Lex.Var :: _ -> var_decl d | _ -> Ok (statement d)
+  match d with
+  | Lex.Var :: _ ->
+      var_decl d
+  | _ ->
+      let s, rest = statement d in
+      (Ok s, rest)
 
 and program decls = function
   | [] ->
