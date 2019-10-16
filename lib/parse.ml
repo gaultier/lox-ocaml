@@ -27,14 +27,13 @@ type statement =
 let error err rest =
   let invalid, rest =
     Base.List.split_while rest ~f:(fun t ->
-        match t with Lex.SemiColon -> true | _ -> false)
+        match t with Lex.SemiColon -> false | _ -> true)
   in
-  let invalid_s =
-    match invalid with
-    | [] ->
-        "no more tokens"
-    | x :: _ ->
-        x |> Lex.sexp_of_lex_token |> Base.Sexp.to_string_hum
+  let invalid_s : string =
+    Base.List.map
+      ~f:(fun x -> x |> Lex.sexp_of_lex_token |> Base.Sexp.to_string_hum)
+      invalid
+    |> Base.List.fold ~init:"" ~f:(fun acc x -> acc ^ x)
   in
   (fail (err ^ ": " ^ invalid_s), rest)
 
@@ -304,8 +303,6 @@ and statement : Lex.lex_token list -> statement * Lex.lex_token list = function
 and var_decl :
     Lex.lex_token list -> (statement, string) result * Lex.lex_token list =
   function
-  | [] ->
-      failwith "No more tokens to match for a variable declaration"
   | Lex.Var :: Lex.Identifier n :: Lex.Equal :: rest -> (
       let e, rest = expression rest in
       match rest with
