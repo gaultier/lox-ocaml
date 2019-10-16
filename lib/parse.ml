@@ -1,6 +1,8 @@
 open Sexplib.Std
 open Base.Result
 
+let ( let* ) = bind
+
 type value = Bool of bool | Number of float | Nil | String of string
 [@@deriving sexp]
 
@@ -284,22 +286,21 @@ and block_stmt_inner tokens acc =
   | [] ->
       failwith "No more tokens to match for a block statement"
   | Lex.CurlyBraceRight :: rest ->
-      (acc, rest)
+      (Ok acc, rest)
   | _ ->
       let s, rest = declaration tokens in
       let s = s |> Result.get_ok in
       let acc = Array.append acc [|s|] in
       block_stmt_inner rest acc
 
-and block_stmt : Lex.lex_token list -> statement * Lex.lex_token list =
+and block_stmt :
+    Lex.lex_token list -> (statement, string) result * Lex.lex_token list =
   function
-  | [] ->
-      failwith "No more tokens to match for a block statement"
   | Lex.CurlyBraceLeft :: rest ->
-      let stmts, rest = block_stmt_inner rest [||] in
-      (Block stmts, rest)
-  | _ ->
-      failwith "Wrong call to block_stmt: not a block statement"
+      let* stmts, rest = block_stmt_inner rest [||] in
+      (Ok (Block stmts), rest)
+  | _ as rest ->
+      error "Block statement" "block statement" rest
 
 and statement :
     Lex.lex_token list -> (statement, string) result * Lex.lex_token list =
@@ -309,7 +310,7 @@ and statement :
   | Lex.Print :: _ as t ->
       print_stmt t
   | Lex.CurlyBraceLeft :: _ as t ->
-      block_stmt t |> make_result_fixme
+      block_stmt t
   | Lex.If :: _ as t ->
       if_stmt t |> make_result_fixme
   | Lex.While :: _ as t ->
