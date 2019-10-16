@@ -25,11 +25,18 @@ type statement =
   | WhileStmt of expr * statement
 
 let error err rest =
-  let _, rest =
+  let invalid, rest =
     Base.List.split_while rest ~f:(fun t ->
         match t with Lex.SemiColon -> true | _ -> false)
   in
-  (err, rest)
+  let invalid_s =
+    match invalid with
+    | [] ->
+        "no more tokens"
+    | x :: _ ->
+        x |> Lex.sexp_of_lex_token |> Base.Sexp.to_string_hum
+  in
+  (fail (err ^ ": " ^ invalid_s), rest)
 
 let rec primary = function
   | [] ->
@@ -304,21 +311,12 @@ and var_decl :
       match rest with
       | Lex.SemiColon :: rest ->
           (Ok (Var (Lex.Identifier n, e)), rest)
-      | x :: _ ->
-          error
-            (failf "Missing semicolon after variable declaration, got: %s"
-               (Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x)))
-            rest
-      | [] ->
-          failwith
-            "Missing semicolon after variable declaration, no more tokens" )
+      | _ ->
+          error "Missing semicolon after variable declaration" rest )
   | Lex.Var :: Lex.Identifier n :: Lex.SemiColon :: rest ->
       (Ok (Var (Lex.Identifier n, Literal Nil)), rest)
-  | x :: _ as rest ->
-      error
-        (failf "Malformed variable declaration: %s"
-           (Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x)))
-        rest
+  | _ as rest ->
+      error "Malformed variable declaration" rest
 
 and declaration d : (statement, string) result * Lex.lex_token list =
   match d with
