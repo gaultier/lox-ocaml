@@ -335,6 +335,4 @@ and program decls = function
       let decls = Base.Array.append decls [|decl|] in
       program decls rest
 
-let parse tokens =
-  let stmts = [||] in
-  program stmts tokens |> combine_errors
+let parse tokens = program [||] tokens |> Base.Array.to_list |> combine_errors
