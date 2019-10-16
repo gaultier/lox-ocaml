@@ -48,6 +48,10 @@ let error ctx expected rest =
   in
   (failf "Context: %s. Expected: %s. Got:%s." ctx expected invalid_s, rest)
 
+let make_result_fixme (a, b) = (Ok a, b)
+
+let extract_value_from_result_fixme (a, b) = (Result.get_ok a, b)
+
 let rec primary = function
   | [] ->
       failwith "No more tokens to match for a primary"
@@ -199,10 +203,14 @@ and if_stmt : Lex.lex_token list -> statement * Lex.lex_token list = function
       let e, rest = expression rest in
       match rest with
       | Lex.ParenRight :: rest -> (
-          let then_stmt, rest = statement rest in
+          let then_stmt, rest =
+            statement rest |> extract_value_from_result_fixme
+          in
           match rest with
           | Lex.Else :: rest ->
-              let else_stmt, rest = statement rest in
+              let else_stmt, rest =
+                statement rest |> extract_value_from_result_fixme
+              in
               (IfElseStmt (e, then_stmt, else_stmt), rest)
           | _ ->
               (IfStmt (e, then_stmt), rest) )
@@ -219,7 +227,7 @@ and while_stmt : Lex.lex_token list -> statement * Lex.lex_token list =
       let e, rest = expression rest in
       match rest with
       | Lex.ParenRight :: rest ->
-          let s, rest = statement rest in
+          let s, rest = statement rest |> extract_value_from_result_fixme in
           (WhileStmt (e, s), rest)
       | _ ->
           failwith "Missing closing parenthesis in if statement" )
@@ -233,7 +241,7 @@ and for_stmt : Lex.lex_token list -> statement * Lex.lex_token list = function
   | Lex.For
     :: Lex.ParenLeft
        :: Lex.SemiColon :: Lex.SemiColon :: Lex.ParenRight :: rest ->
-      let s, rest = statement rest in
+      let s, rest = statement rest |> extract_value_from_result_fixme in
       (WhileStmt (Literal (Bool true), s), rest)
   (* TODO: partial for-loop declaration e.g *)
   (* for (;i; i = i+1) *)
@@ -252,7 +260,9 @@ and for_stmt : Lex.lex_token list -> statement * Lex.lex_token list = function
           let increment, rest = expression rest in
           match rest with
           | Lex.ParenRight :: rest ->
-              let body, rest = statement rest in
+              let body, rest =
+                statement rest |> extract_value_from_result_fixme
+              in
               let enclosed_body =
                 Block
                   [|v; WhileStmt (stop_cond, Block [|body; Expr increment|])|]
@@ -294,22 +304,24 @@ and block_stmt : Lex.lex_token list -> statement * Lex.lex_token list =
   | _ ->
       failwith "Wrong call to block_stmt: not a block statement"
 
-and statement : Lex.lex_token list -> statement * Lex.lex_token list = function
-  | [] ->
-      failwith "No more tokens to match for a statement"
+and statement :
+    Lex.lex_token list -> (statement, string) result * Lex.lex_token list =
+  function
+  | [] as rest ->
+      error "Statement" "statement (e.g `x = 1;`)" rest
   | Lex.Print :: _ as t ->
-      print_stmt t
+      print_stmt t |> make_result_fixme
   | Lex.CurlyBraceLeft :: _ as t ->
-      block_stmt t
+      block_stmt t |> make_result_fixme
   | Lex.If :: _ as t ->
-      if_stmt t
+      if_stmt t |> make_result_fixme
   | Lex.While :: _ as t ->
-      while_stmt t
+      while_stmt t |> make_result_fixme
   | Lex.For :: _ as t ->
-      for_stmt t
+      for_stmt t |> make_result_fixme
   | _ as t ->
       let e, rest = expression_stmt t in
-      (Expr e, rest)
+      (Expr e, rest) |> make_result_fixme
 
 and var_decl :
     Lex.lex_token list -> (statement, string) result * Lex.lex_token list =
@@ -324,15 +336,11 @@ and var_decl :
   | Lex.Var :: Lex.Identifier n :: Lex.SemiColon :: rest ->
       (Ok (Var (Lex.Identifier n, Literal Nil)), rest)
   | _ as rest ->
-      error "Malformed variable declaration" "variable declaration" rest
+      error "Malformed variable declaration"
+        "variable declaration (e.g `var x = 1;`)" rest
 
 and declaration d : (statement, string) result * Lex.lex_token list =
-  match d with
-  | Lex.Var :: _ ->
-      var_decl d
-  | _ ->
-      let s, rest = statement d in
-      (Ok s, rest)
+  match d with Lex.Var :: _ -> var_decl d | _ -> statement d
 
 and program decls = function
   | [] ->
