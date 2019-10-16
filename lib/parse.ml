@@ -315,4 +315,4 @@ and program decls = function
 
 let parse tokens =
   let stmts = [||] in
-  program stmts tokens
+  Ok (program stmts tokens)
