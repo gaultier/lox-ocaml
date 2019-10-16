@@ -305,9 +305,10 @@ and var_decl :
       | Lex.SemiColon :: rest ->
           (Ok (Var (Lex.Identifier n, e)), rest)
       | x :: _ ->
-          failwith
-            ( "Missing semicolon after variable declaration, got: "
-            ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
+          error
+            (failf "Missing semicolon after variable declaration, got: %s"
+               (Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x)))
+            rest
       | [] ->
           failwith
             "Missing semicolon after variable declaration, no more tokens" )
