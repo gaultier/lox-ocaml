@@ -36,13 +36,17 @@ let rec sync acc = function
 
 let error ctx expected rest =
   let invalid, rest = sync [] rest in
-  let invalid_s : string =
-    invalid
-    |> Base.List.rev_map ~f:(fun x ->
-           x |> Lex.sexp_of_lex_token |> Base.Sexp.to_string_hum)
-    |> Base.List.fold ~init:"" ~f:(fun acc x -> acc ^ " " ^ x)
+  let invalid_s =
+    match invalid with
+    | [] ->
+        "no more tokens"
+    | _ ->
+        invalid
+        |> Base.List.rev_map ~f:(fun x ->
+               x |> Lex.sexp_of_lex_token |> Base.Sexp.to_string_hum)
+        |> Base.List.fold ~init:"" ~f:(fun acc x -> acc ^ " " ^ x)
   in
-  (failf "Context: %s. Expected: %s. Got: %s." ctx expected invalid_s, rest)
+  (failf "Context: %s. Expected: %s. Got:%s." ctx expected invalid_s, rest)
 
 let rec primary = function
   | [] ->
