@@ -56,18 +56,21 @@ let rec primary = function
 
 and unary = function
   | (Lex.Bang as t) :: rest | (Lex.Minus as t) :: rest ->
-      let right, rrest = unary rest in
-      (map ~f:(fun x -> Unary (t, x)) right, rrest)
+      let right, rest = unary rest in
+      let m = right >>| Ok (Unary (t, right)) in
+      (m, rest)
   | _ as t ->
       primary t
 
 and multiplication tokens =
-  unary tokens >>= (fun left, rest ->
+  unary tokens
+  >>= fun (left, rest) ->
   match rest with
   | (Lex.Star as t) :: rest | (Lex.Slash as t) :: rest ->
- multiplication rest >>| (fun right, rest -> (Binary (left, t, right), rest))
+      multiplication rest
+      >>| fun (right, rest) -> (Binary (left, t, right), rest)
   | _ ->
-      (Ok left, rest))
+      (Ok left, rest)
 
 and addition tokens =
   let left, rest = multiplication tokens in
