@@ -263,6 +263,7 @@ and block_stmt_inner tokens acc =
       (acc, rest)
   | _ ->
       let s, rest = declaration tokens in
+      let s = s |> Result.get_ok in
       let acc = Array.append acc [|s|] in
       block_stmt_inner rest acc
 
@@ -294,8 +295,7 @@ and statement : Lex.lex_token list -> statement * Lex.lex_token list = function
       (Expr e, rest)
 
 and var_decl :
-       Lex.lex_token list
-    -> (statement, string) Stdlib.Pervasives.result * Lex.lex_token list =
+    Lex.lex_token list -> (statement, string) result * Lex.lex_token list =
   function
   | [] ->
       failwith "No more tokens to match for a variable declaration"
@@ -319,7 +319,8 @@ and var_decl :
            (Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x)))
         rest
 
-and declaration d =
+and declaration d :
+    Lex.lex_token list -> (statement, string) result * Lex.lex_token list =
   match d with
   | Lex.Var :: _ ->
       var_decl d
