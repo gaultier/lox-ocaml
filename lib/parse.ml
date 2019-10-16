@@ -319,8 +319,7 @@ and var_decl :
            (Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x)))
         rest
 
-and declaration d :
-    Lex.lex_token list -> (statement, string) result * Lex.lex_token list =
+and declaration d : (statement, string) result * Lex.lex_token list =
   match d with
   | Lex.Var :: _ ->
       var_decl d
