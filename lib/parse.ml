@@ -24,18 +24,25 @@ type statement =
   | IfElseStmt of expr * statement * statement
   | WhileStmt of expr * statement
 
-let error err rest =
-  let invalid, rest =
-    Base.List.split_while rest ~f:(fun t ->
-        match t with Lex.SemiColon -> false | _ -> true)
-  in
+let rec sync acc = function
+  | Lex.For :: _ as r ->
+      (acc, r)
+  | (Lex.SemiColon as t) :: (_ as r) ->
+      (t :: acc, r)
+  | [] ->
+      (acc, [])
+  | x :: r ->
+      sync (x :: acc) r
+
+let error ctx expected rest =
+  let invalid, rest = sync [] rest in
   let invalid_s : string =
-    Base.List.map
-      ~f:(fun x -> x |> Lex.sexp_of_lex_token |> Base.Sexp.to_string_hum)
-      invalid
-    |> Base.List.fold ~init:"" ~f:(fun acc x -> acc ^ x)
+    invalid |> List.rev
+    |> Base.List.map ~f:(fun x ->
+           x |> Lex.sexp_of_lex_token |> Base.Sexp.to_string_hum)
+    |> Base.List.fold ~init:"" ~f:(fun acc x -> acc ^ " " ^ x)
   in
-  (fail (err ^ ": " ^ invalid_s), rest)
+  (failf "Context: %s. Expected: %s. Got: %s." ctx expected invalid_s, rest)
 
 let rec primary = function
   | [] ->
@@ -309,11 +316,11 @@ and var_decl :
       | Lex.SemiColon :: rest ->
           (Ok (Var (Lex.Identifier n, e)), rest)
       | _ ->
-          error "Missing semicolon after variable declaration" rest )
+          error "variable declaration" "semicolon" rest )
   | Lex.Var :: Lex.Identifier n :: Lex.SemiColon :: rest ->
       (Ok (Var (Lex.Identifier n, Literal Nil)), rest)
   | _ as rest ->
-      error "Malformed variable declaration" rest
+      error "Malformed variable declaration" "variable declaration" rest
 
 and declaration d : (statement, string) result * Lex.lex_token list =
   match d with
