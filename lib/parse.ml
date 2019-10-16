@@ -184,17 +184,14 @@ and expression_stmt = function
           failwith
             "Missing semicolon after expression statement: no more tokens " )
 
-and print_stmt : Lex.lex_token list -> statement * Lex.lex_token list =
+and print_stmt :
+    Lex.lex_token list -> (statement, string) result * Lex.lex_token list =
   function
-  | [] ->
-      failwith "No more tokens to match for a print statement"
   | Lex.Print :: rest ->
       let expr, rest = expression_stmt rest in
-      (Print expr, rest)
-  | x :: _ ->
-      failwith
-        ( "Missing print to match a print statement: "
-        ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
+      (Ok (Print expr), rest)
+  | _ as rest ->
+      error "Print statement" "print statement" rest
 
 and if_stmt : Lex.lex_token list -> statement * Lex.lex_token list = function
   | [] ->
@@ -310,7 +307,7 @@ and statement :
   | [] as rest ->
       error "Statement" "statement (e.g `x = 1;`)" rest
   | Lex.Print :: _ as t ->
-      print_stmt t |> make_result_fixme
+      print_stmt t
   | Lex.CurlyBraceLeft :: _ as t ->
       block_stmt t |> make_result_fixme
   | Lex.If :: _ as t ->
