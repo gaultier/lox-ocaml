@@ -37,8 +37,8 @@ let rec sync acc = function
 let error ctx expected rest =
   let invalid, rest = sync [] rest in
   let invalid_s : string =
-    invalid |> List.rev
-    |> Base.List.map ~f:(fun x ->
+    invalid
+    |> Base.List.rev_map ~f:(fun x ->
            x |> Lex.sexp_of_lex_token |> Base.Sexp.to_string_hum)
     |> Base.List.fold ~init:"" ~f:(fun acc x -> acc ^ " " ^ x)
   in
