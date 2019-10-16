@@ -22,8 +22,7 @@ let rec repl env =
     >>| (fun (stmts, env) ->
           Array.iter Lox.Interpret.print stmts ;
           env)
-    |> map_error ~f:(fun x -> print_errors x ; [])
-    |> Result.value ~default:env
+    |> map_error ~f:print_errors |> Result.value ~default:env
   in
   repl env
 
