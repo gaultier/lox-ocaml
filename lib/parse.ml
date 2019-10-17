@@ -285,8 +285,8 @@ and block_stmt_inner tokens acc =
   | Lex.CurlyBraceRight :: rest ->
       Ok (acc, rest)
   | _ ->
-      let+ s, rest = declaration tokens in
-      let+ acc = Array.append acc [|s|] in
+      let* s, rest = declaration tokens in
+      let* acc = Ok (Array.append acc [|s|]) in
       block_stmt_inner rest acc
 
 and block_stmt :
