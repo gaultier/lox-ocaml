@@ -119,13 +119,13 @@ and comparison tokens =
       (left, rest)
 
 and equality tokens =
-  let left, rest = comparison tokens in
+  let* left, rest = comparison tokens |> make_result_fixme in
   match rest with
   | (Lex.BangEqual as t) :: rrest | (Lex.EqualEqual as t) :: rrest ->
-      let right, rrrest = equality rrest in
+      let+ right, rrrest = equality rrest in
       (Binary (left, t, right), rrrest)
   | _ ->
-      (left, rest)
+      Ok (left, rest)
 
 and expression tokens = assignment tokens
 
@@ -146,7 +146,7 @@ and assignment = function
           Ok (e, rest) )
 
 and logic_and tokens =
-  let* l, rest = Ok (equality tokens) in
+  let* l, rest = equality tokens in
   match rest with
   | Lex.And :: rest ->
       let+ r, rest = logic_and rest in
