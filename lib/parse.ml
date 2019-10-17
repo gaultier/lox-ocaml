@@ -26,8 +26,8 @@ type statement =
   | WhileStmt of expr * statement
 
 let rec sync acc = function
-  | Lex.For :: _ as r ->
-      (acc, r)
+  (* | Lex.For :: _ as r -> *)
+  (*     (acc, r) *)
   | (Lex.SemiColon as t) :: (_ as r) ->
       (t :: acc, r)
   | [] ->
@@ -46,9 +46,7 @@ let error ctx expected rest =
         |> Base.List.rev_map ~f:(fun _ -> "*")
         |> Base.List.fold ~init:"" ~f:(fun acc x -> acc ^ " " ^ x)
   in
-  fail
-    ( Printf.sprintf "Context: %s. Expected: %s. Got:%s." ctx expected invalid_s
-    , rest )
+  fail (Printf.sprintf "Context: %s. %s. Got:%s." ctx expected invalid_s, rest)
 
 let rec primary = function
   | Lex.False :: rest ->
