@@ -281,7 +281,7 @@ and for_stmt : Lex.lex_token list -> statement * Lex.lex_token list = function
 and block_stmt_inner tokens acc =
   match tokens with
   | [] ->
-      error "Block statement" "block statement" tokens
+      error "Block statement" "expected closing `}`" tokens
   | Lex.CurlyBraceRight :: rest ->
       Ok (acc, rest)
   | _ ->
@@ -297,7 +297,8 @@ and block_stmt :
       let+ stmts, rest = block_stmt_inner rest [||] in
       (Block stmts, rest)
   | _ as rest ->
-      error "Block statement" "block statement" rest
+      error "Block statement" "malformed block statement, expected opening `{`"
+        rest
 
 and statement :
        Lex.lex_token list
