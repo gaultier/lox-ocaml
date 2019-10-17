@@ -55,8 +55,6 @@ let make_result_fixme x = Ok x
 let extract_value_from_result_fixme x = Result.get_ok x
 
 let rec primary = function
-  | [] ->
-      failwith "No more tokens to match for a primary"
   | Lex.False :: rest ->
       (Literal (Bool false), rest)
   | Lex.True :: rest ->
@@ -78,8 +76,8 @@ let rec primary = function
           failwith "Missing closing parenthesis for primary, no more tokens" )
   | (Lex.Identifier _ as i) :: rest ->
       (Variable i, rest)
-  | _ :: _ ->
-      failwith ("Not a primary: " ^ "*")
+  | _ as rest ->
+      error "fixme" "Malformed primary" rest
 
 and unary = function
   | (Lex.Bang as t) :: rest | (Lex.Minus as t) :: rest ->
