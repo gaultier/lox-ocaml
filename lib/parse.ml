@@ -2,7 +2,7 @@ open Base.Result
 
 let ( let* ) x f = Result.bind x f
 
-let ( let+ ) x f = Result.map x f
+let ( let+ ) x f = Result.map f x
 
 type value = Bool of bool | Number of float | Nil | String of string
 
@@ -281,12 +281,12 @@ and for_stmt : Lex.lex_token list -> statement * Lex.lex_token list = function
 and block_stmt_inner tokens acc =
   match tokens with
   | [] ->
-      failwith "No more tokens to match for a block statement"
+      error "Block statement" "block statement" tokens
   | Lex.CurlyBraceRight :: rest ->
       Ok (acc, rest)
   | _ ->
-      let s, rest = declaration tokens |> Result.get_ok in
-      let acc = Array.append acc [|s|] in
+      let+ s, rest = declaration tokens in
+      let+ acc = Array.append acc [|s|] in
       block_stmt_inner rest acc
 
 and block_stmt :
@@ -294,8 +294,8 @@ and block_stmt :
     -> (statement * Lex.lex_token list, string * Lex.lex_token list) result =
   function
   | Lex.CurlyBraceLeft :: rest ->
-      let* stmts, rest = block_stmt_inner rest [||] in
-      Ok (Block stmts, rest)
+      let+ stmts, rest = block_stmt_inner rest [||] in
+      (Block stmts, rest)
   | _ as rest ->
       error "Block statement" "block statement" rest
 
