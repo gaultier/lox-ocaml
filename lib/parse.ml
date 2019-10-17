@@ -127,23 +127,23 @@ and equality tokens =
   | _ ->
       (left, rest)
 
-and expression tokens = assignment tokens
+and expression tokens = assignment tokens |> extract_value_from_result_fixme
 
 and assignment = function
-  | [] ->
-      failwith "No more tokens to match for assignement"
+  | [] as rest ->
+      error "Assignement" "Malformed assignement (e.g `a = 1;`)" rest
   | _ as t -> (
-      let e, rest = logic_or t |> extract_value_from_result_fixme in
+      let* e, rest = logic_or t in
       match rest with
       | Lex.Equal :: rest -> (
-          let a, rest = assignment rest in
+          let* a, rest = assignment rest in
           match e with
           | Variable v ->
-              (Assign (v, a), rest)
+              Ok (Assign (v, a), rest)
           | _ ->
-              failwith "Invalid assignment target" )
+              error "Assignement" "Invalid assignment target" rest )
       | _ ->
-          (e, rest) )
+          Ok (e, rest) )
 
 and logic_and tokens =
   let* l, rest = Ok (equality tokens) in
