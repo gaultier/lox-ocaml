@@ -2,6 +2,8 @@ open Base.Result
 
 let ( let* ) x f = Result.bind x f
 
+let ( let+ ) x f = Result.map x f
+
 type value = Bool of bool | Number of float | Nil | String of string
 
 type expr =
