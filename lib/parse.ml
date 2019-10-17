@@ -83,43 +83,43 @@ let rec primary = function
 
 and unary = function
   | (Lex.Bang as t) :: rest | (Lex.Minus as t) :: rest ->
-      let right, rest = unary rest in
+      let+ right, rest = unary rest in
       (Unary (t, right), rest)
   | _ as t ->
-      primary t
+      primary t |> make_result_fixme
 
 and multiplication tokens =
-  let left, rest = unary tokens in
+  let* left, rest = unary tokens in
   match rest with
   | (Lex.Star as t) :: rest | (Lex.Slash as t) :: rest ->
-      let right, rest = multiplication rest in
+      let+ right, rest = multiplication rest in
       (Binary (left, t, right), rest)
   | _ ->
-      (left, rest)
+      Ok (left, rest)
 
 and addition tokens =
-  let left, rest = multiplication tokens in
+  let* left, rest = multiplication tokens in
   match rest with
   | (Lex.Plus as t) :: rest | (Lex.Minus as t) :: rest ->
-      let right, rest = addition rest in
+      let+ right, rest = addition rest in
       (Binary (left, t, right), rest)
   | _ ->
-      (left, rest)
+      Ok (left, rest)
 
 and comparison tokens =
-  let left, rest = addition tokens in
+  let* left, rest = addition tokens in
   match rest with
   | (Lex.Greater as t) :: rest
   | (Lex.GreaterEqual as t) :: rest
   | (Lex.Less as t) :: rest
   | (Lex.LessEqual as t) :: rest ->
-      let right, rest = comparison rest in
+      let+ right, rest = comparison rest in
       (Binary (left, t, right), rest)
   | _ ->
-      (left, rest)
+      Ok (left, rest)
 
 and equality tokens =
-  let* left, rest = comparison tokens |> make_result_fixme in
+  let* left, rest = comparison tokens in
   match rest with
   | (Lex.BangEqual as t) :: rest | (Lex.EqualEqual as t) :: rest ->
       let+ right, rest = equality rest in
