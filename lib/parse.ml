@@ -193,28 +193,23 @@ and print_stmt :
   | _ as rest ->
       error "Print statement" "print statement" rest
 
-and if_stmt : Lex.lex_token list -> statement * Lex.lex_token list = function
-  | [] ->
-      failwith "No more tokens to match for a if statement"
+and if_stmt = function
   | Lex.If :: Lex.ParenLeft :: rest -> (
-      let e, rest = expression rest in
+      let* e, rest = Ok (expression rest) in
       match rest with
       | Lex.ParenRight :: rest -> (
-          let then_stmt, rest =
-            statement rest |> extract_value_from_result_fixme
-          in
+          let* then_stmt, rest = statement rest in
           match rest with
           | Lex.Else :: rest ->
-              let else_stmt, rest =
-                statement rest |> extract_value_from_result_fixme
-              in
-              (IfElseStmt (e, then_stmt, else_stmt), rest)
+              let* else_stmt, rest = statement rest in
+              Ok (IfElseStmt (e, then_stmt, else_stmt), rest)
           | _ ->
-              (IfStmt (e, then_stmt), rest) )
+              Ok (IfStmt (e, then_stmt), rest) )
       | _ ->
-          failwith "Missing closing parenthesis in if statement" )
-  | _ ->
-      failwith "Wrong call to if_stmt: not an if statement"
+          error "If statement" "Missing closing `)`" rest )
+  | _ as rest ->
+      error "If statement" "Malformed if statement (e.g `if (true) print 3;`)"
+        rest
 
 and while_stmt = function
   | Lex.While :: Lex.ParenLeft :: rest -> (
@@ -310,7 +305,7 @@ and statement :
   | Lex.CurlyBraceLeft :: _ as t ->
       block_stmt t
   | Lex.If :: _ as t ->
-      if_stmt t |> make_result_fixme
+      if_stmt t
   | Lex.While :: _ as t ->
       while_stmt t
   | Lex.For :: _ as t ->
