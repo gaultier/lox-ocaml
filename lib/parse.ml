@@ -56,35 +56,34 @@ let extract_value_from_result_fixme x = Result.get_ok x
 
 let rec primary = function
   | Lex.False :: rest ->
-      (Literal (Bool false), rest)
+      Ok (Literal (Bool false), rest)
   | Lex.True :: rest ->
-      (Literal (Bool true), rest)
+      Ok (Literal (Bool true), rest)
   | Lex.Nil :: rest ->
-      (Literal Nil, rest)
+      Ok (Literal Nil, rest)
   | Lex.Number f :: rest ->
-      (Literal (Number f), rest)
+      Ok (Literal (Number f), rest)
   | Lex.String s :: rest ->
-      (Literal (String s), rest)
+      Ok (Literal (String s), rest)
   | Lex.ParenLeft :: rest -> (
-      let e, rest = expression rest |> extract_value_from_result_fixme in
+      let* e, rest = expression rest in
       match rest with
       | Lex.ParenRight :: rest ->
-          (Grouping e, rest)
-      | _ :: _ ->
-          failwith ("Missing closing parenthesis for primary, got: " ^ "*")
-      | [] ->
-          failwith "Missing closing parenthesis for primary, no more tokens" )
+          Ok (Grouping e, rest)
+      | _ as rest ->
+          error "Primary" "Missing closing parenthesis `)`" rest )
   | (Lex.Identifier _ as i) :: rest ->
-      (Variable i, rest)
+      Ok (Variable i, rest)
   | _ as rest ->
-      error "fixme" "Malformed primary" rest
+      error "Primary" "Malformed primary (e.g `1` or `(true)` or \"hello\")"
+        rest
 
 and unary = function
   | (Lex.Bang as t) :: rest | (Lex.Minus as t) :: rest ->
       let+ right, rest = unary rest in
       (Unary (t, right), rest)
   | _ as t ->
-      primary t |> make_result_fixme
+      primary t
 
 and multiplication tokens =
   let* left, rest = unary tokens in
