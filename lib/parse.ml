@@ -216,20 +216,19 @@ and if_stmt : Lex.lex_token list -> statement * Lex.lex_token list = function
   | _ ->
       failwith "Wrong call to if_stmt: not an if statement"
 
-and while_stmt : Lex.lex_token list -> statement * Lex.lex_token list =
-  function
-  | [] ->
-      failwith "No more tokens to match for a while statement"
+and while_stmt = function
   | Lex.While :: Lex.ParenLeft :: rest -> (
-      let e, rest = expression rest in
+      let* e, rest = Ok (expression rest) in
       match rest with
       | Lex.ParenRight :: rest ->
-          let s, rest = statement rest |> extract_value_from_result_fixme in
-          (WhileStmt (e, s), rest)
+          let* s, rest = statement rest in
+          Ok (WhileStmt (e, s), rest)
       | _ ->
-          failwith "Missing closing parenthesis in if statement" )
-  | _ ->
-      failwith "Wrong call to while_stmt: not an while statement"
+          error "While statement" "Missing closing `)` in the while condition"
+            rest )
+  | _ as rest ->
+      error "While statement"
+        "Malformed while statement: (e.g `while(true) {}`)" rest
 
 and for_stmt : Lex.lex_token list -> statement * Lex.lex_token list = function
   | [] ->
@@ -313,7 +312,7 @@ and statement :
   | Lex.If :: _ as t ->
       if_stmt t |> make_result_fixme
   | Lex.While :: _ as t ->
-      while_stmt t |> make_result_fixme
+      while_stmt t
   | Lex.For :: _ as t ->
       for_stmt t |> make_result_fixme
   | _ as t ->
