@@ -146,18 +146,19 @@ and assignment = function
           (e, rest) )
 
 and logic_and tokens =
-  let l, rest = equality tokens in
+  let* l, rest = Ok (equality tokens) in
   match rest with
   | Lex.And :: rest ->
-      let r, rest = logic_and rest in
+      let+ r, rest = logic_and rest in
       (LogicalAnd (l, r), rest)
   | [] ->
-      failwith "No more tokens to match for a logic_and expression"
+      error "Logical and expression" "Malformed and (e.g `true and false`)"
+        rest
   | _ ->
-      (l, rest)
+      Ok (l, rest)
 
 and logic_or tokens =
-  let* l, rest = Ok (logic_and tokens) in
+  let* l, rest = logic_and tokens in
   match rest with
   | Lex.Or :: rest ->
       let+ r, rest = logic_or rest in
