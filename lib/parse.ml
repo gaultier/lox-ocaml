@@ -133,7 +133,7 @@ and assignment = function
   | [] ->
       failwith "No more tokens to match for assignement"
   | _ as t -> (
-      let e, rest = logic_or t in
+      let e, rest = logic_or t |> extract_value_from_result_fixme in
       match rest with
       | Lex.Equal :: rest -> (
           let a, rest = assignment rest in
@@ -152,20 +152,20 @@ and logic_and tokens =
       let r, rest = logic_and rest in
       (LogicalAnd (l, r), rest)
   | [] ->
-      failwith "No more tokens to match for a logic_or expression"
+      failwith "No more tokens to match for a logic_and expression"
   | _ ->
       (l, rest)
 
 and logic_or tokens =
-  let l, rest = logic_and tokens in
+  let* l, rest = Ok (logic_and tokens) in
   match rest with
   | Lex.Or :: rest ->
-      let r, rest = logic_or rest in
+      let+ r, rest = logic_or rest in
       (LogicalOr (l, r), rest)
   | [] ->
-      failwith "No more tokens to match for a logic_or expression"
+      error "Logical or expression" "Malformed or (e.g `true or false`)" rest
   | _ ->
-      (l, rest)
+      Ok (l, rest)
 
 and expression_stmt = function
   | [] as rest ->
