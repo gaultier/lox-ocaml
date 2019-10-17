@@ -168,27 +168,23 @@ and logic_or tokens =
       (l, rest)
 
 and expression_stmt = function
-  | [] ->
-      failwith "No more tokens to match for an expression statement"
+  | [] as rest ->
+      error "Expression statement" "Malformed expression statement (e.g `1;`)"
+        rest
   | _ as t -> (
-      let stmt, rest = expression t in
+      let* stmt, rest = Ok (expression t) in
       match rest with
       | Lex.SemiColon :: rrest ->
-          (stmt, rrest)
-      | _ :: _ ->
-          failwith
-            ( "Missing semicolon after expression statement: expected `;`, got: "
-            ^ "*" )
-      | _ ->
-          failwith
-            "Missing semicolon after expression statement: no more tokens " )
+          Ok (stmt, rrest)
+      | _ as rest ->
+          error "Expression statement" "missing closing semicolon" rest )
 
 and print_stmt :
        Lex.lex_token list
     -> (statement * Lex.lex_token list, string * Lex.lex_token list) result =
   function
   | Lex.Print :: rest ->
-      let expr, rest = expression_stmt rest in
+      let* expr, rest = expression_stmt rest in
       Ok (Print expr, rest)
   | _ as rest ->
       error "Print statement" "print statement" rest
@@ -311,8 +307,8 @@ and statement :
   | Lex.For :: _ as t ->
       for_stmt t |> make_result_fixme
   | _ as t ->
-      let e, rest = expression_stmt t in
-      (Expr e, rest) |> make_result_fixme
+      let+ e, rest = expression_stmt t in
+      (Expr e, rest)
 
 and var_decl :
        Lex.lex_token list
