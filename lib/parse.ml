@@ -179,13 +179,10 @@ and expression_stmt = function
       | _ as rest ->
           error "Expression statement" "missing closing semicolon" rest )
 
-and print_stmt :
-       Lex.lex_token list
-    -> (statement * Lex.lex_token list, string * Lex.lex_token list) result =
-  function
+and print_stmt = function
   | Lex.Print :: rest ->
-      let* expr, rest = expression_stmt rest in
-      Ok (Print expr, rest)
+      let+ expr, rest = expression_stmt rest in
+      (Print expr, rest)
   | _ as rest ->
       error "Print statement" "print statement" rest
 
