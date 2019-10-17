@@ -194,8 +194,8 @@ and if_stmt = function
           let* then_stmt, rest = statement rest in
           match rest with
           | Lex.Else :: rest ->
-              let* else_stmt, rest = statement rest in
-              Ok (IfElseStmt (e, then_stmt, else_stmt), rest)
+              let+ else_stmt, rest = statement rest in
+              (IfElseStmt (e, then_stmt, else_stmt), rest)
           | _ ->
               Ok (IfStmt (e, then_stmt), rest) )
       | _ ->
@@ -209,8 +209,8 @@ and while_stmt = function
       let* e, rest = Ok (expression rest) in
       match rest with
       | Lex.ParenRight :: rest ->
-          let* s, rest = statement rest in
-          Ok (WhileStmt (e, s), rest)
+          let+ s, rest = statement rest in
+          (WhileStmt (e, s), rest)
       | _ ->
           error "While statement" "Missing closing `)` in the while condition"
             rest )
