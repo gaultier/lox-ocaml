@@ -1,10 +1,8 @@
-open Sexplib.Std
 open Base.Result
 
-let ( let* ) = bind
+let ( let* ) x f = Result.bind x f
 
 type value = Bool of bool | Number of float | Nil | String of string
-[@@deriving sexp]
 
 type expr =
   | Binary of expr * Lex.lex_token * expr
@@ -15,7 +13,6 @@ type expr =
   | Variable of Lex.lex_token
   | LogicalOr of expr * expr
   | LogicalAnd of expr * expr
-[@@deriving sexp]
 
 type statement =
   | Expr of expr
@@ -44,8 +41,7 @@ let error ctx expected rest =
         "no more tokens"
     | _ ->
         invalid
-        |> Base.List.rev_map ~f:(fun x ->
-               x |> Lex.sexp_of_lex_token |> Base.Sexp.to_string_hum)
+        |> Base.List.rev_map ~f:(fun _ -> "*")
         |> Base.List.fold ~init:"" ~f:(fun acc x -> acc ^ " " ^ x)
   in
   (failf "Context: %s. Expected: %s. Got:%s." ctx expected invalid_s, rest)
@@ -73,16 +69,13 @@ let rec primary = function
       | Lex.ParenRight :: rest ->
           (Grouping e, rest)
       | x :: _ ->
-          failwith
-            ( "Missing closing parenthesis for primary, got: "
-            ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
+          failwith ("Missing closing parenthesis for primary, got: " ^ "*")
       | [] ->
           failwith "Missing closing parenthesis for primary, no more tokens" )
   | (Lex.Identifier _ as i) :: rest ->
       (Variable i, rest)
-  | x :: _ ->
-      failwith
-        ("Not a primary: " ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x))
+  | _ :: _ ->
+      failwith ("Not a primary: " ^ "*")
 
 and unary = function
   | (Lex.Bang as t) :: rest | (Lex.Minus as t) :: rest ->
@@ -181,7 +174,7 @@ and expression_stmt = function
       | x :: _ ->
           failwith
             ( "Missing semicolon after expression statement: expected `;`, got: "
-            ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
+            ^ "*" )
       | _ ->
           failwith
             "Missing semicolon after expression statement: no more tokens " )
@@ -270,7 +263,7 @@ and for_stmt : Lex.lex_token list -> statement * Lex.lex_token list = function
           | x :: _ ->
               failwith
                 ( "Missing closing parenthesis in for-loop declaration, got: "
-                ^ Base.Sexp.to_string_hum (Lex.sexp_of_lex_token x) )
+                ^ "*" )
           | [] ->
               failwith
                 "Missing closing parenthesis in for-loop declaration, no more \

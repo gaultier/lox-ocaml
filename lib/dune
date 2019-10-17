@@ -1,5 +1,3 @@
 (library
  (name lox)
- (libraries base sexplib)
- (preprocess
-  (pps ppx_sexp_conv)))
+ (libraries base))

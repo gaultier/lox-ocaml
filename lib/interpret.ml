@@ -29,9 +29,7 @@ let rec eval_exp exp env =
         | Lex.Bang, _ ->
             Bool false
         | _ ->
-            failwith
-              ( "Unary expression not allowed: "
-              ^ Base.Sexp.to_string_hum (sexp_of_expr e) )
+            failwith ("Unary expression not allowed: " ^ "*")
       in
       (res, env)
   | Literal l ->
@@ -67,9 +65,7 @@ let rec eval_exp exp env =
       | Number a, Lex.Minus, Number b ->
           (Number (a -. b), env)
       | Number _, Lex.Slash, Number 0. ->
-          failwith
-            ( "Division by zero not allowed: "
-            ^ Base.Sexp.to_string_hum (sexp_of_expr exp) )
+          failwith ("Division by zero not allowed: " ^ "*")
       | Number a, Lex.Slash, Number b ->
           (Number (a /. b), env)
       | Number a, Lex.Star, Number b ->
@@ -97,9 +93,7 @@ let rec eval_exp exp env =
       | _, Lex.EqualEqual, Nil ->
           (Bool false, env)
       | _ ->
-          failwith
-            ( "Binary expression not allowed: "
-            ^ Base.Sexp.to_string_hum (sexp_of_expr exp) ) )
+          failwith ("Binary expression not allowed: " ^ "*") )
 
 let rec eval s env =
   match s with

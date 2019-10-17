@@ -1,5 +1,3 @@
-open Sexplib.Std
-
 type lex_token =
   | CurlyBraceLeft
   | CurlyBraceRight
@@ -39,7 +37,6 @@ type lex_token =
   | String of string
   | Number of float
   | Identifier of string
-[@@deriving sexp]
 
 let keywords =
   Base.Hashtbl.of_alist_exn
