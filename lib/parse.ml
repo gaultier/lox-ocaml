@@ -346,7 +346,8 @@ and program decls = function
       let rest =
         match d with Ok (_, rest) -> rest | Error (_, rest) -> rest
       in
-      let decls = Base.Array.append decls [|d|] in
+      let ok_or_err = map ~f:fst d |> map_error ~f:fst in
+      let decls = Base.Array.append decls [|ok_or_err|] in
       program decls rest
 
 let parse tokens = program [||] tokens |> Base.Array.to_list |> combine_errors
