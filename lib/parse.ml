@@ -83,38 +83,38 @@ let rec primary = function
 
 and unary = function
   | (Lex.Bang as t) :: rest | (Lex.Minus as t) :: rest ->
-      let right, rrest = unary rest in
-      (Unary (t, right), rrest)
+      let right, rest = unary rest in
+      (Unary (t, right), rest)
   | _ as t ->
       primary t
 
 and multiplication tokens =
   let left, rest = unary tokens in
   match rest with
-  | (Lex.Star as t) :: rrest | (Lex.Slash as t) :: rrest ->
-      let right, rrrest = multiplication rrest in
-      (Binary (left, t, right), rrrest)
+  | (Lex.Star as t) :: rest | (Lex.Slash as t) :: rest ->
+      let right, rest = multiplication rest in
+      (Binary (left, t, right), rest)
   | _ ->
       (left, rest)
 
 and addition tokens =
   let left, rest = multiplication tokens in
   match rest with
-  | (Lex.Plus as t) :: rrest | (Lex.Minus as t) :: rrest ->
-      let right, rrrest = addition rrest in
-      (Binary (left, t, right), rrrest)
+  | (Lex.Plus as t) :: rest | (Lex.Minus as t) :: rest ->
+      let right, rest = addition rest in
+      (Binary (left, t, right), rest)
   | _ ->
       (left, rest)
 
 and comparison tokens =
   let left, rest = addition tokens in
   match rest with
-  | (Lex.Greater as t) :: rrest
-  | (Lex.GreaterEqual as t) :: rrest
-  | (Lex.Less as t) :: rrest
-  | (Lex.LessEqual as t) :: rrest ->
-      let right, rrrest = comparison rrest in
-      (Binary (left, t, right), rrrest)
+  | (Lex.Greater as t) :: rest
+  | (Lex.GreaterEqual as t) :: rest
+  | (Lex.Less as t) :: rest
+  | (Lex.LessEqual as t) :: rest ->
+      let right, rest = comparison rest in
+      (Binary (left, t, right), rest)
   | _ ->
       (left, rest)
 
@@ -175,8 +175,8 @@ and expression_stmt = function
   | _ as t -> (
       let* stmt, rest = expression t in
       match rest with
-      | Lex.SemiColon :: rrest ->
-          Ok (stmt, rrest)
+      | Lex.SemiColon :: rest ->
+          Ok (stmt, rest)
       | _ as rest ->
           error "Expression statement" "missing closing semicolon" rest )
 
