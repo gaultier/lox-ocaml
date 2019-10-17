@@ -50,10 +50,6 @@ let error ctx expected rest =
     ( Printf.sprintf "Context: %s. Expected: %s. Got:%s." ctx expected invalid_s
     , rest )
 
-let make_result_fixme x = Ok x
-
-let extract_value_from_result_fixme x = Result.get_ok x
-
 let rec primary = function
   | Lex.False :: rest ->
       Ok (Literal (Bool false), rest)
@@ -231,7 +227,7 @@ and for_stmt = function
 
   (* for (var i = 0; i < 5; i = i + 1) *)
   | Lex.For :: Lex.ParenLeft :: (Lex.Var :: _ as var) -> (
-      let v, rest = var_decl var |> Result.get_ok in
+      let* v, rest = var_decl var in
       (* FIXME *)
       let* stop_cond, rest = expression rest in
       match rest with
