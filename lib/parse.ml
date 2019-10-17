@@ -121,9 +121,9 @@ and comparison tokens =
 and equality tokens =
   let* left, rest = comparison tokens |> make_result_fixme in
   match rest with
-  | (Lex.BangEqual as t) :: rrest | (Lex.EqualEqual as t) :: rrest ->
-      let+ right, rrrest = equality rrest in
-      (Binary (left, t, right), rrrest)
+  | (Lex.BangEqual as t) :: rest | (Lex.EqualEqual as t) :: rest ->
+      let+ right, rest = equality rest in
+      (Binary (left, t, right), rest)
   | _ ->
       Ok (left, rest)
 
