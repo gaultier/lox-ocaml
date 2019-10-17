@@ -216,14 +216,12 @@ and while_stmt = function
       error "While statement"
         "Malformed while statement: (e.g `while(true) {}`)" rest
 
-and for_stmt : Lex.lex_token list -> statement * Lex.lex_token list = function
-  | [] ->
-      failwith "No more tokens to match for a for-loop statement"
+and for_stmt = function
   (* for (;;) *)
   | Lex.For
     :: Lex.ParenLeft
        :: Lex.SemiColon :: Lex.SemiColon :: Lex.ParenRight :: rest ->
-      let s, rest = statement rest |> extract_value_from_result_fixme in
+      let+ s, rest = statement rest in
       (WhileStmt (Literal (Bool true), s), rest)
   (* TODO: partial for-loop declaration e.g *)
   (* for (;i; i = i+1) *)
@@ -235,37 +233,29 @@ and for_stmt : Lex.lex_token list -> statement * Lex.lex_token list = function
   | Lex.For :: Lex.ParenLeft :: (Lex.Var :: _ as var) -> (
       let v, rest = var_decl var |> Result.get_ok in
       (* FIXME *)
-      let stop_cond, rest =
-        expression rest |> extract_value_from_result_fixme
-      in
+      let* stop_cond, rest = expression rest in
       match rest with
       | Lex.SemiColon :: rest -> (
-          let increment, rest =
-            expression rest |> extract_value_from_result_fixme
-          in
+          let* increment, rest = expression rest in
           match rest with
           | Lex.ParenRight :: rest ->
-              let body, rest =
-                statement rest |> extract_value_from_result_fixme
+              let* body, rest = statement rest in
+              let* enclosed_body =
+                Ok
+                  (Block
+                     [| v
+                      ; WhileStmt (stop_cond, Block [|body; Expr increment|])
+                     |])
               in
-              let enclosed_body =
-                Block
-                  [|v; WhileStmt (stop_cond, Block [|body; Expr increment|])|]
-              in
-              (enclosed_body, rest)
-          | _ :: _ ->
-              failwith
-                ( "Missing closing parenthesis in for-loop declaration, got: "
-                ^ "*" )
-          | [] ->
-              failwith
-                "Missing closing parenthesis in for-loop declaration, no more \
-                 tokens" )
-      | _ ->
-          failwith "Missing semicolon after condition in for-loop declaration"
-      )
-  | _ ->
-      failwith "Wrong call to loop_stmt: not an loop statement"
+              Ok (enclosed_body, rest)
+          | _ as rest ->
+              error "Loop"
+                "Missing closing parenthesis `)` after increment expression"
+                rest )
+      | _ as rest ->
+          error "Loop" "Missing semicolon `;` after stop condition" rest )
+  | _ as rest ->
+      error "Loop" "Malformed loop (e.g `for (;;)`)" rest
 
 and block_stmt_inner tokens acc =
   match tokens with
@@ -304,7 +294,7 @@ and statement :
   | Lex.While :: _ as t ->
       while_stmt t
   | Lex.For :: _ as t ->
-      for_stmt t |> make_result_fixme
+      for_stmt t
   | _ as t ->
       let+ e, rest = expression_stmt t in
       (Expr e, rest)
