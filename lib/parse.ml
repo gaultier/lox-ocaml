@@ -68,7 +68,7 @@ let rec primary = function
   | Lex.String s :: rest ->
       (Literal (String s), rest)
   | Lex.ParenLeft :: rest -> (
-      let e, rest = expression rest in
+      let e, rest = expression rest |> extract_value_from_result_fixme in
       match rest with
       | Lex.ParenRight :: rest ->
           (Grouping e, rest)
@@ -127,7 +127,7 @@ and equality tokens =
   | _ ->
       (left, rest)
 
-and expression tokens = assignment tokens |> extract_value_from_result_fixme
+and expression tokens = assignment tokens
 
 and assignment = function
   | [] as rest ->
@@ -173,7 +173,7 @@ and expression_stmt = function
       error "Expression statement" "Malformed expression statement (e.g `1;`)"
         rest
   | _ as t -> (
-      let* stmt, rest = Ok (expression t) in
+      let* stmt, rest = expression t in
       match rest with
       | Lex.SemiColon :: rrest ->
           Ok (stmt, rrest)
@@ -189,7 +189,7 @@ and print_stmt = function
 
 and if_stmt = function
   | Lex.If :: Lex.ParenLeft :: rest -> (
-      let* e, rest = Ok (expression rest) in
+      let* e, rest = expression rest in
       match rest with
       | Lex.ParenRight :: rest -> (
           let* then_stmt, rest = statement rest in
@@ -207,7 +207,7 @@ and if_stmt = function
 
 and while_stmt = function
   | Lex.While :: Lex.ParenLeft :: rest -> (
-      let* e, rest = Ok (expression rest) in
+      let* e, rest = expression rest in
       match rest with
       | Lex.ParenRight :: rest ->
           let+ s, rest = statement rest in
@@ -238,10 +238,14 @@ and for_stmt : Lex.lex_token list -> statement * Lex.lex_token list = function
   | Lex.For :: Lex.ParenLeft :: (Lex.Var :: _ as var) -> (
       let v, rest = var_decl var |> Result.get_ok in
       (* FIXME *)
-      let stop_cond, rest = expression rest in
+      let stop_cond, rest =
+        expression rest |> extract_value_from_result_fixme
+      in
       match rest with
       | Lex.SemiColon :: rest -> (
-          let increment, rest = expression rest in
+          let increment, rest =
+            expression rest |> extract_value_from_result_fixme
+          in
           match rest with
           | Lex.ParenRight :: rest ->
               let body, rest =
@@ -313,7 +317,7 @@ and var_decl :
     -> (statement * Lex.lex_token list, string * Lex.lex_token list) result =
   function
   | Lex.Var :: Lex.Identifier n :: Lex.Equal :: rest -> (
-      let e, rest = expression rest in
+      let* e, rest = expression rest in
       match rest with
       | Lex.SemiColon :: rest ->
           Ok (Var (Lex.Identifier n, e), rest)
