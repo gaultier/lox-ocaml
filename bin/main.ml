@@ -20,7 +20,9 @@ let rec repl env =
     read_line () |> Lox.Lex.lex >>= Lox.Parse.parse
     >>= Lox.Interpret.interpret env
     >>| (fun (stmts, env) ->
-          Array.iter Lox.Interpret.print stmts ;
+          Base.Array.iter
+            ~f:(fun s -> s |> Lox.Parse.value_to_string |> print_endline)
+            stmts ;
           env)
     |> map_error ~f:print_errors |> Result.value ~default:env
   in

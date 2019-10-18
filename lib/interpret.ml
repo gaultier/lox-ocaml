@@ -1,19 +1,6 @@
 open Parse
 module StringMap = Map.Make (String)
 
-let print e =
-  match e with
-  | String s ->
-      Printf.printf "%s\n" s
-  | Number f ->
-      Printf.printf "%f\n" f
-  | Bool true ->
-      Printf.printf "true\n"
-  | Bool false ->
-      Printf.printf "false\n"
-  | Nil ->
-      Printf.printf "nil\n"
-
 let rec eval_exp exp env =
   match exp with
   | Grouping e ->
@@ -101,7 +88,8 @@ let rec eval s env =
       eval_exp e env
   | Print e ->
       let v, env = eval_exp e env in
-      print v ; (Nil, env)
+      v |> Parse.value_to_string |> print_endline ;
+      (Nil, env)
   | Var (Lex.Identifier n, e) ->
       let e, env = eval_exp e env in
       let env = StringMap.add n e env in

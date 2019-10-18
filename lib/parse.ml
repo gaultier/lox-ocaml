@@ -316,3 +316,15 @@ and program decls = function
       program decls rest
 
 let parse tokens = program [||] tokens |> Base.Array.to_list |> combine_errors
+
+let value_to_string = function
+  | String s ->
+      Printf.sprintf "\"%s\"" s
+  | Number f ->
+      Float.to_string f
+  | Bool true ->
+      "true"
+  | Bool false ->
+      "false"
+  | Nil ->
+      "nil"
