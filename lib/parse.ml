@@ -319,7 +319,7 @@ let parse tokens = program [||] tokens |> Base.Array.to_list |> combine_errors
 
 let value_to_string = function
   | String s ->
-      Printf.sprintf "\"%s\"" s
+      s (* No quotes for human readability *)
   | Number f ->
       Float.to_string f
   | Bool true ->
