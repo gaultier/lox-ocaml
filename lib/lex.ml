@@ -145,3 +145,81 @@ let rec lex_r acc rest =
 
 let lex s =
   lex_r [] (Base.String.to_list s) |> List.rev |> Base.Result.combine_errors
+
+let token_to_string = function
+  | CurlyBraceLeft ->
+      "{"
+  | CurlyBraceRight ->
+      "}"
+  | ParenLeft ->
+      "("
+  | ParenRight ->
+      ")"
+  | Comma ->
+      ","
+  | Dot ->
+      "."
+  | Minus ->
+      "-"
+  | Plus ->
+      "+"
+  | SemiColon ->
+      ";"
+  | Star ->
+      "*"
+  | Slash ->
+      "/"
+  | Bang ->
+      "!"
+  | BangEqual ->
+      "!="
+  | Equal ->
+      "="
+  | EqualEqual ->
+      "=="
+  | Less ->
+      "<"
+  | LessEqual ->
+      "<="
+  | Greater ->
+      ">"
+  | GreaterEqual ->
+      ">="
+  | And ->
+      "and"
+  | Class ->
+      "class"
+  | Else ->
+      "else"
+  | False ->
+      "false"
+  | For ->
+      "for"
+  | Fun ->
+      "fun"
+  | If ->
+      "if"
+  | Nil ->
+      "nil"
+  | Or ->
+      "or"
+  | Print ->
+      "print"
+  | Return ->
+      "return"
+  | Super ->
+      "super"
+  | This ->
+      "this"
+  | True ->
+      "true"
+  | Var ->
+      "var"
+  | While ->
+      "while"
+  | String s ->
+      Printf.sprintf "\"%s\"" s
+  | Number f ->
+      Float.to_string f
+  | Identifier i ->
+      i

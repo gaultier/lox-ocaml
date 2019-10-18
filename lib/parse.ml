@@ -43,10 +43,12 @@ let error ctx expected rest =
         "no more tokens"
     | _ ->
         invalid
-        |> Base.List.rev_map ~f:(fun _ -> "*")
+        |> Base.List.rev_map ~f:Lex.token_to_string
         |> Base.List.fold ~init:"" ~f:(fun acc x -> acc ^ " " ^ x)
+        |> String.trim
   in
-  fail (Printf.sprintf "Context: %s. %s. Got:%s." ctx expected invalid_s, rest)
+  fail
+    (Printf.sprintf "Context: %s. %s. Got: `%s`." ctx expected invalid_s, rest)
 
 let rec primary = function
   | Lex.False :: rest ->
