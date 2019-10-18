@@ -243,13 +243,13 @@ and for_stmt = function
               in
               Ok (enclosed_body, rest)
           | _ as rest ->
-              error "Loop"
+              error "For-loop"
                 "Expected closing parenthesis `)` after increment expression"
                 rest )
       | _ as rest ->
-          error "Loop" "Expected semicolon `;` after stop condition" rest )
+          error "For-loop" "Expected semicolon `;` after stop condition" rest )
   | _ as rest ->
-      error "Loop" "Expected loop (e.g `for (;;)`)" rest
+      error "For-loop" "Expected loop (e.g `for (;;)`)" rest
 
 and block_stmt_inner tokens acc =
   match tokens with
