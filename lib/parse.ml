@@ -67,11 +67,11 @@ let rec primary = function
       | Lex.ParenRight :: rest ->
           Ok (Grouping e, rest)
       | _ as rest ->
-          error "Primary" "Missing closing parenthesis `)`" rest )
+          error "Primary" "Expected closing parenthesis `)`" rest )
   | (Lex.Identifier _ as i) :: rest ->
       Ok (Variable i, rest)
   | _ as rest ->
-      error "Primary" "Malformed primary (e.g `1` or `(true)` or \"hello\")"
+      error "Primary" "Expected primary (e.g `1` or `(true)` or \"hello\")"
         rest
 
 and unary = function
@@ -124,7 +124,7 @@ and expression tokens = assignment tokens
 
 and assignment = function
   | [] as rest ->
-      error "Assignement" "Malformed assignement (e.g `a = 1;`)" rest
+      error "Assignement" "Expected assignement (e.g `a = 1;`)" rest
   | _ as t -> (
       let* e, rest = logic_or t in
       match rest with
@@ -134,7 +134,7 @@ and assignment = function
           | Variable v ->
               Ok (Assign (v, a), rest)
           | _ ->
-              error "Assignement" "Invalid assignment target" rest )
+              error "Assignement" "Expected valid assignment target" rest )
       | _ ->
           Ok (e, rest) )
 
@@ -145,8 +145,7 @@ and logic_and tokens =
       let+ r, rest = logic_and rest in
       (LogicalAnd (l, r), rest)
   | [] ->
-      error "Logical and expression" "Malformed and (e.g `true and false`)"
-        rest
+      error "Logical and expression" "Expected and (e.g `true and false`)" rest
   | _ ->
       Ok (l, rest)
 
@@ -157,13 +156,13 @@ and logic_or tokens =
       let+ r, rest = logic_or rest in
       (LogicalOr (l, r), rest)
   | [] ->
-      error "Logical or expression" "Malformed or (e.g `true or false`)" rest
+      error "Logical or expression" "Expected or (e.g `true or false`)" rest
   | _ ->
       Ok (l, rest)
 
 and expression_stmt = function
   | [] as rest ->
-      error "Expression statement" "Malformed expression statement (e.g `1;`)"
+      error "Expression statement" "Expected expression statement (e.g `1;`)"
         rest
   | _ as t -> (
       let* stmt, rest = expression t in
@@ -171,14 +170,14 @@ and expression_stmt = function
       | Lex.SemiColon :: rest ->
           Ok (stmt, rest)
       | _ as rest ->
-          error "Expression statement" "missing closing semicolon" rest )
+          error "Expression statement" "Expected closing semicolon `;`" rest )
 
 and print_stmt = function
   | Lex.Print :: rest ->
       let+ expr, rest = expression_stmt rest in
       (Print expr, rest)
   | _ as rest ->
-      error "Print statement" "print statement" rest
+      error "Print statement" "Expected print statement (e.g `print 1;`)" rest
 
 and if_stmt = function
   | Lex.If :: Lex.ParenLeft :: rest -> (
@@ -193,9 +192,9 @@ and if_stmt = function
           | _ ->
               Ok (IfStmt (e, then_stmt), rest) )
       | _ ->
-          error "If statement" "Missing closing `)`" rest )
+          error "If statement" "Expected closing `)`" rest )
   | _ as rest ->
-      error "If statement" "Malformed if statement (e.g `if (true) print 3;`)"
+      error "If statement" "Expected if statement (e.g `if (true) print 3;`)"
         rest
 
 and while_stmt = function
@@ -206,11 +205,10 @@ and while_stmt = function
           let+ s, rest = statement rest in
           (WhileStmt (e, s), rest)
       | _ ->
-          error "While statement" "Missing closing `)` in the while condition"
-            rest )
+          error "While statement" "Missing closing `)`" rest )
   | _ as rest ->
       error "While statement"
-        "Malformed while statement: (e.g `while(true) {}`)" rest
+        "Expected while statement: (e.g `while(true) {}`)" rest
 
 and for_stmt = function
   (* for (;;) *)
@@ -246,17 +244,17 @@ and for_stmt = function
               Ok (enclosed_body, rest)
           | _ as rest ->
               error "Loop"
-                "Missing closing parenthesis `)` after increment expression"
+                "Expected closing parenthesis `)` after increment expression"
                 rest )
       | _ as rest ->
-          error "Loop" "Missing semicolon `;` after stop condition" rest )
+          error "Loop" "Expected semicolon `;` after stop condition" rest )
   | _ as rest ->
-      error "Loop" "Malformed loop (e.g `for (;;)`)" rest
+      error "Loop" "Expected loop (e.g `for (;;)`)" rest
 
 and block_stmt_inner tokens acc =
   match tokens with
   | [] ->
-      error "Block statement" "expected closing `}`" tokens
+      error "Block statement" "Expected closing `}`" tokens
   | Lex.CurlyBraceRight :: rest ->
       Ok (acc, rest)
   | _ ->
@@ -272,15 +270,14 @@ and block_stmt :
       let+ stmts, rest = block_stmt_inner rest [||] in
       (Block stmts, rest)
   | _ as rest ->
-      error "Block statement" "malformed block statement, expected opening `{`"
-        rest
+      error "Block statement" "Expected block statement with opening `{`" rest
 
 and statement :
        Lex.lex_token list
     -> (statement * Lex.lex_token list, string * Lex.lex_token list) result =
   function
   | [] as rest ->
-      error "Statement" "statement (e.g `x = 1;`)" rest
+      error "Statement" "Expected statement (e.g `x = 1;`)" rest
   | Lex.Print :: _ as t ->
       print_stmt t
   | Lex.CurlyBraceLeft :: _ as t ->
@@ -305,12 +302,12 @@ and var_decl :
       | Lex.SemiColon :: rest ->
           Ok (Var (Lex.Identifier n, e), rest)
       | _ ->
-          error "variable declaration" "semicolon" rest )
+          error "Variable declaration" "Expected terminating `;`" rest )
   | Lex.Var :: Lex.Identifier n :: Lex.SemiColon :: rest ->
       Ok (Var (Lex.Identifier n, Literal Nil), rest)
   | _ as rest ->
-      error "Malformed variable declaration"
-        "variable declaration (e.g `var x = 1;`)" rest
+      error "Variable declaration"
+        "Expected variable declaration (e.g `var x = 1;`)" rest
 
 and declaration d :
     (statement * Lex.lex_token list, string * Lex.lex_token list) result =
