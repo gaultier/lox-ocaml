@@ -35,7 +35,10 @@ let main () =
   | [|_; "run"; filename|] ->
       lox_run filename
   | _ ->
-      failwith "Bad CLI invocation"
+      prerr_endline
+        "Bad CLI invocation.\n\
+         Use: `lox run foo.lox` to execute a file.\n\
+         Use `lox repl` or `rlwrap lox repl` to launch the repl."
 
 ;;
 main ()
