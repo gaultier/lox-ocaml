@@ -262,18 +262,14 @@ and block_stmt_inner tokens acc =
       let* acc = Ok (Array.append acc [|s|]) in
       block_stmt_inner rest acc
 
-and block_stmt :
-       Lex.token list
-    -> (statement * Lex.token list, string * Lex.token list) result = function
+and block_stmt = function
   | Lex.CurlyBraceLeft :: rest ->
       let+ stmts, rest = block_stmt_inner rest [||] in
       (Block stmts, rest)
   | _ as rest ->
       error "Block statement" "Expected block statement with opening `{`" rest
 
-and statement :
-       Lex.token list
-    -> (statement * Lex.token list, string * Lex.token list) result = function
+and statement = function
   | [] as rest ->
       error "Statement" "Expected statement (e.g `x = 1;`)" rest
   | Lex.Print :: _ as t ->
@@ -290,9 +286,7 @@ and statement :
       let+ e, rest = expression_stmt t in
       (Expr e, rest)
 
-and var_decl :
-       Lex.token list
-    -> (statement * Lex.token list, string * Lex.token list) result = function
+and var_decl = function
   | Lex.Var :: Lex.Identifier n :: Lex.Equal :: rest -> (
       let* e, rest = expression rest in
       match rest with
@@ -306,8 +300,7 @@ and var_decl :
       error "Variable declaration"
         "Expected variable declaration (e.g `var x = 1;`)" rest
 
-and declaration d :
-    (statement * Lex.token list, string * Lex.token list) result =
+and declaration d =
   match d with Lex.Var :: _ -> var_decl d | _ -> statement d
 
 and program decls = function
