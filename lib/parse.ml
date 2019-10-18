@@ -7,19 +7,19 @@ let ( let+ ) x f = Result.map f x
 type value = Bool of bool | Number of float | Nil | String of string
 
 type expr =
-  | Binary of expr * Lex.lex_token * expr
+  | Binary of expr * Lex.token * expr
   | Grouping of expr
   | Literal of value
-  | Unary of Lex.lex_token * expr
-  | Assign of Lex.lex_token * expr
-  | Variable of Lex.lex_token
+  | Unary of Lex.token * expr
+  | Assign of Lex.token * expr
+  | Variable of Lex.token
   | LogicalOr of expr * expr
   | LogicalAnd of expr * expr
 
 type statement =
   | Expr of expr
   | Print of expr
-  | Var of Lex.lex_token * expr
+  | Var of Lex.token * expr
   | Block of statement array
   | IfStmt of expr * statement
   | IfElseStmt of expr * statement * statement
@@ -263,9 +263,8 @@ and block_stmt_inner tokens acc =
       block_stmt_inner rest acc
 
 and block_stmt :
-       Lex.lex_token list
-    -> (statement * Lex.lex_token list, string * Lex.lex_token list) result =
-  function
+       Lex.token list
+    -> (statement * Lex.token list, string * Lex.token list) result = function
   | Lex.CurlyBraceLeft :: rest ->
       let+ stmts, rest = block_stmt_inner rest [||] in
       (Block stmts, rest)
@@ -273,9 +272,8 @@ and block_stmt :
       error "Block statement" "Expected block statement with opening `{`" rest
 
 and statement :
-       Lex.lex_token list
-    -> (statement * Lex.lex_token list, string * Lex.lex_token list) result =
-  function
+       Lex.token list
+    -> (statement * Lex.token list, string * Lex.token list) result = function
   | [] as rest ->
       error "Statement" "Expected statement (e.g `x = 1;`)" rest
   | Lex.Print :: _ as t ->
@@ -293,9 +291,8 @@ and statement :
       (Expr e, rest)
 
 and var_decl :
-       Lex.lex_token list
-    -> (statement * Lex.lex_token list, string * Lex.lex_token list) result =
-  function
+       Lex.token list
+    -> (statement * Lex.token list, string * Lex.token list) result = function
   | Lex.Var :: Lex.Identifier n :: Lex.Equal :: rest -> (
       let* e, rest = expression rest in
       match rest with
@@ -310,7 +307,7 @@ and var_decl :
         "Expected variable declaration (e.g `var x = 1;`)" rest
 
 and declaration d :
-    (statement * Lex.lex_token list, string * Lex.lex_token list) result =
+    (statement * Lex.token list, string * Lex.token list) result =
   match d with Lex.Var :: _ -> var_decl d | _ -> statement d
 
 and program decls = function

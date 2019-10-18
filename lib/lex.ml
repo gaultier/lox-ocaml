@@ -1,4 +1,4 @@
-type lex_token =
+type token =
   | CurlyBraceLeft
   | CurlyBraceRight
   | ParenLeft
