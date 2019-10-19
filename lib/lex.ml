@@ -71,8 +71,10 @@ let lex_num rest =
   let digits, rest =
     Base.List.split_while rest ~f:(fun c -> Base.Char.is_digit c || c == '.')
   in
-  let f = digits |> Base.String.of_char_list |> Float.of_string in
-  (Ok (Number f), rest)
+  let s = digits |> Base.String.of_char_list in
+  if Base.String.is_suffix s ~suffix:"." then
+    (Base.Result.failf "Trailing `.` in number not allowed: `%s`" s, rest)
+  else (Ok (Number (Float.of_string s)), rest)
 
 let lex_identifier rest =
   let identifier, rest = Base.List.split_while rest ~f:Base.Char.is_alphanum in
