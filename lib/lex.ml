@@ -58,13 +58,28 @@ let keywords =
     ; ("var", Var)
     ; ("while", While) ]
 
-let lex_string rest =
-  let s, rest = Base.List.split_while rest ~f:(fun c -> c != '"') in
+let rec string_count_lines_columns lines columns = function
+  | [] ->
+      (lines, columns)
+  | '\n' :: rest ->
+      (string_count_lines_columns [@tailcall]) (lines + 1) 1 rest
+  | _ :: rest ->
+      (string_count_lines_columns [@tailcall]) lines (columns + 1) rest
+
+let lex_string rest lines columns =
+  let sl, rest = Base.List.split_while rest ~f:(fun c -> c != '"') in
+  let lines, columns = string_count_lines_columns lines columns sl in
+  let s = Base.String.of_char_list sl in
   match rest with
   | '"' :: rest ->
-      (Ok (String (Base.String.of_char_list s)), rest)
+      (Ok (String s), rest, lines, columns)
   | _ ->
-      (Error "Missing closing quote, no more tokens", rest)
+      ( Base.Result.failf
+          "%d:%d:Missing closing quote, no more tokens for string: `%s`" lines
+          columns s
+      , rest
+      , lines
+      , columns )
 
 let lex_num rest lines columns =
   (* trailing dot is allowed for now *)
@@ -141,8 +156,8 @@ let rec lex_r acc rest lines columns =
   | '\n' :: rest ->
       (lex_r [@tailcall]) acc rest (lines + 1) 1
   | '"' :: rest ->
-      let t, rest = lex_string rest in
-      (lex_r [@tailcall]) (t :: acc) rest lines (columns + 1)
+      let t, rest, lines, columns = lex_string rest lines columns in
+      (lex_r [@tailcall]) (t :: acc) rest lines columns
   | '0' .. '9' :: _ ->
       let t, rest, lines, columns = lex_num rest lines columns in
       (lex_r [@tailcall]) (t :: acc) rest lines columns
