@@ -130,10 +130,12 @@ and eval_while w env =
       failwith "Wrong call"
 
 let interpret env stmts =
-  let arr_stmts = Base.List.to_array stmts in
-  Ok
-    (Base.Array.fold arr_stmts
-       ~init:([||], env)
-       ~f:(fun (acc, env) s ->
-         let e, env = eval s env in
-         (Array.append acc [|e|], env)))
+  try
+    stmts |> Base.List.to_array
+    |> Base.Array.fold
+         ~init:([||], env)
+         ~f:(fun (acc, env) s ->
+           let e, env = eval s env in
+           (Array.append acc [|e|], env))
+    |> Result.ok
+  with Failure err -> Result.Error [err]
