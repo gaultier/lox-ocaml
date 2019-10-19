@@ -4,7 +4,7 @@ module StringMap = Map.Make (String)
 let rec eval_exp exp env =
   match exp with
   | Grouping e ->
-      eval_exp e env
+      (eval_exp [@tailcall]) e env
   | Unary (t, e) ->
       let v, env = eval_exp e env in
       let res =
@@ -25,10 +25,18 @@ let rec eval_exp exp env =
       (l, env)
   | LogicalOr (l, r) -> (
       let e, env = eval_exp l env in
-      match e with Bool false | Nil -> eval_exp r env | _ -> (e, env) )
+      match e with
+      | Bool false | Nil ->
+          (eval_exp [@tailcall]) r env
+      | _ ->
+          (e, env) )
   | LogicalAnd (l, r) -> (
       let e, env = eval_exp l env in
-      match e with Bool false | Nil -> (e, env) | _ -> eval_exp r env )
+      match e with
+      | Bool false | Nil ->
+          (e, env)
+      | _ ->
+          (eval_exp [@tailcall]) r env )
   | Variable (Lex.Identifier n) -> (
     match StringMap.find_opt n env with
     | Some v ->
@@ -91,7 +99,7 @@ let rec eval_exp exp env =
 let rec eval s env =
   match s with
   | Expr e ->
-      eval_exp e env
+      (eval_exp [@tailcall]) e env
   | Print e ->
       let v, env = eval_exp e env in
       v |> Parse.value_to_string |> print_endline ;
@@ -115,9 +123,9 @@ let rec eval s env =
       let e, env = eval_exp e env in
       match e with
       | Bool false | Nil ->
-          eval else_stmt env
+          (eval [@tailcall]) else_stmt env
       | _ ->
-          eval then_stmt env )
+          (eval [@tailcall]) then_stmt env )
   | IfStmt (e, then_stmt) -> (
       let e, env = eval_exp e env in
       match e with
