@@ -16,7 +16,9 @@ let rec eval_exp exp env =
         | Lex.Bang, _ ->
             Bool false
         | _ ->
-            failwith ("Unary expression not allowed: " ^ "*")
+            failwith
+              (Printf.sprintf "Unary expression not allowed: %s %s"
+                 (Lex.token_to_string t) (value_to_string v))
       in
       (res, env)
   | Literal l ->
@@ -32,15 +34,16 @@ let rec eval_exp exp env =
     | Some v ->
         (v, env)
     | None ->
-        failwith ("Accessing unkown variable `" ^ n ^ "`") )
+        failwith (Printf.sprintf "Accessing unbound variable %s" n) )
   | Variable _ ->
       failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e) ->
       let e, env = eval_exp e env in
       let env = StringMap.add n e env in
       (e, env)
-  | Assign _ ->
-      failwith "Badly constructed assignement"
+  | Assign (t, _) ->
+      failwith
+        (Printf.sprintf "Invalid assignment: %s " (Lex.token_to_string t))
   | Binary (l, t, r) -> (
       let l, env = eval_exp l env in
       let r, env = eval_exp r env in
@@ -52,7 +55,9 @@ let rec eval_exp exp env =
       | Number a, Lex.Minus, Number b ->
           (Number (a -. b), env)
       | Number _, Lex.Slash, Number 0. ->
-          failwith ("Division by zero not allowed: " ^ "*")
+          failwith
+            (Printf.sprintf "Division by zero not allowed: %s %s %s"
+               (value_to_string l) (Lex.token_to_string t) (value_to_string r))
       | Number a, Lex.Slash, Number b ->
           (Number (a /. b), env)
       | Number a, Lex.Star, Number b ->
@@ -80,7 +85,8 @@ let rec eval_exp exp env =
       | _, Lex.EqualEqual, Nil ->
           (Bool false, env)
       | _ ->
-          failwith ("Binary expression not allowed: " ^ "*") )
+          failwith ("Binary expression not allowed: " ^ Lex.token_to_string t)
+      )
 
 let rec eval s env =
   match s with
@@ -94,8 +100,10 @@ let rec eval s env =
       let e, env = eval_exp e env in
       let env = StringMap.add n e env in
       (e, env)
-  | Var _ ->
-      failwith "Badly constructed var"
+  | Var (t, _) ->
+      failwith
+        (Printf.sprintf "Invalid variable declaration: %s"
+           (Lex.token_to_string t))
   | Block stmts ->
       ( Nil
       , Array.fold_left
@@ -127,7 +135,7 @@ and eval_while w env =
           let _, env = eval s env in
           eval_while w env )
   | _ ->
-      failwith "Wrong call"
+      failwith "Invalid while statement"
 
 let interpret env stmts =
   try
