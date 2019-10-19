@@ -33,7 +33,7 @@ let rec sync acc = function
   | [] ->
       (acc, [])
   | x :: r ->
-      sync (x :: acc) r
+      (sync [@tailcall]) (x :: acc) r
 
 let error ctx expected rest =
   let invalid, rest = sync [] rest in
@@ -79,7 +79,7 @@ and unary = function
       let+ right, rest = unary rest in
       (Unary (t, right), rest)
   | _ as t ->
-      primary t
+      (primary [@tailcall]) t
 
 and multiplication tokens =
   let* left, rest = unary tokens in
@@ -120,7 +120,7 @@ and equality tokens =
   | _ ->
       Ok (left, rest)
 
-and expression tokens = assignment tokens
+and expression tokens = (assignment [@tailcall]) tokens
 
 and assignment = function
   | [] as rest ->
@@ -301,7 +301,11 @@ and var_decl = function
         "Expected variable declaration (e.g `var x = 1;`)" rest
 
 and declaration d =
-  match d with Lex.Var :: _ -> var_decl d | _ -> statement d
+  match d with
+  | Lex.Var :: _ ->
+      (var_decl [@tailcall]) d
+  | _ ->
+      (statement [@tailcall]) d
 
 and program decls = function
   | [] ->
@@ -313,7 +317,7 @@ and program decls = function
       in
       let ok_or_err = map ~f:fst d |> map_error ~f:fst in
       let decls = Base.Array.append decls [|ok_or_err|] in
-      program decls rest
+      (program [@tailcall]) decls rest
 
 let parse tokens = program [||] tokens |> Base.Array.to_list |> combine_errors
 
