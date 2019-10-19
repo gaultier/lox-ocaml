@@ -120,9 +120,13 @@ let rec eval s env =
           eval then_stmt env )
   | IfStmt (e, then_stmt) -> (
       let e, env = eval_exp e env in
-      match e with Bool false | Nil -> (Nil, env) | _ -> eval then_stmt env )
+      match e with
+      | Bool false | Nil ->
+          (Nil, env)
+      | _ ->
+          (eval [@tailcall]) then_stmt env )
   | WhileStmt _ ->
-      eval_while s env
+      (eval_while [@tailcall]) s env
 
 and eval_while w env =
   match w with
@@ -133,7 +137,7 @@ and eval_while w env =
           (Nil, env)
       | _ ->
           let _, env = eval s env in
-          eval_while w env )
+          (eval_while [@tailcall]) w env )
   | _ ->
       failwith "Invalid while statement"
 
