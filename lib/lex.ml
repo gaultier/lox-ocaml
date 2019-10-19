@@ -72,8 +72,9 @@ let lex_string rest lines columns =
   let s = Base.String.of_char_list sl in
   match rest with
   | '"' :: rest ->
-      (Ok (String s), rest, lines, columns)
+      (Ok (String s), rest, lines, columns + 1)
   | _ ->
+      (* TODO: we should sync at newlines probably here *)
       ( Base.Result.failf
           "%d:%d:Missing closing quote, no more tokens for string: `%s`" lines
           columns s
@@ -156,6 +157,7 @@ let rec lex_r acc rest lines columns =
   | '\n' :: rest ->
       (lex_r [@tailcall]) acc rest (lines + 1) 1
   | '"' :: rest ->
+      let columns = columns + 1 in
       let t, rest, lines, columns = lex_string rest lines columns in
       (lex_r [@tailcall]) (t :: acc) rest lines columns
   | '0' .. '9' :: _ ->
