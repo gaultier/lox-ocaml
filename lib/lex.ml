@@ -66,15 +66,20 @@ let lex_string rest =
   | _ ->
       (Error "Missing closing quote, no more tokens", rest)
 
-let lex_num rest =
+let lex_num rest lines columns =
   (* trailing dot is allowed for now *)
   let digits, rest =
     Base.List.split_while rest ~f:(fun c -> Base.Char.is_digit c || c == '.')
   in
   let s = digits |> Base.String.of_char_list in
+  let columns = columns + String.length s in
   if Base.String.is_suffix s ~suffix:"." then
-    (Base.Result.failf "Trailing `.` in number not allowed: `%s`" s, rest)
-  else (Ok (Number (Float.of_string s)), rest)
+    ( Base.Result.failf "%d:%d:Trailing `.` in number not allowed: `%s`" lines
+        (columns - 1) s
+    , rest
+    , lines
+    , columns )
+  else (Ok (Number (Float.of_string s)), rest, lines, columns)
 
 let lex_identifier rest =
   let identifier, rest = Base.List.split_while rest ~f:Base.Char.is_alphanum in
@@ -139,8 +144,8 @@ let rec lex_r acc rest lines columns =
       let t, rest = lex_string rest in
       (lex_r [@tailcall]) (t :: acc) rest lines (columns + 1)
   | '0' .. '9' :: _ ->
-      let t, rest = lex_num rest in
-      (lex_r [@tailcall]) (t :: acc) rest lines (columns + 1)
+      let t, rest, lines, columns = lex_num rest lines columns in
+      (lex_r [@tailcall]) (t :: acc) rest lines columns
   | x :: _ when Base.Char.is_alpha x ->
       let t, rest, dlines, dcolumns = lex_identifier rest in
       (lex_r [@tailcall]) (t :: acc) rest (lines + dlines) (columns + dcolumns)
