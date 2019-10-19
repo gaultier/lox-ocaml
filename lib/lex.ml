@@ -81,72 +81,76 @@ let lex_identifier rest =
   let s = Base.String.of_char_list identifier in
   match Base.Hashtbl.find keywords s with
   | Some k ->
-      (Ok k, rest)
+      (Ok k, rest, 0, String.length s)
   | _ ->
-      (Ok (Identifier s), rest)
+      (Ok (Identifier s), rest, 0, String.length s)
 
-let rec lex_r acc rest =
+let rec lex_r acc rest lines columns =
   match rest with
   | [] | '\000' :: _ ->
       acc
   | '{' :: rest ->
-      (lex_r [@tailcall]) (Ok CurlyBraceLeft :: acc) rest
+      (lex_r [@tailcall]) (Ok CurlyBraceLeft :: acc) rest lines (columns + 1)
   | '}' :: rest ->
-      (lex_r [@tailcall]) (Ok CurlyBraceRight :: acc) rest
+      (lex_r [@tailcall]) (Ok CurlyBraceRight :: acc) rest lines (columns + 1)
   | '(' :: rest ->
-      (lex_r [@tailcall]) (Ok ParenLeft :: acc) rest
+      (lex_r [@tailcall]) (Ok ParenLeft :: acc) rest lines (columns + 1)
   | ')' :: rest ->
-      (lex_r [@tailcall]) (Ok ParenRight :: acc) rest
+      (lex_r [@tailcall]) (Ok ParenRight :: acc) rest lines (columns + 1)
   | ',' :: rest ->
-      (lex_r [@tailcall]) (Ok Comma :: acc) rest
+      (lex_r [@tailcall]) (Ok Comma :: acc) rest lines (columns + 1)
   | '.' :: rest ->
-      (lex_r [@tailcall]) (Ok Dot :: acc) rest
+      (lex_r [@tailcall]) (Ok Dot :: acc) rest lines (columns + 1)
   | '-' :: rest ->
-      (lex_r [@tailcall]) (Ok Minus :: acc) rest
+      (lex_r [@tailcall]) (Ok Minus :: acc) rest lines (columns + 1)
   | '+' :: rest ->
-      (lex_r [@tailcall]) (Ok Plus :: acc) rest
+      (lex_r [@tailcall]) (Ok Plus :: acc) rest lines (columns + 1)
   | ';' :: rest ->
-      (lex_r [@tailcall]) (Ok SemiColon :: acc) rest
+      (lex_r [@tailcall]) (Ok SemiColon :: acc) rest lines (columns + 1)
   | '*' :: rest ->
-      (lex_r [@tailcall]) (Ok Star :: acc) rest
+      (lex_r [@tailcall]) (Ok Star :: acc) rest lines (columns + 1)
   | '/' :: '/' :: rest ->
       (lex_r [@tailcall]) acc
         (Base.List.drop_while rest ~f:(fun c -> c != '\n'))
+        lines (columns + 1)
   | '/' :: rest ->
-      (lex_r [@tailcall]) (Ok Slash :: acc) rest
+      (lex_r [@tailcall]) (Ok Slash :: acc) rest lines (columns + 1)
   | '!' :: '=' :: rest ->
-      (lex_r [@tailcall]) (Ok BangEqual :: acc) rest
+      (lex_r [@tailcall]) (Ok BangEqual :: acc) rest lines (columns + 2)
   | '!' :: rest ->
-      (lex_r [@tailcall]) (Ok Bang :: acc) rest
+      (lex_r [@tailcall]) (Ok Bang :: acc) rest lines (columns + 1)
   | '=' :: '=' :: rest ->
-      (lex_r [@tailcall]) (Ok EqualEqual :: acc) rest
+      (lex_r [@tailcall]) (Ok EqualEqual :: acc) rest lines (columns + 2)
   | '=' :: rest ->
-      (lex_r [@tailcall]) (Ok Equal :: acc) rest
+      (lex_r [@tailcall]) (Ok Equal :: acc) rest lines (columns + 1)
   | '<' :: '=' :: rest ->
-      (lex_r [@tailcall]) (Ok LessEqual :: acc) rest
+      (lex_r [@tailcall]) (Ok LessEqual :: acc) rest lines (columns + 2)
   | '<' :: rest ->
-      (lex_r [@tailcall]) (Ok Less :: acc) rest
+      (lex_r [@tailcall]) (Ok Less :: acc) rest lines (columns + 1)
   | '>' :: '=' :: rest ->
-      (lex_r [@tailcall]) (Ok GreaterEqual :: acc) rest
+      (lex_r [@tailcall]) (Ok GreaterEqual :: acc) rest lines (columns + 2)
   | '>' :: rest ->
-      (lex_r [@tailcall]) (Ok Greater :: acc) rest
-  | ' ' :: rest | '\n' :: rest | '\t' :: rest | '\r' :: rest ->
-      (lex_r [@tailcall]) acc rest
+      (lex_r [@tailcall]) (Ok Greater :: acc) rest lines (columns + 1)
+  | ' ' :: rest | '\t' :: rest | '\r' :: rest ->
+      (lex_r [@tailcall]) acc rest lines (columns + 1)
+  | '\n' :: rest ->
+      (lex_r [@tailcall]) acc rest (lines + 1) 1
   | '"' :: rest ->
       let t, rest = lex_string rest in
-      (lex_r [@tailcall]) (t :: acc) rest
+      (lex_r [@tailcall]) (t :: acc) rest lines (columns + 1)
   | '0' .. '9' :: _ ->
       let t, rest = lex_num rest in
-      (lex_r [@tailcall]) (t :: acc) rest
+      (lex_r [@tailcall]) (t :: acc) rest lines (columns + 1)
   | x :: _ when Base.Char.is_alpha x ->
-      let t, rest = lex_identifier rest in
-      (lex_r [@tailcall]) (t :: acc) rest
+      let t, rest, dlines, dcolumns = lex_identifier rest in
+      (lex_r [@tailcall]) (t :: acc) rest (lines + dlines) (columns + dcolumns)
   | x :: rest ->
-      let err = Base.Result.failf "Unkown token: `%c`" x in
-      (lex_r [@tailcall]) (err :: acc) rest
+      let err = Base.Result.failf "%d:%d:Unkown token: `%c`" lines columns x in
+      (lex_r [@tailcall]) (err :: acc) rest lines (columns + 1)
 
 let lex s =
-  lex_r [] (Base.String.to_list s) |> List.rev |> Base.Result.combine_errors
+  lex_r [] (Base.String.to_list s) 1 1
+  |> List.rev |> Base.Result.combine_errors
 
 let token_to_string = function
   | CurlyBraceLeft ->
