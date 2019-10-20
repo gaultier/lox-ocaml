@@ -17,7 +17,8 @@ let lox_run filename =
 let rec repl env =
   Printf.printf "> " ;
   let env =
-    read_line () |> Lox.Lex.lex >>= Lox.Parse.parse
+    (try read_line () with End_of_file -> exit 0)
+    |> Lox.Lex.lex >>= Lox.Parse.parse
     >>= Lox.Interpret.interpret env
     >>| (fun (stmts, env) ->
           Base.Array.iter
