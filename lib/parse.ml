@@ -7,19 +7,19 @@ let ( let+ ) x f = Result.map f x
 type value = Bool of bool | Number of float | Nil | String of string
 
 type expr =
-  | Binary of expr * Lex.token * expr
+  | Binary of expr * Lex.token_kind * expr
   | Grouping of expr
   | Literal of value
-  | Unary of Lex.token * expr
-  | Assign of Lex.token * expr
-  | Variable of Lex.token
+  | Unary of Lex.token_kind * expr
+  | Assign of Lex.token_kind * expr
+  | Variable of Lex.token_kind
   | LogicalOr of expr * expr
   | LogicalAnd of expr * expr
 
 type statement =
   | Expr of expr
   | Print of expr
-  | Var of Lex.token * expr
+  | Var of Lex.token_kind * expr
   | Block of statement array
   | IfStmt of expr * statement
   | IfElseStmt of expr * statement * statement

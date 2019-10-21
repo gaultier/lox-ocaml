@@ -1,4 +1,4 @@
-type token =
+type token_kind =
   | CurlyBraceLeft
   | CurlyBraceRight
   | ParenLeft
