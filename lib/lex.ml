@@ -38,6 +38,8 @@ type token_kind =
   | Number of float
   | Identifier of string
 
+type token = {kind: token_kind; lines: int; columns: int}
+
 let keywords =
   Base.Hashtbl.of_alist_exn
     (module Base.String)
