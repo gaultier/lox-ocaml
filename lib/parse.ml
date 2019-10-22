@@ -247,8 +247,8 @@ and for_stmt = function
         match rest with
         | {Lex.kind= Lex.Var; _} :: _ ->
             var_decl rest
-        (* | {Lex.kind= Lex.SemiColon; _} :: rest -> *)
-        (*     Ok (Expr (Literal (Bool true)), rest) *)
+        | {Lex.kind= Lex.SemiColon; _} :: rest ->
+            Ok (Expr (Literal (Bool true)), rest)
         | _ ->
             expression_stmt rest >>| fun (e, r) -> (Expr e, r)
       in
