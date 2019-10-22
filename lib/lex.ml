@@ -74,9 +74,12 @@ let lex_string rest lines columns =
   let s = Base.String.of_char_list sl in
   match rest with
   | '"' :: rest ->
-      (Ok (String s), rest, lines, columns + 1)
+      let t = {kind= String s; lines; columns} in
+      let lines, columns = string_count_lines_columns lines columns sl in
+      (Ok t, rest, lines, columns + 1)
   | _ ->
       (* TODO: we should sync at newlines probably here *)
+      let lines, columns = string_count_lines_columns lines columns sl in
       ( Base.Result.failf
           "%d:%d:Missing closing quote, no more tokens for string: `%s`" lines
           columns s
@@ -113,47 +116,85 @@ let rec lex_r acc rest lines columns =
   | [] | '\000' :: _ ->
       acc
   | '{' :: rest ->
-      (lex_r [@tailcall]) (Ok CurlyBraceLeft :: acc) rest lines (columns + 1)
+      (lex_r [@tailcall])
+        (Ok {kind= CurlyBraceLeft; lines; columns} :: acc)
+        rest lines (columns + 1)
   | '}' :: rest ->
-      (lex_r [@tailcall]) (Ok CurlyBraceRight :: acc) rest lines (columns + 1)
+      (lex_r [@tailcall])
+        (Ok {kind= CurlyBraceRight; lines; columns} :: acc)
+        rest lines (columns + 1)
   | '(' :: rest ->
-      (lex_r [@tailcall]) (Ok ParenLeft :: acc) rest lines (columns + 1)
+      (lex_r [@tailcall])
+        (Ok {kind= ParenLeft; lines; columns} :: acc)
+        rest lines (columns + 1)
   | ')' :: rest ->
-      (lex_r [@tailcall]) (Ok ParenRight :: acc) rest lines (columns + 1)
+      (lex_r [@tailcall])
+        (Ok {kind= ParenRight; lines; columns} :: acc)
+        rest lines (columns + 1)
   | ',' :: rest ->
-      (lex_r [@tailcall]) (Ok Comma :: acc) rest lines (columns + 1)
+      (lex_r [@tailcall])
+        (Ok {kind= Comma; lines; columns} :: acc)
+        rest lines (columns + 1)
   | '.' :: rest ->
-      (lex_r [@tailcall]) (Ok Dot :: acc) rest lines (columns + 1)
+      (lex_r [@tailcall])
+        (Ok {kind= Dot; lines; columns} :: acc)
+        rest lines (columns + 1)
   | '-' :: rest ->
-      (lex_r [@tailcall]) (Ok Minus :: acc) rest lines (columns + 1)
+      (lex_r [@tailcall])
+        (Ok {kind= Minus; lines; columns} :: acc)
+        rest lines (columns + 1)
   | '+' :: rest ->
-      (lex_r [@tailcall]) (Ok Plus :: acc) rest lines (columns + 1)
+      (lex_r [@tailcall])
+        (Ok {kind= Plus; lines; columns} :: acc)
+        rest lines (columns + 1)
   | ';' :: rest ->
-      (lex_r [@tailcall]) (Ok SemiColon :: acc) rest lines (columns + 1)
+      (lex_r [@tailcall])
+        (Ok {kind= SemiColon; lines; columns} :: acc)
+        rest lines (columns + 1)
   | '*' :: rest ->
-      (lex_r [@tailcall]) (Ok Star :: acc) rest lines (columns + 1)
+      (lex_r [@tailcall])
+        (Ok {kind= Star; lines; columns} :: acc)
+        rest lines (columns + 1)
   | '/' :: '/' :: rest ->
       (lex_r [@tailcall]) acc
         (Base.List.drop_while rest ~f:(fun c -> c != '\n'))
         lines (columns + 1)
   | '/' :: rest ->
-      (lex_r [@tailcall]) (Ok Slash :: acc) rest lines (columns + 1)
+      (lex_r [@tailcall])
+        (Ok {kind= Slash; lines; columns} :: acc)
+        rest lines (columns + 1)
   | '!' :: '=' :: rest ->
-      (lex_r [@tailcall]) (Ok BangEqual :: acc) rest lines (columns + 2)
+      (lex_r [@tailcall])
+        (Ok {kind= BangEqual; lines; columns} :: acc)
+        rest lines (columns + 2)
   | '!' :: rest ->
-      (lex_r [@tailcall]) (Ok Bang :: acc) rest lines (columns + 1)
+      (lex_r [@tailcall])
+        (Ok {kind= Bang; lines; columns} :: acc)
+        rest lines (columns + 1)
   | '=' :: '=' :: rest ->
-      (lex_r [@tailcall]) (Ok EqualEqual :: acc) rest lines (columns + 2)
+      (lex_r [@tailcall])
+        (Ok {kind= EqualEqual; lines; columns} :: acc)
+        rest lines (columns + 2)
   | '=' :: rest ->
-      (lex_r [@tailcall]) (Ok Equal :: acc) rest lines (columns + 1)
+      (lex_r [@tailcall])
+        (Ok {kind= Equal; lines; columns} :: acc)
+        rest lines (columns + 1)
   | '<' :: '=' :: rest ->
-      (lex_r [@tailcall]) (Ok LessEqual :: acc) rest lines (columns + 2)
+      (lex_r [@tailcall])
+        (Ok {kind= LessEqual; lines; columns} :: acc)
+        rest lines (columns + 2)
   | '<' :: rest ->
-      (lex_r [@tailcall]) (Ok Less :: acc) rest lines (columns + 1)
+      (lex_r [@tailcall])
+        (Ok {kind= Less; lines; columns} :: acc)
+        rest lines (columns + 1)
   | '>' :: '=' :: rest ->
-      (lex_r [@tailcall]) (Ok GreaterEqual :: acc) rest lines (columns + 2)
+      (lex_r [@tailcall])
+        (Ok {kind= GreaterEqual; lines; columns} :: acc)
+        rest lines (columns + 2)
   | '>' :: rest ->
-      (lex_r [@tailcall]) (Ok Greater :: acc) rest lines (columns + 1)
+      (lex_r [@tailcall])
+        (Ok {kind= Greater; lines; columns} :: acc)
+        rest lines (columns + 1)
   | ' ' :: rest | '\t' :: rest | '\r' :: rest ->
       (lex_r [@tailcall]) acc rest lines (columns + 1)
   | '\n' :: rest ->
