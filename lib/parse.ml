@@ -36,20 +36,26 @@ let rec sync acc = function
       (sync [@tailcall]) (x :: acc) r
 
 let error ctx expected rest =
+  let head =
+    Base.List.hd rest
+    |> Base.Option.value
+         ~default:{Lex.lines= 1; Lex.columns= 1; Lex.kind= Lex.Class}
+  in
   let invalid, rest = sync [] rest in
   let invalid_s =
     match invalid with
     | [] ->
         "no more tokens"
-    | {Lex.lines= l; Lex.columns= c; _} :: _ ->
+    | _ :: _ ->
         invalid
         |> Base.List.rev_map ~f:(fun {Lex.kind= x; _} -> Lex.token_to_string x)
-        |> Base.List.fold ~init:(Printf.sprintf "%d:%d:" l c) ~f:(fun acc x ->
-               acc ^ " " ^ x)
+        |> Base.List.fold ~init:"" ~f:(fun acc x -> acc ^ " " ^ x)
         |> String.trim
   in
   fail
-    (Printf.sprintf "Context: %s. %s. Got: `%s`." ctx expected invalid_s, rest)
+    ( Printf.sprintf "%d:%d:Context: %s. %s. Got: `%s`." head.lines
+        head.columns ctx expected invalid_s
+    , rest )
 
 let rec primary = function
   | {Lex.kind= Lex.False; _} :: rest ->
