@@ -70,7 +70,6 @@ let rec string_count_lines_columns lines columns = function
 
 let lex_string rest lines columns =
   let sl, rest = Base.List.split_while rest ~f:(fun c -> c != '"') in
-  let lines, columns = string_count_lines_columns lines columns sl in
   let s = Base.String.of_char_list sl in
   match rest with
   | '"' :: rest ->
