@@ -3,34 +3,41 @@ for (i=1; i<3; i) {
     print i;
     i = i+i;
 }
-//
+
 print "";
-// 
+ 
 i = 1;
 for (; i<3; i) {
     print i;
     i = i+i;
 }
-//
+
 print "";
-// 
+ 
 i = 1;
 for (;i<3;) {
     print i;
     i = i+i;
 }
-//
+
 print "";
-// 
+ 
 i = 1;
 for (i;i<3;) {
     print i;
     i = i+i;
 }
-//
+
 print "";
-// 
+ 
 for (var i = 1;i<3;) {
+    print i;
+    i = i+i;
+}
+
+print "";
+ 
+for (var i = 1;i<3; i) {
     print i;
     i = i+i;
 }
