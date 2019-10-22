@@ -260,7 +260,7 @@ and for_stmt = function
       in
       let* incr_stmt, rest =
         match rest with
-        | {Lex.kind= Lex.SemiColon; _} :: rest ->
+        | {Lex.kind= Lex.ParenRight; _} :: _ ->
             Ok (Literal (Bool true), rest)
         | _ ->
             expression rest

@@ -11,3 +11,11 @@ for (; i<3; i) {
     print i;
     i = i+i;
 }
+//
+print "";
+// 
+i = 1;
+for (;i<3;) {
+    print i;
+    i = i+i;
+}
