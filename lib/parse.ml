@@ -222,6 +222,11 @@ and while_stmt = function
       error "While statement"
         "Expected while statement: (e.g `while(true) {}`)" rest
 
+(*
+forStmt   → "for" "(" ( varDecl | exprStmt | ";" )
+                      expression? ";"
+                      expression? ")" statement ;
+                      *)
 and for_stmt = function
   (* for (;;) *)
   | {Lex.kind= Lex.For; _}
@@ -236,33 +241,48 @@ and for_stmt = function
   (* for (;i;) *)
   (* or for (i;;i=i+1)  *)
   (* or for (;;i=i+1)  *)
-
   (* for (var i = 0; i < 5; i = i + 1) *)
-  | {Lex.kind= Lex.For; _}
-    :: {Lex.kind= Lex.ParenLeft; _} :: ({Lex.kind= Lex.Var; _} :: _ as var)
-    -> (
-      let* v, rest = var_decl var in
-      let* stop_cond, rest = expression rest in
-      match rest with
-      | {Lex.kind= Lex.SemiColon; _} :: rest -> (
-          let* increment, rest = expression rest in
-          match rest with
-          | {Lex.kind= Lex.ParenRight; _} :: rest ->
-              let* body, rest = statement rest in
-              let* enclosed_body =
-                Ok
-                  (Block
-                     [| v
-                      ; WhileStmt (stop_cond, Block [|body; Expr increment|])
-                     |])
-              in
-              Ok (enclosed_body, rest)
-          | _ as rest ->
-              error "For-loop"
-                "Expected closing parenthesis `)` after increment expression"
-                rest )
-      | _ as rest ->
-          error "For-loop" "Expected semicolon `;` after stop condition" rest )
+  | {Lex.kind= Lex.For; _} :: {Lex.kind= Lex.ParenLeft; _} :: rest ->
+      let* init_clause, rest =
+        match rest with
+        | {Lex.kind= Lex.Var; _} :: _ ->
+            var_decl rest
+        (* | {Lex.kind= Lex.SemiColon; _} :: rest -> *)
+        (*     Ok (Expr (Literal (Bool true)), rest) *)
+        | _ ->
+            expression_stmt rest >>| fun (e, r) -> (Expr e, r)
+      in
+      let* stop_cond, rest =
+        match rest with
+        | {Lex.kind= Lex.SemiColon; _} :: rest ->
+            Ok (Literal (Bool true), rest)
+        | _ ->
+            expression rest
+      in
+      let* incr_stmt, rest =
+        match rest with
+        | {Lex.kind= Lex.SemiColon; _} :: rest ->
+            Ok (Literal (Bool true), rest)
+        | _ ->
+            expression rest
+      in
+      let* _, rest =
+        match rest with
+        | {Lex.kind= Lex.ParenRight; _} :: rest ->
+            Ok (Nil, rest)
+        | _ ->
+            error "For-loop"
+              "Expected closing parenthesis `)` after increment expression"
+              rest
+      in
+      let* body, rest = statement rest in
+      let* enclosed_body =
+        Ok
+          (Block
+             [| init_clause
+              ; WhileStmt (stop_cond, Block [|body; Expr incr_stmt|]) |])
+      in
+      Ok (enclosed_body, rest)
   | _ as rest ->
       error "For-loop" "Expected loop (e.g `for (;;)`)" rest
 
