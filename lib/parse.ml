@@ -39,6 +39,7 @@ let error ctx expected rest =
   let lines, columns =
     Base.List.hd rest
     |> Base.Option.map ~f:(fun {Lex.lines; Lex.columns; _} -> (lines, columns))
+    (*FIXME*)
     |> Base.Option.value ~default:(1, 1)
   in
   let invalid, rest = sync [] rest in
