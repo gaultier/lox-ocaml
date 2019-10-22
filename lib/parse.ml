@@ -242,7 +242,6 @@ and for_stmt = function
     :: {Lex.kind= Lex.ParenLeft; _} :: ({Lex.kind= Lex.Var; _} :: _ as var)
     -> (
       let* v, rest = var_decl var in
-      (* FIXME *)
       let* stop_cond, rest = expression rest in
       match rest with
       | {Lex.kind= Lex.SemiColon; _} :: rest -> (
