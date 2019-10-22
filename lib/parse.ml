@@ -117,8 +117,8 @@ and comparison tokens =
 and equality tokens =
   let* left, rest = comparison tokens in
   match rest with
-  | {Lex.kind= (Lex.BangEqual as t) :: rest | (Lex.EqualEqual as t); _} :: rest
-    ->
+  | {Lex.kind= Lex.BangEqual as t; _} :: rest
+  | {Lex.kind= Lex.EqualEqual as t; _} :: rest ->
       let+ right, rest = equality rest in
       (Binary (left, t, right), rest)
   | _ ->
@@ -216,9 +216,11 @@ and while_stmt = function
 
 and for_stmt = function
   (* for (;;) *)
-  | Lex.For
-    :: Lex.ParenLeft
-       :: Lex.SemiColon :: Lex.SemiColon :: Lex.ParenRight :: rest ->
+  | {Lex.kind= Lex.For; _}
+    :: {Lex.kind= Lex.ParenLeft; _}
+       :: {Lex.kind= Lex.SemiColon; _}
+          :: {Lex.kind= Lex.SemiColon; _}
+             :: {Lex.kind= Lex.ParenRight; _} :: rest ->
       let+ s, rest = statement rest in
       (WhileStmt (Literal (Bool true), s), rest)
   (* TODO: partial for-loop declaration e.g *)
@@ -228,15 +230,17 @@ and for_stmt = function
   (* or for (;;i=i+1)  *)
 
   (* for (var i = 0; i < 5; i = i + 1) *)
-  | Lex.For :: Lex.ParenLeft :: (Lex.Var :: _ as var) -> (
+  | {Lex.kind= Lex.For; _}
+    :: {Lex.kind= Lex.ParenLeft; _} :: ({Lex.kind= Lex.Var; _} :: _ as var)
+    -> (
       let* v, rest = var_decl var in
       (* FIXME *)
       let* stop_cond, rest = expression rest in
       match rest with
-      | Lex.SemiColon :: rest -> (
+      | {Lex.kind= Lex.SemiColon; _} :: rest -> (
           let* increment, rest = expression rest in
           match rest with
-          | Lex.ParenRight :: rest ->
+          | {Lex.kind= Lex.ParenRight; _} :: rest ->
               let* body, rest = statement rest in
               let* enclosed_body =
                 Ok
@@ -259,7 +263,7 @@ and block_stmt_inner tokens acc =
   match tokens with
   | [] ->
       error "Block statement" "Expected closing `}`" tokens
-  | Lex.CurlyBraceRight :: rest ->
+  | {Lex.kind= Lex.CurlyBraceRight; _} :: rest ->
       Ok (acc, rest)
   | _ ->
       let* s, rest = declaration tokens in
@@ -267,7 +271,7 @@ and block_stmt_inner tokens acc =
       block_stmt_inner rest acc
 
 and block_stmt = function
-  | Lex.CurlyBraceLeft :: rest ->
+  | {Lex.kind= Lex.CurlyBraceLeft; _} :: rest ->
       let+ stmts, rest = block_stmt_inner rest [||] in
       (Block stmts, rest)
   | _ as rest ->
@@ -276,29 +280,32 @@ and block_stmt = function
 and statement = function
   | [] as rest ->
       error "Statement" "Expected statement (e.g `x = 1;`)" rest
-  | Lex.Print :: _ as t ->
+  | {Lex.kind= Lex.Print; _} :: _ as t ->
       print_stmt t
-  | Lex.CurlyBraceLeft :: _ as t ->
+  | {Lex.kind= Lex.CurlyBraceLeft; _} :: _ as t ->
       block_stmt t
-  | Lex.If :: _ as t ->
+  | {Lex.kind= Lex.If; _} :: _ as t ->
       if_stmt t
-  | Lex.While :: _ as t ->
+  | {Lex.kind= Lex.While; _} :: _ as t ->
       while_stmt t
-  | Lex.For :: _ as t ->
+  | {Lex.kind= Lex.For; _} :: _ as t ->
       for_stmt t
   | _ as t ->
       let+ e, rest = expression_stmt t in
       (Expr e, rest)
 
 and var_decl = function
-  | Lex.Var :: Lex.Identifier n :: Lex.Equal :: rest -> (
+  | {Lex.kind= Lex.Var; _}
+    :: {Lex.kind= Lex.Identifier n; _} :: {Lex.kind= Lex.Equal; _} :: rest -> (
       let* e, rest = expression rest in
       match rest with
-      | Lex.SemiColon :: rest ->
+      | {Lex.kind= Lex.SemiColon; _} :: rest ->
           Ok (Var (Lex.Identifier n, e), rest)
       | _ ->
           error "Variable declaration" "Expected terminating `;`" rest )
-  | Lex.Var :: Lex.Identifier n :: Lex.SemiColon :: rest ->
+  | {Lex.kind= Lex.Var; _}
+    :: {Lex.kind= Lex.Identifier n; _} :: {Lex.kind= Lex.SemiColon; _} :: rest
+    ->
       Ok (Var (Lex.Identifier n, Literal Nil), rest)
   | _ as rest ->
       error "Variable declaration"
@@ -306,7 +313,7 @@ and var_decl = function
 
 and declaration d =
   match d with
-  | Lex.Var :: _ ->
+  | {Lex.kind= Lex.Var; _} :: _ ->
       (var_decl [@tailcall]) d
   | _ ->
       (statement [@tailcall]) d
