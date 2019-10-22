@@ -36,10 +36,10 @@ let rec sync acc = function
       (sync [@tailcall]) (x :: acc) r
 
 let error ctx expected rest =
-  let head =
+  let lines, columns =
     Base.List.hd rest
-    |> Base.Option.value
-         ~default:{Lex.lines= 1; Lex.columns= 1; Lex.kind= Lex.Class}
+    |> Base.Option.map ~f:(fun {Lex.lines; Lex.columns; _} -> (lines, columns))
+    |> Base.Option.value ~default:(1, 1)
   in
   let invalid, rest = sync [] rest in
   let invalid_s =
@@ -53,8 +53,8 @@ let error ctx expected rest =
         |> String.trim
   in
   fail
-    ( Printf.sprintf "%d:%d:Context: %s. %s. Got: `%s`." head.lines
-        head.columns ctx expected invalid_s
+    ( Printf.sprintf "%d:%d:Context: %s. %s. Got: `%s`." lines columns ctx
+        expected invalid_s
     , rest )
 
 let rec primary = function
