@@ -28,11 +28,11 @@ type statement =
 let rec sync acc = function
   (* | Lex.For :: _ as r -> *)
   (*     (acc, r) *)
-  | {Lex.kind= Lex.SemiColon as t; _} :: (_ as r) ->
+  | ({Lex.kind= Lex.SemiColon; _} as t) :: (_ as r) ->
       (t :: acc, r)
   | [] ->
       (acc, [])
-  | {Lex.kind= x; _} :: r ->
+  | x :: r ->
       (sync [@tailcall]) (x :: acc) r
 
 let error ctx expected rest =
@@ -41,10 +41,11 @@ let error ctx expected rest =
     match invalid with
     | [] ->
         "no more tokens"
-    | _ ->
+    | {Lex.lines= l; Lex.columns= c; _} :: _ ->
         invalid
-        |> Base.List.rev_map ~f:Lex.token_to_string
-        |> Base.List.fold ~init:"" ~f:(fun acc x -> acc ^ " " ^ x)
+        |> Base.List.rev_map ~f:(fun {Lex.kind= x; _} -> Lex.token_to_string x)
+        |> Base.List.fold ~init:(Printf.sprintf "%d:%d:" l c) ~f:(fun acc x ->
+               acc ^ " " ^ x)
         |> String.trim
   in
   fail
