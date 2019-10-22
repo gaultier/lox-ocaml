@@ -146,7 +146,7 @@ and assignment = function
           | Variable v ->
               Ok (Assign (v, a), rest)
           | _ ->
-              error "Assignement" "Expected valid assignment target" rest )
+              error "Assignement" "Expected valid assignment target" t )
       | _ ->
           Ok (e, rest) )
 
