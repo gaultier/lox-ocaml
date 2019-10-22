@@ -28,11 +28,11 @@ type statement =
 let rec sync acc = function
   (* | Lex.For :: _ as r -> *)
   (*     (acc, r) *)
-  | (Lex.SemiColon as t) :: (_ as r) ->
+  | {Lex.kind= Lex.SemiColon as t; _} :: (_ as r) ->
       (t :: acc, r)
   | [] ->
       (acc, [])
-  | x :: r ->
+  | {Lex.kind= x; _} :: r ->
       (sync [@tailcall]) (x :: acc) r
 
 let error ctx expected rest =
@@ -51,31 +51,32 @@ let error ctx expected rest =
     (Printf.sprintf "Context: %s. %s. Got: `%s`." ctx expected invalid_s, rest)
 
 let rec primary = function
-  | Lex.False :: rest ->
+  | {Lex.kind= Lex.False; _} :: rest ->
       Ok (Literal (Bool false), rest)
-  | Lex.True :: rest ->
+  | {Lex.kind= Lex.True; _} :: rest ->
       Ok (Literal (Bool true), rest)
-  | Lex.Nil :: rest ->
+  | {Lex.kind= Lex.Nil; _} :: rest ->
       Ok (Literal Nil, rest)
-  | Lex.Number f :: rest ->
+  | {Lex.kind= Lex.Number f; _} :: rest ->
       Ok (Literal (Number f), rest)
-  | Lex.String s :: rest ->
+  | {Lex.kind= Lex.String s; _} :: rest ->
       Ok (Literal (String s), rest)
-  | Lex.ParenLeft :: rest -> (
+  | {Lex.kind= Lex.ParenLeft; _} :: rest -> (
       let* e, rest = expression rest in
       match rest with
-      | Lex.ParenRight :: rest ->
+      | {Lex.kind= Lex.ParenRight; _} :: rest ->
           Ok (Grouping e, rest)
       | _ as rest ->
           error "Primary" "Expected closing parenthesis `)`" rest )
-  | (Lex.Identifier _ as i) :: rest ->
+  | {Lex.kind= Lex.Identifier _ as i; _} :: rest ->
       Ok (Variable i, rest)
   | _ as rest ->
       error "Primary" "Expected primary (e.g `1` or `(true)` or \"hello\")"
         rest
 
 and unary = function
-  | (Lex.Bang as t) :: rest | (Lex.Minus as t) :: rest ->
+  | {Lex.kind= Lex.Bang as t; _} :: rest
+  | {Lex.kind= Lex.Minus as t; _} :: rest ->
       let+ right, rest = unary rest in
       (Unary (t, right), rest)
   | _ as t ->
@@ -84,7 +85,8 @@ and unary = function
 and multiplication tokens =
   let* left, rest = unary tokens in
   match rest with
-  | (Lex.Star as t) :: rest | (Lex.Slash as t) :: rest ->
+  | {Lex.kind= Lex.Star as t; _} :: rest
+  | {Lex.kind= Lex.Slash as t; _} :: rest ->
       let+ right, rest = multiplication rest in
       (Binary (left, t, right), rest)
   | _ ->
@@ -93,7 +95,8 @@ and multiplication tokens =
 and addition tokens =
   let* left, rest = multiplication tokens in
   match rest with
-  | (Lex.Plus as t) :: rest | (Lex.Minus as t) :: rest ->
+  | {Lex.kind= Lex.Plus as t; _} :: rest
+  | {Lex.kind= Lex.Minus as t; _} :: rest ->
       let+ right, rest = addition rest in
       (Binary (left, t, right), rest)
   | _ ->
@@ -102,10 +105,10 @@ and addition tokens =
 and comparison tokens =
   let* left, rest = addition tokens in
   match rest with
-  | (Lex.Greater as t) :: rest
-  | (Lex.GreaterEqual as t) :: rest
-  | (Lex.Less as t) :: rest
-  | (Lex.LessEqual as t) :: rest ->
+  | {Lex.kind= Lex.Greater as t; _} :: rest
+  | {Lex.kind= Lex.GreaterEqual as t; _} :: rest
+  | {Lex.kind= Lex.Less as t; _} :: rest
+  | {Lex.kind= Lex.LessEqual as t; _} :: rest ->
       let+ right, rest = comparison rest in
       (Binary (left, t, right), rest)
   | _ ->
@@ -114,7 +117,8 @@ and comparison tokens =
 and equality tokens =
   let* left, rest = comparison tokens in
   match rest with
-  | (Lex.BangEqual as t) :: rest | (Lex.EqualEqual as t) :: rest ->
+  | {Lex.kind= (Lex.BangEqual as t) :: rest | (Lex.EqualEqual as t); _} :: rest
+    ->
       let+ right, rest = equality rest in
       (Binary (left, t, right), rest)
   | _ ->
@@ -128,7 +132,7 @@ and assignment = function
   | _ as t -> (
       let* e, rest = logic_or t in
       match rest with
-      | Lex.Equal :: rest -> (
+      | {Lex.kind= Lex.Equal; _} :: rest -> (
           let* a, rest = assignment rest in
           match e with
           | Variable v ->
@@ -141,7 +145,7 @@ and assignment = function
 and logic_and tokens =
   let* l, rest = equality tokens in
   match rest with
-  | Lex.And :: rest ->
+  | {Lex.kind= Lex.And; _} :: rest ->
       let+ r, rest = logic_and rest in
       (LogicalAnd (l, r), rest)
   | [] ->
@@ -152,7 +156,7 @@ and logic_and tokens =
 and logic_or tokens =
   let* l, rest = logic_and tokens in
   match rest with
-  | Lex.Or :: rest ->
+  | {Lex.kind= Lex.Or; _} :: rest ->
       let+ r, rest = logic_or rest in
       (LogicalOr (l, r), rest)
   | [] ->
@@ -167,26 +171,26 @@ and expression_stmt = function
   | _ as t -> (
       let* stmt, rest = expression t in
       match rest with
-      | Lex.SemiColon :: rest ->
+      | {Lex.kind= Lex.SemiColon; _} :: rest ->
           Ok (stmt, rest)
       | _ as rest ->
           error "Expression statement" "Expected closing semicolon `;`" rest )
 
 and print_stmt = function
-  | Lex.Print :: rest ->
+  | {Lex.kind= Lex.Print; _} :: rest ->
       let+ expr, rest = expression_stmt rest in
       (Print expr, rest)
   | _ as rest ->
       error "Print statement" "Expected print statement (e.g `print 1;`)" rest
 
 and if_stmt = function
-  | Lex.If :: Lex.ParenLeft :: rest -> (
+  | {Lex.kind= Lex.If; _} :: {Lex.kind= Lex.ParenLeft; _} :: rest -> (
       let* e, rest = expression rest in
       match rest with
-      | Lex.ParenRight :: rest -> (
+      | {Lex.kind= Lex.ParenRight; _} :: rest -> (
           let* then_stmt, rest = statement rest in
           match rest with
-          | Lex.Else :: rest ->
+          | {Lex.kind= Lex.Else; _} :: rest ->
               let+ else_stmt, rest = statement rest in
               (IfElseStmt (e, then_stmt, else_stmt), rest)
           | _ ->
@@ -198,10 +202,10 @@ and if_stmt = function
         rest
 
 and while_stmt = function
-  | Lex.While :: Lex.ParenLeft :: rest -> (
+  | {Lex.kind= Lex.While; _} :: {Lex.kind= Lex.ParenLeft; _} :: rest -> (
       let* e, rest = expression rest in
       match rest with
-      | Lex.ParenRight :: rest ->
+      | {Lex.kind= Lex.ParenRight; _} :: rest ->
           let+ s, rest = statement rest in
           (WhileStmt (e, s), rest)
       | _ ->
