@@ -248,8 +248,15 @@ and for_stmt = function
         match rest with
         | {Lex.kind= Lex.SemiColon; _} :: rest ->
             Ok (Literal (Bool true), rest)
-        | _ ->
+        | _ -> (
             expression rest
+            >>= fun (e, r) ->
+            match r with
+            | {Lex.kind= Lex.SemiColon; _} :: r ->
+                Ok (e, r)
+            | _ ->
+                error "For-loop"
+                  "Expected terminating semicolon after stop condition" rest )
       in
       let* incr_stmt, rest =
         match rest with
