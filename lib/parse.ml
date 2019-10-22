@@ -229,18 +229,10 @@ forStmt   → "for" "(" ( varDecl | exprStmt | ";" )
                       *)
 and for_stmt = function
   (* for (;;) *)
-  | {Lex.kind= Lex.For; _}
-    :: {Lex.kind= Lex.ParenLeft; _}
-       :: {Lex.kind= Lex.SemiColon; _}
-          :: {Lex.kind= Lex.SemiColon; _}
-             :: {Lex.kind= Lex.ParenRight; _} :: rest ->
-      let+ s, rest = statement rest in
-      (WhileStmt (Literal (Bool true), s), rest)
-  (* TODO: partial for-loop declaration e.g *)
   (* for (;i; i = i+1) *)
   (* for (;i;) *)
-  (* or for (i;;i=i+1)  *)
-  (* or for (;;i=i+1)  *)
+  (* for (i;;i=i+1) *)
+  (* for (;;i=i+1)  *)
   (* for (var i = 0; i < 5; i = i + 1) *)
   | {Lex.kind= Lex.For; _} :: {Lex.kind= Lex.ParenLeft; _} :: rest ->
       let* init_clause, rest =
