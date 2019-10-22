@@ -93,23 +93,28 @@ let lex_num rest lines columns =
     Base.List.split_while rest ~f:(fun c -> Base.Char.is_digit c || c == '.')
   in
   let s = digits |> Base.String.of_char_list in
-  let columns = columns + String.length s in
+  let new_columns = columns + String.length s in
   if Base.String.is_suffix s ~suffix:"." then
     ( Base.Result.failf "%d:%d:Trailing `.` in number not allowed: `%s`" lines
-        (columns - 1) s
+        (new_columns - 1) s
     , rest
     , lines
-    , columns )
-  else (Ok (Number (Float.of_string s)), rest, lines, columns)
+    , new_columns )
+  else
+    ( Ok {kind= Number (Float.of_string s); lines; columns}
+    , rest
+    , lines
+    , new_columns )
 
-let lex_identifier rest =
+let lex_identifier rest lines columns =
   let identifier, rest = Base.List.split_while rest ~f:Base.Char.is_alphanum in
   let s = Base.String.of_char_list identifier in
+  let new_columns = columns + String.length s in
   match Base.Hashtbl.find keywords s with
   | Some k ->
-      (Ok k, rest, 0, String.length s)
+      (Ok {kind= k; lines; columns}, rest, lines, new_columns)
   | _ ->
-      (Ok (Identifier s), rest, 0, String.length s)
+      (Ok {kind= Identifier s; lines; columns}, rest, lines, new_columns)
 
 let rec lex_r acc rest lines columns =
   match rest with
@@ -207,8 +212,8 @@ let rec lex_r acc rest lines columns =
       let t, rest, lines, columns = lex_num rest lines columns in
       (lex_r [@tailcall]) (t :: acc) rest lines columns
   | x :: _ when Base.Char.is_alpha x ->
-      let t, rest, dlines, dcolumns = lex_identifier rest in
-      (lex_r [@tailcall]) (t :: acc) rest (lines + dlines) (columns + dcolumns)
+      let t, rest, lines, columns = lex_identifier rest lines columns in
+      (lex_r [@tailcall]) (t :: acc) rest lines columns
   | x :: rest ->
       let err = Base.Result.failf "%d:%d:Unkown token: `%c`" lines columns x in
       (lex_r [@tailcall]) (err :: acc) rest lines (columns + 1)
