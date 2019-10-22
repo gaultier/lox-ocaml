@@ -22,11 +22,6 @@ $ ./lox repl
 
 ```
 
-
-Note: the `Result` module is used which was introduced in the `4.08.1` release
-hence the requirement. An earlier version can be used by using a shim: `opam
-install result`.
-
 ## Implemented
 
 - Arithmetic, strings, booleans, nil
@@ -35,8 +30,7 @@ install result`.
 - Conditions (if/else)
 - Boolean logic (and, or, not)
 - Loops (while, for)
-
-Note: On error, it will abort with an exception and a stacktrace of the interpreter.
+- All errors are reported with line and column number
 
 ## Test
 
