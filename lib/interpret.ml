@@ -126,12 +126,15 @@ let rec eval s env =
         (Printf.sprintf "Invalid variable declaration: %s"
            (Lex.token_to_string t))
   | Block stmts ->
-      ( Nil
-      , Array.fold_left
-          (fun env s ->
-            let _, env = eval s env in
-            env)
-          env stmts )
+      let enclosed_env = {values= empty; enclosing= Some env} in
+      let _ =
+        Array.fold_left
+          (fun enclosed_env s ->
+            let _, enclosed_env = eval s enclosed_env in
+            enclosed_env)
+          enclosed_env stmts
+      in
+      (Nil, env)
   | IfElseStmt (e, then_stmt, else_stmt) -> (
       let e, env = eval_exp e env in
       match e with

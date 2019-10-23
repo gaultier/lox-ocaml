@@ -1,0 +1,88 @@
+// One local var
+{
+    var a = 1;
+    print a; // 1
+}
+
+// Shadowing
+{
+    var a = 1;
+    {
+        var a = 2;
+        print a; // 2
+    }
+}
+
+// Separate vars in enclosed scopes
+{
+    var a = 1;
+    {
+        var b = 3;
+        print b; // 3
+    }
+}
+
+// Multiple enclosed scopes
+{
+    {
+        {
+            var a = 4;
+            print a; // 4
+        }
+    }
+}
+
+
+// Unused vars
+{
+    var a = 1;
+}
+{
+    var a = 5;
+    print a; // 5
+}
+
+
+// Enclosed scopes with inner mutation
+{
+    var a = 1;
+    {
+        a = 6;
+        print a; // 6
+    }
+}
+
+// Enclosed scopes with same level mutation
+{
+    var a = 1;
+    {
+        var b= 99;
+    }
+    a = 7;
+    print a; // 7
+}
+
+// Enclosed scopes with shadowing + mutation
+{
+    var a = 1;
+    {
+        var a = 99;
+        a = a + 1;
+    }
+    a = a + 7;
+    print a; // 8
+}
+
+// Global
+var a = 1;
+{
+    {
+        var a = 8;
+        a = a + 1;
+        print a; // 9
+    }
+    a = a + 9;
+    print a; // 10
+    a = a + 1;
+}
+print a; // 11
