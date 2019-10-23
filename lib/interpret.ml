@@ -1,6 +1,10 @@
 open Parse
 module StringMap = Map.Make (String)
 
+type t = (string, int, Base.String.comparator_witness) Base.Map.t
+
+type environment = {values: t; enclosing: environment}
+
 let rec eval_exp exp env =
   match exp with
   | Grouping e ->
