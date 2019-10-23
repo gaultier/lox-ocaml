@@ -17,14 +17,20 @@ let rec find_in_environment env v =
     | None ->
         failwith (Printf.sprintf "Accessing unbound variable %s" v) )
 
-let rec assign_in_environment env n v =
+let rec assign_in_environment last env n v =
   match Base.Map.find env.values n with
-  | Some v ->
-      Base.Map.set ~key:n ~data:v env.values
+  | Some v -> (
+      let values = Base.Map.set ~key:n ~data:v env.values in
+      let env = {values; enclosing= env.enclosing} in
+      match last with
+      | Some last ->
+          {last with enclosing= Some env}
+      | None ->
+          env )
   | None -> (
     match env.enclosing with
     | Some e ->
-        assign_in_environment e n v
+        assign_in_environment (Some env) e n v
     | None ->
         failwith (Printf.sprintf "Accessing unbound variable %s" n) )
 
@@ -71,7 +77,7 @@ let rec eval_exp exp env =
       failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e) ->
       let e, env = eval_exp e env in
-      let env = {env with values= Base.Map.set ~key:n ~data:e env.values} in
+      let env = assign_in_environment None env n e in
       (e, env)
   | Assign (t, _) ->
       failwith
