@@ -72,7 +72,7 @@ let rec eval_exp exp env =
   | Assign (Lex.Identifier n, e) ->
       let e, env = eval_exp e env in
       assign_in_environment env n e ;
-      Printf.printf "[D001] %s=%s" n
+      Printf.printf "[D001] %s=%s\n" n
         ( Base.Map.find env.values n |> Option.map value_to_string
         |> Base.Option.value ~default:"?" ) ;
       (e, env)
