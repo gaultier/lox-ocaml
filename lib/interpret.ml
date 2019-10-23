@@ -2,7 +2,7 @@ open Parse
 
 type t = (string, value, Base.String.comparator_witness) Base.Map.t
 
-let empty = Base.Map.empty (module String)
+let empty = Base.Map.empty (module Base.String)
 
 type environment = {values: t; enclosing: environment option}
 
