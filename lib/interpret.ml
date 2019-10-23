@@ -6,6 +6,17 @@ let empty = Base.Map.empty (module Base.String)
 
 type environment = {values: t; enclosing: environment option}
 
+let rec find_in_environment env k =
+  match Base.Map.find env.values k with
+  | Some v ->
+      v
+  | None -> (
+    match env.enclosing with
+    | Some e ->
+        find_in_environment e k
+    | None ->
+        failwith (Printf.sprintf "Accessing unbound variable %s" k) )
+
 let rec eval_exp exp env =
   match exp with
   | Grouping e ->
@@ -42,12 +53,9 @@ let rec eval_exp exp env =
           (e, env)
       | _ ->
           (eval_exp [@tailcall]) r env )
-  | Variable (Lex.Identifier n) -> (
-    match Base.Map.find env.values n with
-    | Some v ->
-        (v, env)
-    | None ->
-        failwith (Printf.sprintf "Accessing unbound variable %s" n) )
+  | Variable (Lex.Identifier n) ->
+      let v = find_in_environment env n in
+      (v, env)
   | Variable _ ->
       failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e) ->
