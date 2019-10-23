@@ -1,9 +1,10 @@
 open Parse
-module StringMap = Map.Make (String)
 
-type t = (string, int, Base.String.comparator_witness) Base.Map.t
+type t = (string, value, Base.String.comparator_witness) Base.Map.t
 
-type environment = {values: t; enclosing: environment}
+let empty = Base.Map.empty (module String)
+
+type environment = {values: t; enclosing: environment option}
 
 let rec eval_exp exp env =
   match exp with
@@ -42,7 +43,7 @@ let rec eval_exp exp env =
       | _ ->
           (eval_exp [@tailcall]) r env )
   | Variable (Lex.Identifier n) -> (
-    match StringMap.find_opt n env with
+    match Base.Map.find env.values n with
     | Some v ->
         (v, env)
     | None ->
@@ -51,7 +52,7 @@ let rec eval_exp exp env =
       failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e) ->
       let e, env = eval_exp e env in
-      let env = StringMap.add n e env in
+      let env = {env with values= Base.Map.set ~key:n ~data:e env.values} in
       (e, env)
   | Assign (t, _) ->
       failwith
@@ -110,7 +111,7 @@ let rec eval s env =
       (Nil, env)
   | Var (Lex.Identifier n, e) ->
       let e, env = eval_exp e env in
-      let env = StringMap.add n e env in
+      let env = {env with values= Base.Map.set ~key:n ~data:e env.values} in
       (e, env)
   | Var (t, _) ->
       failwith

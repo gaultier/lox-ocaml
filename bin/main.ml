@@ -11,7 +11,9 @@ let print_errors = List.iter prerr_endline
 
 let lox_run filename =
   read_whole_file filename >>= Lox.Lex.lex >>= Lox.Parse.parse
-  >>= Lox.Interpret.interpret Lox.Interpret.StringMap.empty
+  >>= Lox.Interpret.interpret
+        { Lox.Interpret.values= Lox.Interpret.empty
+        ; Lox.Interpret.enclosing= None }
   |> iter_error ~f:print_errors
 
 let rec repl env =
@@ -32,7 +34,9 @@ let rec repl env =
 let main () =
   match Sys.argv with
   | [|_; "repl"|] ->
-      repl Lox.Interpret.StringMap.empty
+      repl
+        { Lox.Interpret.values= Lox.Interpret.empty
+        ; Lox.Interpret.enclosing= None }
   | [|_; "run"; filename|] ->
       lox_run filename
   | _ ->
