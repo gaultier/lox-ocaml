@@ -1,3 +1,7 @@
+// Sinple global
+var c = 0;
+print c; // 0
+
 // One local var
 {
     var a = 1;
@@ -33,7 +37,7 @@
 }
 
 
-// Unused vars
+// Unused var
 {
     var a = 1;
 }

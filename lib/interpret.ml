@@ -6,16 +6,27 @@ let empty = Base.Map.empty (module Base.String)
 
 type environment = {values: t; enclosing: environment option}
 
-let rec find_in_environment env k =
-  match Base.Map.find env.values k with
+let rec find_in_environment env v =
+  match Base.Map.find env.values v with
   | Some v ->
       v
   | None -> (
     match env.enclosing with
     | Some e ->
-        find_in_environment e k
+        find_in_environment e v
     | None ->
-        failwith (Printf.sprintf "Accessing unbound variable %s" k) )
+        failwith (Printf.sprintf "Accessing unbound variable %s" v) )
+
+let rec assign_in_environment env n v =
+  match Base.Map.find env.values n with
+  | Some v ->
+      Base.Map.set ~key:n ~data:v env.values
+  | None -> (
+    match env.enclosing with
+    | Some e ->
+        assign_in_environment e n v
+    | None ->
+        failwith (Printf.sprintf "Accessing unbound variable %s" n) )
 
 let rec eval_exp exp env =
   match exp with
