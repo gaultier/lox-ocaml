@@ -119,8 +119,11 @@ let rec eval_exp exp env =
       | _ ->
           failwith ("Binary expression not allowed: " ^ Lex.token_to_string t)
       )
-  | Call _ ->
-      failwith "NIY"
+  | Call (callee, _, args) ->
+      (* FIXME *)
+      let _ = eval_exp callee env in
+      let _ = List.map (fun a -> eval_exp a env) args in
+      (Nil, env)
 
 let rec eval s env =
   match s with
