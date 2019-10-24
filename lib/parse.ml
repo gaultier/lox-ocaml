@@ -110,7 +110,7 @@ and function_arguments callee args = function
   | _ as rest ->
       let* expr, rest = expression rest in
       let+ args, closing_paren, rest = comma_arguments [expr] rest in
-      (Call (callee, closing_paren, args), rest)
+      (Call (callee, closing_paren, List.rev args), rest)
 
 and unary = function
   | {Lex.kind= Lex.Bang as t; _} :: rest
