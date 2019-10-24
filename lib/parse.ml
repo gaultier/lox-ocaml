@@ -102,7 +102,7 @@ and comma_arguments args = function
       Ok (args, t, rest)
   | _ as rest ->
       let* arg, rest = comma_argument rest in
-      comma_arguments (arg :: args) rest
+      (comma_arguments [@tailcall]) (arg :: args) rest
 
 and function_arguments callee args = function
   | ({Lex.kind= Lex.ParenRight; _} as t) :: rest ->
