@@ -15,7 +15,7 @@ type expr =
   | Variable of Lex.token_kind
   | LogicalOr of expr * expr
   | LogicalAnd of expr * expr
-  | Call of expr * Lex.token
+  | Call of expr * Lex.token * expr list
 
 type statement =
   | Expr of expr
@@ -87,16 +87,22 @@ and call tokens =
   let* expr, rest = primary tokens in
   match rest with
   | {Lex.kind= Lex.ParenLeft; _} :: rest ->
-      let* paren_right, rest =
-        match rest with
-        | ({Lex.kind= Lex.ParenRight; _} as t) :: rest ->
-            Ok (t, rest)
-        | _ ->
-            error "Function call" "Expected closing parenthesis `)`" rest
-      in
-      Ok (Call (expr, paren_right), rest)
+      function_arguments expr [] rest
   | _ ->
       Ok (expr, rest)
+
+and function_arguments callee args = function
+  | ({Lex.kind= Lex.ParenRight; _} as t) :: rest ->
+      Ok (Call (callee, t, args), rest)
+  | _ as rest -> (
+      let* expr, rest = expression rest in
+      match rest with
+      | ({Lex.kind= Lex.ParenRight; _} as t) :: rest ->
+          Ok (Call (callee, t, args), rest)
+      | {Lex.kind= Lex.Comma; _} :: rest ->
+          function_arguments callee (expr :: args) rest
+      | _ ->
+          error "Function call arguments" "Expected `,` or `)`" rest )
 
 and unary = function
   | {Lex.kind= Lex.Bang as t; _} :: rest
