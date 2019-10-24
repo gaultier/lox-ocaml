@@ -109,8 +109,14 @@ and function_arguments callee args = function
       Ok (Call (callee, t, args), rest)
   | _ as rest ->
       let* expr, rest = expression rest in
-      let+ args, closing_paren, rest = comma_arguments [expr] rest in
-      (Call (callee, closing_paren, List.rev args), rest)
+      let* args, closing_paren, rest = comma_arguments [expr] rest in
+      let len = List.length args in
+      if len >= 255 then
+        prerr_endline
+          (Printf.sprintf
+             "Function definition: Too many arguments: limit is 255, got: %d"
+             len) ;
+      Ok (Call (callee, closing_paren, List.rev args), rest)
 
 and unary = function
   | {Lex.kind= Lex.Bang as t; _} :: rest
