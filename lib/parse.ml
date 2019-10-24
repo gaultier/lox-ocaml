@@ -96,7 +96,7 @@ and call tokens =
       in
       Ok (Call (expr, paren_right), rest)
   | _ ->
-      (primary [@tailcall]) rest
+      Ok (expr, rest)
 
 and unary = function
   | {Lex.kind= Lex.Bang as t; _} :: rest
