@@ -19,12 +19,12 @@ let rec find_in_environment env v =
 
 let rec assign_in_environment env n v =
   match Base.Map.find env.values n with
-  | Some v ->
+  | Some _ ->
       env.values <- Base.Map.set ~key:n ~data:v env.values
   | None -> (
     match env.enclosing with
-    | Some e ->
-        assign_in_environment e n v
+    | Some env ->
+        assign_in_environment env n v
     | None ->
         failwith (Printf.sprintf "Accessing unbound variable %s" n) )
 
@@ -72,9 +72,6 @@ let rec eval_exp exp env =
   | Assign (Lex.Identifier n, e) ->
       let e, env = eval_exp e env in
       assign_in_environment env n e ;
-      Printf.printf "[D001] %s=%s\n" n
-        ( Base.Map.find env.values n |> Option.map value_to_string
-        |> Base.Option.value ~default:"?" ) ;
       (e, env)
   | Assign (t, _) ->
       failwith
