@@ -91,18 +91,26 @@ and call tokens =
   | _ ->
       Ok (expr, rest)
 
+and comma_argument = function
+  | {Lex.kind= Lex.Comma; _} :: rest ->
+      expression rest
+  | _ as rest ->
+      error "Function call arguments" "Expected `,` before argument" rest
+
+and comma_arguments args = function
+  | ({Lex.kind= Lex.ParenRight; _} as t) :: rest ->
+      Ok (args, t, rest)
+  | _ as rest ->
+      let* arg, rest = comma_argument rest in
+      comma_arguments (arg :: args) rest
+
 and function_arguments callee args = function
   | ({Lex.kind= Lex.ParenRight; _} as t) :: rest ->
       Ok (Call (callee, t, args), rest)
-  | _ as rest -> (
+  | _ as rest ->
       let* expr, rest = expression rest in
-      match rest with
-      | ({Lex.kind= Lex.ParenRight; _} as t) :: rest ->
-          Ok (Call (callee, t, args), rest)
-      | {Lex.kind= Lex.Comma; _} :: rest ->
-          (function_arguments [@tailcall]) callee (expr :: args) rest
-      | _ ->
-          error "Function call arguments" "Expected `,` or `)`" rest )
+      let* args, closing_paren, rest = comma_arguments [expr] rest in
+      Ok (Call (callee, closing_paren, args), rest)
 
 and unary = function
   | {Lex.kind= Lex.Bang as t; _} :: rest
