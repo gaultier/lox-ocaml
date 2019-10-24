@@ -100,7 +100,7 @@ and function_arguments callee args = function
       | ({Lex.kind= Lex.ParenRight; _} as t) :: rest ->
           Ok (Call (callee, t, args), rest)
       | {Lex.kind= Lex.Comma; _} :: rest ->
-          function_arguments callee (expr :: args) rest
+          (function_arguments [@tailcall]) callee (expr :: args) rest
       | _ ->
           error "Function call arguments" "Expected `,` or `)`" rest )
 
