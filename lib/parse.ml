@@ -109,8 +109,8 @@ and function_arguments callee args = function
       Ok (Call (callee, t, args), rest)
   | _ as rest ->
       let* expr, rest = expression rest in
-      let* args, closing_paren, rest = comma_arguments [expr] rest in
-      Ok (Call (callee, closing_paren, args), rest)
+      let+ args, closing_paren, rest = comma_arguments [expr] rest in
+      (Call (callee, closing_paren, args), rest)
 
 and unary = function
   | {Lex.kind= Lex.Bang as t; _} :: rest
