@@ -15,6 +15,7 @@ type expr =
   | Variable of Lex.token_kind
   | LogicalOr of expr * expr
   | LogicalAnd of expr * expr
+  | Call of expr * Lex.token
 
 type statement =
   | Expr of expr
@@ -81,6 +82,24 @@ let rec primary = function
   | _ as rest ->
       error "Primary" "Expected primary (e.g `1` or `(true)` or \"hello\")"
         rest
+
+and call tokens =
+  let* expr, rest = primary tokens in
+  let* rest =
+    match rest with
+    | {Lex.kind= Lex.ParenLeft; _} :: rest ->
+        Ok rest
+    | _ ->
+        error "Function call" "Expected opening parenthesis `(`" rest
+  in
+  let* paren_right, rest =
+    match rest with
+    | ({Lex.kind= Lex.ParenRight; _} as t) :: rest ->
+        Ok (t, rest)
+    | _ ->
+        error "Function call" "Expected closing parenthesis `)`" rest
+  in
+  Ok (Call (expr, paren_right), rest)
 
 and unary = function
   | {Lex.kind= Lex.Bang as t; _} :: rest

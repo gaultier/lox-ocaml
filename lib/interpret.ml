@@ -119,6 +119,8 @@ let rec eval_exp exp env =
       | _ ->
           failwith ("Binary expression not allowed: " ^ Lex.token_to_string t)
       )
+  | Call _ ->
+      failwith "NIY"
 
 let rec eval s env =
   match s with
