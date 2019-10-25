@@ -66,11 +66,13 @@ let rec eval_exp exp env =
           (e, env)
       | _ ->
           (eval_exp [@tailcall]) r env )
-  | Variable (Lex.Identifier n) ->
-    (   match find_in_environment env n with
-Value v ->     (v, env)
-Callable _ -> failwith (Printf.sprintf "Accessing variable which is a function: %s" n)    
-)
+  | Variable (Lex.Identifier n) -> (
+    match find_in_environment env n with
+    | Value v ->
+        (v, env)
+    | Callable _ ->
+        failwith
+          (Printf.sprintf "Accessing variable which is a function: %s" n) )
   | Variable _ ->
       failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e) ->
