@@ -6,6 +6,8 @@ let ( let+ ) x f = Result.map f x
 
 type value = Bool of bool | Number of float | Nil | String of string
 
+type callable = {arity: int; fn: value list -> value}
+
 type expr =
   | Binary of expr * Lex.token_kind * expr
   | Grouping of expr

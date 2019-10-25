@@ -1,6 +1,8 @@
 open Parse
 
-type t = (string, value, Base.String.comparator_witness) Base.Map.t
+type environment_value = Value of value | Callable of callable
+
+type t = (string, environment_value, Base.String.comparator_witness) Base.Map.t
 
 let empty = Base.Map.empty (module Base.String)
 
@@ -65,8 +67,10 @@ let rec eval_exp exp env =
       | _ ->
           (eval_exp [@tailcall]) r env )
   | Variable (Lex.Identifier n) ->
-      let v = find_in_environment env n in
-      (v, env)
+    (   match find_in_environment env n with
+Value v ->     (v, env)
+Callable _ -> failwith (Printf.sprintf "Accessing variable which is a function: %s" n)    
+)
   | Variable _ ->
       failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e) ->
