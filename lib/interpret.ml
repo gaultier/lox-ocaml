@@ -77,7 +77,7 @@ let rec eval_exp exp env =
       failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e) ->
       let e, env = eval_exp e env in
-      assign_in_environment env n e ;
+      assign_in_environment env n (Value e) ;
       (e, env)
   | Assign (t, _) ->
       failwith
@@ -141,7 +141,9 @@ let rec eval s env =
       (Nil, env)
   | Var (Lex.Identifier n, e) ->
       let e, env = eval_exp e env in
-      let env = {env with values= Base.Map.set ~key:n ~data:e env.values} in
+      let env =
+        {env with values= Base.Map.set ~key:n ~data:(Value e) env.values}
+      in
       (e, env)
   | Var (t, _) ->
       failwith
