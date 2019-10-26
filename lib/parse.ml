@@ -4,9 +4,14 @@ let ( let* ) x f = Result.bind x f
 
 let ( let+ ) x f = Result.map f x
 
-type value = Bool of bool | Number of float | Nil | String of string
+type callable = {arity: int; name: string; fn: value list -> value}
 
-type callable = {arity: int; fn: value list -> value}
+and value =
+  | Bool of bool
+  | Number of float
+  | Nil
+  | String of string
+  | Callable of callable
 
 type expr =
   | Binary of expr * Lex.token_kind * expr
@@ -407,3 +412,5 @@ let value_to_string = function
       "false"
   | Nil ->
       "nil"
+  | Callable {name= n; _} ->
+      "function@" ^ n
