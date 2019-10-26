@@ -136,7 +136,7 @@ let rec eval_exp exp env =
       | _ ->
           failwith
             (Printf.sprintf "Wrong arity in function call: expected %d, got %d"
-               f.arity) )
+               f.arity len) )
 
 let rec eval s env =
   match s with
