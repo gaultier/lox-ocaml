@@ -126,7 +126,9 @@ let rec eval_exp exp env =
         | Callable f ->
             f
         | _ ->
-            failwith "Variable cannot be called as a function"
+            failwith
+              (Printf.sprintf "Value `%s` cannot be called as a function"
+                 (value_to_string e))
       in
       let args = List.map (fun a -> eval_exp a env) args in
       let len = List.length args in
