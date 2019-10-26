@@ -118,17 +118,25 @@ let rec eval_exp exp env =
       | _ ->
           failwith ("Binary expression not allowed: " ^ Lex.token_to_string t)
       )
-  | Call (callee, _, args) ->
+  | Call (callee, _, args) -> (
       (* FIXME *)
+      let e, env = eval_exp callee env in
       let f =
-        match eval_exp callee env with
-        | Value _ ->
-            failwith "Variable cannot be called"
+        match e with
         | Callable f ->
             f
+        | _ ->
+            failwith "Variable cannot be called as a function"
       in
-      let _ = List.map (fun a -> eval_exp a env) args in
-      (Nil, env)
+      let args = List.map (fun a -> eval_exp a env) args in
+      let len = List.length args in
+      match len with
+      | l when l = f.arity ->
+          (Nil, env)
+      | _ ->
+          failwith
+            (Printf.sprintf "Wrong arity in function call: expected %d, got %d"
+               f.arity) )
 
 let rec eval s env =
   match s with
@@ -140,9 +148,7 @@ let rec eval s env =
       (Nil, env)
   | Var (Lex.Identifier n, e) ->
       let e, env = eval_exp e env in
-      let env =
-        {env with values= Base.Map.set ~key:n ~data:(Value e) env.values}
-      in
+      let env = {env with values= Base.Map.set ~key:n ~data:e env.values} in
       (e, env)
   | Var (t, _) ->
       failwith
