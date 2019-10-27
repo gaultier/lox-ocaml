@@ -163,7 +163,7 @@ let rec eval s env =
         (Printf.sprintf "Invalid variable declaration: %s"
            (Lex.token_to_string t))
   | Block stmts ->
-      let enclosed_env = {values= empty; enclosing= Some env} in
+      let enclosed_env = {values= globals; enclosing= Some env} in
       let _ =
         Array.fold_left
           (fun enclosed_env s ->

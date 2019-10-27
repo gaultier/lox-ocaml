@@ -20,7 +20,12 @@ and value =
   | String of string
   | Callable of callable
 
-let empty = Base.Map.empty (module Base.String)
+let globals =
+  Base.Map.of_alist
+    [ ( "clock"
+      , { arity= 0
+        ; name= "clock"
+        ; fn= (fun _ env -> (Number (Unix.gettimeofday ()), env)) } ) ]
 
 type expr =
   | Binary of expr * Lex.token_kind * expr
