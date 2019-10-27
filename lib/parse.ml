@@ -22,12 +22,12 @@ and value =
 
 let globals =
   Base.Map.of_alist_exn
-    ( [ ( "clock"
-        , Callable
-            { arity= 0
-            ; name= "clock"
-            ; fn= (fun _ env -> (Number (Unix.gettimeofday ()), env)) } ) ]
-    , Base.String.comparator_witness )
+    (module Base.String)
+    [ ( "clock"
+      , Callable
+          { arity= 0
+          ; name= "clock"
+          ; fn= (fun _ env -> (Number (Unix.gettimeofday ()), env)) } ) ]
 
 type expr =
   | Binary of expr * Lex.token_kind * expr
