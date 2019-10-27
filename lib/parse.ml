@@ -27,7 +27,7 @@ let globals =
       , Callable
           { arity= 0
           ; name= "clock"
-          ; fn= (fun _ env -> (Number (Unix.gettimeofday ()), env)) } ) ]
+          ; fn= (fun _ env -> (Number (Unix.time ()), env)) } ) ]
 
 type expr =
   | Binary of expr * Lex.token_kind * expr

@@ -2,12 +2,14 @@ EXCLUDE_QUERY_DIR
 B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/base
 B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/base/caml
 B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/base/shadow_stdlib
+B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ocaml
 B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/sexplib0
 B ../_build/default/bin/.main.eobjs/byte
 B ../_build/default/lib/.lox.objs/byte
 S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/base
 S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/base/caml
 S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/base/shadow_stdlib
+S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ocaml
 S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/sexplib0
 S .
 S ../lib
