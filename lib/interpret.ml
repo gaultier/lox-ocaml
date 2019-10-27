@@ -1,11 +1,5 @@
 open Parse
 
-type t = (string, value, Base.String.comparator_witness) Base.Map.t
-
-let empty = Base.Map.empty (module Base.String)
-
-type environment = {mutable values: t; enclosing: environment option}
-
 let rec find_in_environment env v =
   match Base.Map.find env.values v with
   | Some v ->
@@ -118,7 +112,7 @@ let rec eval_exp exp env =
       | _ ->
           failwith ("Binary expression not allowed: " ^ Lex.token_to_string t)
       )
-  | Call (callee, _, args) -> (
+  | Call (callee, _, args) ->
       (* FIXME *)
       let e, env = eval_exp callee env in
       let f =
@@ -130,15 +124,27 @@ let rec eval_exp exp env =
               (Printf.sprintf "Value `%s` cannot be called as a function"
                  (value_to_string e))
       in
-      let args = List.map (fun a -> eval_exp a env) args in
+      let args, env =
+        Base.List.fold ~init:([], env)
+          ~f:(fun acc a ->
+            let values, env = acc in
+            let v, env = eval_exp a env in
+            (v :: values, env))
+          args
+      in
       let len = List.length args in
-      match len with
-      | l when l = f.arity ->
-          (Nil, env)
-      | _ ->
-          failwith
-            (Printf.sprintf "Wrong arity in function call: expected %d, got %d"
-               f.arity len) )
+      let _ =
+        match len with
+        | l when l = f.arity ->
+            l
+        | _ ->
+            failwith
+              (Printf.sprintf
+                 "Wrong arity in function call: expected %d, got %d" f.arity
+                 len)
+      in
+      let v, env = f.fn args env in
+      (v, env)
 
 let rec eval s env =
   match s with

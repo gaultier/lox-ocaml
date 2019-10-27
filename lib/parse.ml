@@ -4,7 +4,14 @@ let ( let* ) x f = Result.bind x f
 
 let ( let+ ) x f = Result.map f x
 
-type callable = {arity: int; name: string; fn: value list -> value}
+type callable =
+  { arity: int
+  ; name: string
+  ; fn: value list -> environment -> value * environment }
+
+and t = (string, value, Base.String.comparator_witness) Base.Map.t
+
+and environment = {mutable values: t; enclosing: environment option}
 
 and value =
   | Bool of bool
@@ -12,6 +19,8 @@ and value =
   | Nil
   | String of string
   | Callable of callable
+
+let empty = Base.Map.empty (module Base.String)
 
 type expr =
   | Binary of expr * Lex.token_kind * expr
