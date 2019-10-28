@@ -138,8 +138,7 @@ and fn_call_arguments callee args = function
       if len >= 255 then
         prerr_endline
           (Printf.sprintf
-             "Function definition: Too many arguments: limit is 255, got: %d"
-             len) ;
+             "Function call: Too many arguments: limit is 255, got: %d" len) ;
       Ok (Call (callee, closing_paren, List.rev args), rest)
 
 and unary = function
@@ -399,34 +398,39 @@ and var_decl = function
 
 and function_decl = function
   | {Lex.kind= Lex.Fun; _}
-    :: ({Lex.kind= Lex.Identifier fn_name; _} as name)
-       :: {Lex.kind= Lex.ParenLeft; _} :: rest ->
-      let* args, rest = fn_decl_arguments fn_name [] rest in
-      let* body, rest = block_stmt rest in
-      Ok (Function (name, args, body), rest)
+    :: ({Lex.kind= Lex.Identifier _; _} as name)
+       :: {Lex.kind= Lex.ParenLeft; _} :: rest -> (
+      let* args, rest = fn_decl_arguments [] rest in
+      let* block, rest = block_stmt rest in
+      match block with
+      | Block statements ->
+          Ok (Function (name, args, Base.Array.to_list statements), rest)
+      | _ ->
+          error "Function declaration"
+            "Expected function body (e.g `{ print 1; print 2;}`)" rest )
   | _ as rest ->
       error "Function declaration"
         "Expected function declaration (e.g `fun foo {print 1;}`)" rest
 
 and fn_decl_comma_argument = function
-  | {Lex.kind= Lex.Comma; _} :: rest ->
-      expression rest
+  | {Lex.kind= Lex.Comma; _}
+    :: ({Lex.kind= Lex.Identifier _; _} as identifier) :: rest ->
+      Ok (identifier, rest)
   | _ as rest ->
       error "Function call arguments" "Expected `,` before argument" rest
 
 and fn_decl_comma_arguments args = function
-  | ({Lex.kind= Lex.ParenRight; _} as t) :: rest ->
-      Ok (args, t, rest)
+  | {Lex.kind= Lex.ParenRight; _} :: rest ->
+      Ok (args, rest)
   | _ as rest ->
       let* arg, rest = fn_decl_comma_argument rest in
       (fn_decl_comma_arguments [@tailcall]) (arg :: args) rest
 
-and fn_decl_arguments callee args = function
-  | ({Lex.kind= Lex.ParenRight; _} as t) :: rest ->
+and fn_decl_arguments args = function
+  | {Lex.kind= Lex.ParenRight; _} :: rest ->
       Ok (List.rev args, rest)
-  | _ as rest ->
-      let* expr, rest = expression rest in
-      let* args, closing_paren, rest = fn_decl_comma_arguments [expr] rest in
+  | ({Lex.kind= Lex.Identifier _; _} as identifier) :: rest ->
+      let* args, rest = fn_decl_comma_arguments [identifier] rest in
       let len = List.length args in
       if len >= 255 then
         prerr_endline
@@ -434,6 +438,8 @@ and fn_decl_arguments callee args = function
              "Function definition: Too many arguments: limit is 255, got: %d"
              len) ;
       Ok (List.rev args, rest)
+  | _ as rest ->
+      error "Function definition" "Expected argument list (e.g `(a, b)`)" rest
 
 and declaration d =
   match d with
