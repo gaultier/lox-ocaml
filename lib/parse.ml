@@ -397,10 +397,19 @@ and var_decl = function
       error "Variable declaration"
         "Expected variable declaration (e.g `var x = 1;`)" rest
 
+and function_decl = function
+  | {Lex.kind= Lex.Fun; _} :: _ ->
+      failwith "NIY"
+  | _ as rest ->
+      error "Function declaration"
+        "Expected function declaration (e.g `fun foo {print 1;}`)" rest
+
 and declaration d =
   match d with
   | {Lex.kind= Lex.Var; _} :: _ ->
       (var_decl [@tailcall]) d
+  | {Lex.kind= Lex.Fun; _} :: _ ->
+      (function_decl [@tailcall]) d
   | _ ->
       (statement [@tailcall]) d
 
