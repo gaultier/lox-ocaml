@@ -172,12 +172,21 @@ let rec eval s env =
           enclosed_env stmts
       in
       (Nil, env)
-  | Function ({Lex.kind= Lex.Identifier name; _}, args, _) ->
+  | Function ({Lex.kind= Lex.Identifier name; _}, args, body) ->
       let fn =
         Callable
           { arity= List.length args
           ; name
-          ; fn= (fun _ env -> (Number (Unix.gettimeofday ()), env)) }
+          ; fn=
+              (fun _ env ->
+                let env =
+                  Base.List.fold ~init:env
+                    ~f:(fun env stmt ->
+                      let _, env = eval stmt env in
+                      env)
+                    body
+                in
+                (Nil, env)) }
       in
       assign_in_global_environment name fn env ;
       (Nil, env)
