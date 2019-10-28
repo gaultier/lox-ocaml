@@ -22,6 +22,12 @@ let rec assign_in_environment env n v =
     | None ->
         Base.Printf.failwithf "Accessing unbound variable %s" n () )
 
+let rec assign_in_global_environment n v = function
+  | {enclosing= None; _} as env ->
+      env.values <- Base.Map.set ~key:n ~data:v env.values
+  | {enclosing= Some enc; _} ->
+      (assign_in_global_environment [@tailcall]) n v enc
+
 let rec eval_exp exp env =
   match exp with
   | Grouping e ->
@@ -111,7 +117,6 @@ let rec eval_exp exp env =
           Base.Printf.failwithf "Binary expression not allowed: %s"
             (Lex.token_to_string t) () )
   | Call (callee, _, args) ->
-      (* FIXME *)
       let e, env = eval_exp callee env in
       let f =
         match e with
@@ -167,8 +172,17 @@ let rec eval s env =
           enclosed_env stmts
       in
       (Nil, env)
+  | Function ({Lex.kind= Lex.Identifier name; _}, args, _) ->
+      let fn =
+        Callable
+          { arity= List.length args
+          ; name
+          ; fn= (fun _ env -> (Number (Unix.gettimeofday ()), env)) }
+      in
+      assign_in_global_environment name fn env ;
+      (Nil, env)
   | Function _ ->
-      failwith "NIY function decl"
+      failwith "Invalid function declaration"
   | IfElseStmt (e, then_stmt, else_stmt) -> (
       let e, env = eval_exp e env in
       match e with
