@@ -107,33 +107,33 @@ let rec primary = function
       error "Primary" "Expected primary (e.g `1` or `(true)` or \"hello\")"
         rest
 
-and call tokens =
+and fn_call tokens =
   let* expr, rest = primary tokens in
   match rest with
   | {Lex.kind= Lex.ParenLeft; _} :: rest ->
-      function_arguments expr [] rest
+      fn_call_arguments expr [] rest
   | _ ->
       Ok (expr, rest)
 
-and comma_argument = function
+and fn_call_comma_argument = function
   | {Lex.kind= Lex.Comma; _} :: rest ->
       expression rest
   | _ as rest ->
       error "Function call arguments" "Expected `,` before argument" rest
 
-and comma_arguments args = function
+and fn_call_comma_arguments args = function
   | ({Lex.kind= Lex.ParenRight; _} as t) :: rest ->
       Ok (args, t, rest)
   | _ as rest ->
-      let* arg, rest = comma_argument rest in
-      (comma_arguments [@tailcall]) (arg :: args) rest
+      let* arg, rest = fn_call_comma_argument rest in
+      (fn_call_comma_arguments [@tailcall]) (arg :: args) rest
 
-and function_arguments callee args = function
+and fn_call_arguments callee args = function
   | ({Lex.kind= Lex.ParenRight; _} as t) :: rest ->
       Ok (Call (callee, t, args), rest)
   | _ as rest ->
       let* expr, rest = expression rest in
-      let* args, closing_paren, rest = comma_arguments [expr] rest in
+      let* args, closing_paren, rest = fn_call_comma_arguments [expr] rest in
       let len = List.length args in
       if len >= 255 then
         prerr_endline
@@ -148,7 +148,7 @@ and unary = function
       let+ right, rest = unary rest in
       (Unary (t, right), rest)
   | _ as t ->
-      (call [@tailcall]) t
+      (fn_call [@tailcall]) t
 
 and multiplication tokens =
   let* left, rest = unary tokens in
@@ -398,11 +398,42 @@ and var_decl = function
         "Expected variable declaration (e.g `var x = 1;`)" rest
 
 and function_decl = function
-  | {Lex.kind= Lex.Fun; _} :: _ ->
-      failwith "NIY"
+  | {Lex.kind= Lex.Fun; _}
+    :: ({Lex.kind= Lex.Identifier fn_name; _} as name)
+       :: {Lex.kind= Lex.ParenLeft; _} :: rest ->
+      let* args, rest = fn_decl_arguments fn_name [] rest in
+      let* body, rest = block_stmt rest in
+      Ok (Function (name, args, body), rest)
   | _ as rest ->
       error "Function declaration"
         "Expected function declaration (e.g `fun foo {print 1;}`)" rest
+
+and fn_decl_comma_argument = function
+  | {Lex.kind= Lex.Comma; _} :: rest ->
+      expression rest
+  | _ as rest ->
+      error "Function call arguments" "Expected `,` before argument" rest
+
+and fn_decl_comma_arguments args = function
+  | ({Lex.kind= Lex.ParenRight; _} as t) :: rest ->
+      Ok (args, t, rest)
+  | _ as rest ->
+      let* arg, rest = fn_decl_comma_argument rest in
+      (fn_decl_comma_arguments [@tailcall]) (arg :: args) rest
+
+and fn_decl_arguments callee args = function
+  | ({Lex.kind= Lex.ParenRight; _} as t) :: rest ->
+      Ok (List.rev args, rest)
+  | _ as rest ->
+      let* expr, rest = expression rest in
+      let* args, closing_paren, rest = fn_decl_comma_arguments [expr] rest in
+      let len = List.length args in
+      if len >= 255 then
+        prerr_endline
+          (Printf.sprintf
+             "Function definition: Too many arguments: limit is 255, got: %d"
+             len) ;
+      Ok (List.rev args, rest)
 
 and declaration d =
   match d with
