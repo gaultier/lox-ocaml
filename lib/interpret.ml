@@ -172,13 +172,21 @@ let rec eval s env =
           enclosed_env stmts
       in
       (Nil, env)
-  | Function ({Lex.kind= Lex.Identifier name; _}, args, body) ->
+  | Function ({Lex.kind= Lex.Identifier name; _}, decl_args, body) ->
       let fn =
         Callable
-          { arity= List.length args
+          { arity= List.length decl_args
           ; name
           ; fn=
-              (fun _ env ->
+              (fun call_args env ->
+                List.iter2
+                  (fun decl_arg call_arg ->
+                    match decl_arg with
+                    | {Lex.kind= Identifier n; _} ->
+                        assign_in_environment env n call_arg
+                    | _ ->
+                        failwith "Invalid function argument")
+                  decl_args call_args ;
                 let env =
                   Base.List.fold ~init:env
                     ~f:(fun env stmt ->
