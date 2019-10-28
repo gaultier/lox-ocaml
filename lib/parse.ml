@@ -45,6 +45,7 @@ type statement =
   | Print of expr
   | Var of Lex.token_kind * expr
   | Block of statement array
+  | Function of Lex.token * Lex.token list * statement list
   | IfStmt of expr * statement
   | IfElseStmt of expr * statement * statement
   | WhileStmt of expr * statement

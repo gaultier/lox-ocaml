@@ -167,6 +167,8 @@ let rec eval s env =
           enclosed_env stmts
       in
       (Nil, env)
+  | Function _ ->
+      failwith "NIY function decl"
   | IfElseStmt (e, then_stmt, else_stmt) -> (
       let e, env = eval_exp e env in
       match e with
