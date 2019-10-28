@@ -9,7 +9,7 @@ let rec find_in_environment env v =
     | Some e ->
         find_in_environment e v
     | None ->
-        failwith (Printf.sprintf "Accessing unbound variable %s" v) )
+        Base.Printf.failwithf "Accessing unbound variable %s" v () )
 
 let rec assign_in_environment env n v =
   match Base.Map.find env.values n with
@@ -20,7 +20,7 @@ let rec assign_in_environment env n v =
     | Some env ->
         assign_in_environment env n v
     | None ->
-        failwith (Printf.sprintf "Accessing unbound variable %s" n) )
+        Base.Printf.failwithf "Accessing unbound variable %s" n () )
 
 let rec eval_exp exp env =
   match exp with
@@ -37,9 +37,8 @@ let rec eval_exp exp env =
         | Lex.Bang, _ ->
             Bool false
         | _ ->
-            failwith
-              (Printf.sprintf "Unary expression not allowed: %s %s"
-                 (Lex.token_to_string t) (value_to_string v))
+            Base.Printf.failwithf "Unary expression not allowed: %s %s"
+              (Lex.token_to_string t) (value_to_string v) ()
       in
       (res, env)
   | Literal l ->
@@ -67,8 +66,8 @@ let rec eval_exp exp env =
       assign_in_environment env n e ;
       (e, env)
   | Assign (t, _) ->
-      failwith
-        (Printf.sprintf "Invalid assignment: %s " (Lex.token_to_string t))
+      Base.Printf.failwithf "Invalid assignment: %s " (Lex.token_to_string t)
+        ()
   | Binary (l, t, r) -> (
       let l, env = eval_exp l env in
       let r, env = eval_exp r env in
@@ -80,9 +79,8 @@ let rec eval_exp exp env =
       | Number a, Lex.Minus, Number b ->
           (Number (a -. b), env)
       | Number _, Lex.Slash, Number 0. ->
-          failwith
-            (Printf.sprintf "Division by zero not allowed: %s %s %s"
-               (value_to_string l) (Lex.token_to_string t) (value_to_string r))
+          Base.Printf.failwithf "Division by zero not allowed: %s %s %s"
+            (value_to_string l) (Lex.token_to_string t) (value_to_string r) ()
       | Number a, Lex.Slash, Number b ->
           (Number (a /. b), env)
       | Number a, Lex.Star, Number b ->
@@ -110,8 +108,8 @@ let rec eval_exp exp env =
       | _, Lex.EqualEqual, Nil ->
           (Bool false, env)
       | _ ->
-          failwith ("Binary expression not allowed: " ^ Lex.token_to_string t)
-      )
+          Base.Printf.failwithf "Binary expression not allowed: %s"
+            (Lex.token_to_string t) () )
   | Call (callee, _, args) ->
       (* FIXME *)
       let e, env = eval_exp callee env in
@@ -120,9 +118,8 @@ let rec eval_exp exp env =
         | Callable f ->
             f
         | _ ->
-            failwith
-              (Printf.sprintf "Value `%s` cannot be called as a function"
-                 (value_to_string e))
+            Base.Printf.failwithf "Value `%s` cannot be called as a function"
+              (value_to_string e) ()
       in
       let args, env =
         Base.List.fold ~init:([], env)
@@ -138,10 +135,9 @@ let rec eval_exp exp env =
         | l when l = f.arity ->
             l
         | _ ->
-            failwith
-              (Printf.sprintf
-                 "Wrong arity in function call: expected %d, got %d" f.arity
-                 len)
+            Base.Printf.failwithf
+              "Wrong arity in function call: expected %d, got %d" f.arity len
+              ()
       in
       let v, env = f.fn args env in
       (v, env)
@@ -159,9 +155,8 @@ let rec eval s env =
       let env = {env with values= Base.Map.set ~key:n ~data:e env.values} in
       (e, env)
   | Var (t, _) ->
-      failwith
-        (Printf.sprintf "Invalid variable declaration: %s"
-           (Lex.token_to_string t))
+      Base.Printf.failwithf "Invalid variable declaration: %s"
+        (Lex.token_to_string t) ()
   | Block stmts ->
       let enclosed_env = {values= globals; enclosing= Some env} in
       let _ =
