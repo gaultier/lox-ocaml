@@ -417,7 +417,7 @@ and fn_decl_comma_argument = function
     :: ({Lex.kind= Lex.Identifier _; _} as identifier) :: rest ->
       Ok (identifier, rest)
   | _ as rest ->
-      error "Function call arguments" "Expected `,` before argument" rest
+      error "Function declaration" "Expected `,` before argument" rest
 
 and fn_decl_comma_arguments args = function
   | {Lex.kind= Lex.ParenRight; _} :: rest ->
