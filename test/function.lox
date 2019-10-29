@@ -2,6 +2,6 @@ fun simplePrint(a) { print a; }
 
 simplePrint(1); // 1
 
-var a = 2;
-simplePrint(a); // 2
+//var a = 2;
+//simplePrint(a); // 2
 

@@ -22,7 +22,7 @@ let rec assign_in_environment env n v =
     | Some env ->
         assign_in_environment env n v
     | None ->
-        Base.Printf.failwithf "Accessing unbound variable %s" n () )
+        Base.Printf.failwithf "Assigning unbound variable %s" n () )
 
 let rec eval_exp exp env =
   match exp with
@@ -180,7 +180,8 @@ let rec eval s env =
                   (fun decl_arg call_arg ->
                     match decl_arg with
                     | {Lex.kind= Identifier n; _} ->
-                        assign_in_environment env n call_arg
+                        env.values <-
+                          Base.Map.set ~key:n ~data:call_arg env.values
                     | _ ->
                         failwith "Invalid function argument")
                   decl_args call_args ;
