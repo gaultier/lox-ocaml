@@ -368,8 +368,15 @@ and return_stmt = function
     ->
       Ok (Return (ret, Literal Nil), rest)
   | ({Lex.kind= Lex.Return; _} as ret) :: rest ->
-      let+ e, rest = expression rest in
-      (Return (ret, e), rest)
+      let* e, rest = expression rest in
+      let* rest =
+        match rest with
+        | {Lex.kind= Lex.SemiColon; _} :: rest ->
+            Ok rest
+        | _ as rest ->
+            error "Return statement" "Expected terminating semicolon `;`" rest
+      in
+      Ok (Return (ret, e), rest)
   | _ as rest ->
       error "Return statement" "Expected return statement (e.g `return 1+2;`)"
         rest
