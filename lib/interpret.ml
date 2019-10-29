@@ -2,6 +2,8 @@ open Parse
 
 let empty = Base.Map.empty (module Base.String)
 
+exception FunctionReturn of value
+
 let rec find_in_environment env v =
   match Base.Map.find env.values v with
   | Some v ->
@@ -168,8 +170,9 @@ let rec eval s env =
           enclosed_env stmts
       in
       (Nil, env)
-  | Return _ ->
-      failwith "NIY"
+  | Return (_, expr) ->
+      let v, _ = eval_exp expr env in
+      raise (FunctionReturn v)
   | Function ({Lex.kind= Lex.Identifier name; _}, decl_args, body) ->
       let fn =
         Callable
