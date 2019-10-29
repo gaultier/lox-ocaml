@@ -149,7 +149,7 @@ let rec eval_exp exp env =
               "Wrong arity in function call: expected %d, got %d" f.arity len
               ()
       in
-      let v, env = f.fn args env in
+      let v, _ = f.fn args f.decl_environment in
       (v, env)
 
 let rec eval s env =
@@ -227,10 +227,8 @@ let rec eval s env =
                 (* print_endline "---" ; *)
                 (v, Option.get env.enclosing)) }
       in
-      let env =
-        {decl_env with values= Base.Map.set ~key:name ~data:fn decl_env.values}
-      in
-      (Nil, env)
+      decl_env.values <- Base.Map.set ~key:name ~data:fn decl_env.values ;
+      (Nil, decl_env)
   | Function _ ->
       failwith "Invalid function declaration"
   | IfElseStmt (e, then_stmt, else_stmt) -> (
