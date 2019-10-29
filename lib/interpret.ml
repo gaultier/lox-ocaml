@@ -1,7 +1,5 @@
 open Parse
 
-let empty = Base.Map.empty (module Base.String)
-
 exception FunctionReturn of value
 
 let rec find_in_environment env v =
@@ -178,30 +176,36 @@ let rec eval s env =
         Callable
           { arity= List.length decl_args
           ; name
+          ; decl_environment= env
           ; fn=
-              (fun call_args env ->
+              (fun call_args _ ->
                 let enclosed_env = {values= empty; enclosing= Some env} in
-                List.iter2
-                  (fun decl_arg call_arg ->
-                    match decl_arg with
-                    | {Lex.kind= Identifier n; _} ->
-                        enclosed_env.values <-
-                          Base.Map.set ~key:n ~data:call_arg
-                            enclosed_env.values
-                    | _ ->
-                        failwith "Invalid function argument")
-                  decl_args call_args ;
+                let enclosed_env =
+                  List.fold_left2
+                    (fun enclosed_env decl_arg call_arg ->
+                      match decl_arg with
+                      | {Lex.kind= Identifier n; _} ->
+                          { enclosed_env with
+                            values=
+                              Base.Map.set ~key:n ~data:call_arg
+                                enclosed_env.values }
+                      | _ ->
+                          failwith "Invalid function argument")
+                    enclosed_env decl_args call_args
+                in
                 try
                   Base.List.fold ~init:enclosed_env
-                    ~f:(fun env stmt ->
-                      let _, env = eval stmt env in
-                      env)
+                    ~f:(fun enc_env stmt ->
+                      let _, enc_env = eval stmt enc_env in
+                      enc_env)
                     body
                   |> ignore ;
                   (Nil, env)
                 with FunctionReturn v -> (v, env)) }
       in
-      env.values <- Base.Map.set ~key:name ~data:fn env.values ;
+      let env =
+        {env with values= Base.Map.set ~key:name ~data:fn env.values}
+      in
       (Nil, env)
   | Function _ ->
       failwith "Invalid function declaration"

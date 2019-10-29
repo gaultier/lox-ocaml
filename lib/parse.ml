@@ -7,6 +7,7 @@ let ( let+ ) x f = Result.map f x
 type callable =
   { arity: int
   ; name: string
+  ; decl_environment: environment
   ; fn: value list -> environment -> value * environment }
 
 and t = (string, value, Base.String.comparator_witness) Base.Map.t
@@ -20,6 +21,8 @@ and value =
   | String of string
   | Callable of callable
 
+let empty = Base.Map.empty (module Base.String)
+
 let globals =
   Base.Map.of_alist_exn
     (module Base.String)
@@ -27,6 +30,7 @@ let globals =
       , Callable
           { arity= 0
           ; name= "clock"
+          ; decl_environment= {values= empty; enclosing= None}
           ; fn= (fun _ env -> (Number (Unix.gettimeofday ()), env)) } ) ]
 
 type expr =
