@@ -168,6 +168,8 @@ let rec eval s env =
           enclosed_env stmts
       in
       (Nil, env)
+  | Return _ ->
+      failwith "NIY"
   | Function ({Lex.kind= Lex.Identifier name; _}, decl_args, body) ->
       let fn =
         Callable

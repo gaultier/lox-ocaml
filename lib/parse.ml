@@ -46,6 +46,7 @@ type statement =
   | Var of Lex.token_kind * expr
   | Block of statement array
   | Function of Lex.token * Lex.token list * statement list
+  | Return of Lex.token * expr
   | IfStmt of expr * statement
   | IfElseStmt of expr * statement * statement
   | WhileStmt of expr * statement
@@ -362,6 +363,17 @@ and block_stmt = function
   | _ as rest ->
       error "Block statement" "Expected block statement with opening `{`" rest
 
+and return_stmt = function
+  | ({Lex.kind= Lex.Return; _} as ret) :: {Lex.kind= Lex.SemiColon; _} :: rest
+    ->
+      Ok (Return (ret, Literal Nil), rest)
+  | ({Lex.kind= Lex.Return; _} as ret) :: rest ->
+      let+ e, rest = expression rest in
+      (Return (ret, e), rest)
+  | _ as rest ->
+      error "Return statement" "Expected return statement (e.g `return 1+2;`)"
+        rest
+
 and statement = function
   | [] as rest ->
       error "Statement" "Expected statement (e.g `x = 1;`)" rest
@@ -375,6 +387,8 @@ and statement = function
       while_stmt t
   | {Lex.kind= Lex.For; _} :: _ as t ->
       for_stmt t
+  | {Lex.kind= Lex.Return; _} :: _ as t ->
+      return_stmt t
   | _ as t ->
       let+ e, rest = expression_stmt t in
       (Expr e, rest)
