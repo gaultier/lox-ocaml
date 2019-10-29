@@ -3,10 +3,13 @@ open Parse
 exception FunctionReturn of value * environment
 
 let rec env_debug = function
-  | {values; enclosing} ->
+  | {values; enclosing= None} ->
+      Base.Map.iteri values ~f:(fun ~key ~data ->
+          Printf.printf "Env: `%s`=`%s`\n" key (value_to_string data))
+  | {values; enclosing= Some enclosing} ->
       Base.Map.iteri values ~f:(fun ~key ~data ->
           Printf.printf "Env: `%s`=`%s`\n" key (value_to_string data)) ;
-      Option.iter env_debug enclosing
+      env_debug enclosing
 
 let rec find_in_environment env n =
   match Base.Map.find env.values n with
@@ -137,7 +140,7 @@ let rec eval_exp exp env =
               (value_to_string e) ()
       in
       Printf.printf "Fn call in, `%s`\n" f.name ;
-      let args, _ =
+      let args, env =
         Base.List.fold ~init:([], env)
           ~f:(fun acc a ->
             let values, env = acc in
@@ -219,15 +222,22 @@ let rec eval s env =
                           failwith "Invalid function argument")
                     env decl_args call_args
                 in
+                Printf.printf "In fn call, bound args, env:\n" ;
+                env_debug env ;
                 let v, env =
-                  Base.List.fold ~init:(Nil, env)
-                    ~f:(fun (_, env) stmt ->
-                      try
-                        let _, env = eval stmt env in
-                        (Nil, env)
-                      with FunctionReturn (v, env) -> (v, env))
+                  Base.List.fold ~init:(None, env)
+                    ~f:(fun (v, env) stmt ->
+                      match v with
+                      | Some _ as ret_value ->
+                          (ret_value, env)
+                      | None -> (
+                        try
+                          let _, env = eval stmt env in
+                          (None, env)
+                        with FunctionReturn (v, env) -> (Some v, env) ))
                     body
                 in
+                let v = Base.Option.value v ~default:Nil in
                 Printf.printf "Fn call `%s` finished\n" name ;
                 env_debug env ;
                 print_endline "---" ;
