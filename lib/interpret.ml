@@ -190,14 +190,16 @@ let rec eval s env =
                     | _ ->
                         failwith "Invalid function argument")
                   decl_args call_args ;
-                let env =
-                  Base.List.fold ~init:env
-                    ~f:(fun env stmt ->
-                      let _, env = eval stmt env in
-                      env)
-                    body
-                in
-                (Nil, env)) }
+                try
+                  let env =
+                    Base.List.fold ~init:env
+                      ~f:(fun env stmt ->
+                        let _, env = eval stmt env in
+                        env)
+                      body
+                  in
+                  (Nil, env)
+                with FunctionReturn v -> (v, env)) }
       in
       env.values <- Base.Map.set ~key:name ~data:fn env.values ;
       (Nil, env)
