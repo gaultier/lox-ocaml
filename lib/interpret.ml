@@ -193,7 +193,7 @@ let rec eval s env =
                 in
                 (Nil, env)) }
       in
-      assign_in_environment env name fn ;
+      env.values <- Base.Map.set ~key:name ~data:fn env.values ;
       (Nil, env)
   | Function _ ->
       failwith "Invalid function declaration"
