@@ -2,6 +2,19 @@ fun simplePrint(a) { print a; }
 
 simplePrint(1); // 1
 
-//var a = 2;
-//simplePrint(a); // 2
+// Global
+var a = 2;
+simplePrint(a); // 2
 
+
+// Shadowing local
+{
+    var a = 3;
+    simplePrint(a); // 3
+}
+
+// Assigned global
+{
+    a = 4;
+    simplePrint(a); // 4
+}
