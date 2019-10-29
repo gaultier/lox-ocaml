@@ -2,7 +2,7 @@ open Parse
 
 let empty = Base.Map.empty (module Base.String)
 
-exception FunctionReturn of value
+exception FunctionReturn of value * environment
 
 let rec find_in_environment env v =
   match Base.Map.find env.values v with
@@ -171,8 +171,8 @@ let rec eval s env =
       in
       (Nil, env)
   | Return (_, expr) ->
-      let v, _ = eval_exp expr env in
-      raise (FunctionReturn v)
+      let v, env = eval_exp expr env in
+      raise (FunctionReturn (v, env))
   | Function ({Lex.kind= Lex.Identifier name; _}, decl_args, body) ->
       let fn =
         Callable
@@ -199,7 +199,7 @@ let rec eval s env =
                       body
                   in
                   (Nil, env)
-                with FunctionReturn v -> (v, env)) }
+                with FunctionReturn (v, env) -> (v, env)) }
       in
       env.values <- Base.Map.set ~key:name ~data:fn env.values ;
       (Nil, env)
