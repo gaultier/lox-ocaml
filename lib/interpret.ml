@@ -1,17 +1,25 @@
 open Parse
 
-exception FunctionReturn of value
+exception FunctionReturn of value * environment
 
-let rec find_in_environment env v =
-  match Base.Map.find env.values v with
+let rec env_debug = function
+  | {values; enclosing} ->
+      Base.Map.iteri values ~f:(fun ~key ~data ->
+          Printf.printf "Env: `%s`=`%s`\n" key (value_to_string data)) ;
+      Option.iter env_debug enclosing
+
+let rec find_in_environment env n =
+  match Base.Map.find env.values n with
   | Some v ->
       v
   | None -> (
     match env.enclosing with
-    | Some e ->
-        find_in_environment e v
+    | Some env ->
+        find_in_environment env n
     | None ->
-        Base.Printf.failwithf "Accessing unbound variable %s" v () )
+        Printf.printf "Access to unbound variable `%s`, env_debug incoming\n" n ;
+        env_debug env ;
+        Base.Printf.failwithf "Accessing unbound variable `%s`" n () )
 
 let rec assign_in_environment env n v =
   match Base.Map.find env.values n with
@@ -64,9 +72,13 @@ let rec eval_exp exp env =
   | Variable _ ->
       failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e) ->
-      let e, env = eval_exp e env in
-      assign_in_environment env n e ;
-      (e, env)
+      Printf.printf "Assigning var `%s`\n" n ;
+      env_debug env ;
+      let v, env = eval_exp e env in
+      assign_in_environment env n v ;
+      Printf.printf "Assigned var `%s`=`%s`\n" n (value_to_string v) ;
+      env_debug env ;
+      (v, env)
   | Assign (t, _) ->
       Base.Printf.failwithf "Invalid assignment: %s " (Lex.token_to_string t)
         ()
@@ -113,6 +125,8 @@ let rec eval_exp exp env =
           Base.Printf.failwithf "Binary expression not allowed: %s"
             (Lex.token_to_string t) () )
   | Call (callee, _, args) ->
+      Printf.printf "Fn call starting, env_debug incoming\n" ;
+      env_debug env ;
       let e, env = eval_exp callee env in
       let f =
         match e with
@@ -122,6 +136,7 @@ let rec eval_exp exp env =
             Base.Printf.failwithf "Value `%s` cannot be called as a function"
               (value_to_string e) ()
       in
+      Printf.printf "Fn call in, `%s`\n" f.name ;
       let args, _ =
         Base.List.fold ~init:([], env)
           ~f:(fun acc a ->
@@ -140,7 +155,10 @@ let rec eval_exp exp env =
               "Wrong arity in function call: expected %d, got %d" f.arity len
               ()
       in
-      let v, env = f.fn args f.decl_environment in
+      let v, env = f.fn args env in
+      Printf.printf "Call to function `%s` finished, env_debug incoming\n"
+        f.name ;
+      env_debug env ;
       (v, env)
 
 let rec eval s env =
@@ -169,44 +187,57 @@ let rec eval s env =
       in
       (Nil, env)
   | Return (_, expr) ->
-      let v, _ = eval_exp expr env in
-      raise (FunctionReturn v)
+      let v, env = eval_exp expr env in
+      Printf.printf "Returning `%s` from function, env_debug incoming\n"
+        (value_to_string v) ;
+      env_debug env ;
+      raise (FunctionReturn (v, env))
   | Function ({Lex.kind= Lex.Identifier name; _}, decl_args, body) ->
+      Printf.printf "fn decl `%s`, env_debug incoming\n" name ;
+      env_debug env ;
+      let decl_env = env in
       let fn =
         Callable
           { arity= List.length decl_args
           ; name
-          ; decl_environment= env
+          ; decl_environment= decl_env
           ; fn=
-              (fun call_args decl_env ->
-                let enclosed_env = {values= empty; enclosing= Some decl_env} in
-                let enclosed_env =
+              (fun call_args env ->
+                print_endline "---" ;
+                Printf.printf "\nFn call starting `%s`\n" name ;
+                env_debug env ;
+                let env = {values= empty; enclosing= Some env} in
+                let env =
                   List.fold_left2
-                    (fun enclosed_env decl_arg call_arg ->
+                    (fun env decl_arg call_arg ->
                       match decl_arg with
                       | {Lex.kind= Identifier n; _} ->
-                          { enclosed_env with
+                          { env with
                             values=
-                              Base.Map.set ~key:n ~data:call_arg
-                                enclosed_env.values }
+                              Base.Map.set ~key:n ~data:call_arg env.values }
                       | _ ->
                           failwith "Invalid function argument")
-                    enclosed_env decl_args call_args
+                    env decl_args call_args
                 in
-                try
-                  let enclosed_env =
-                    Base.List.fold ~init:enclosed_env
-                      ~f:(fun enc_env stmt ->
-                        let _, enc_env = eval stmt enc_env in
-                        enc_env)
-                      body
-                  in
-                  (Nil, Option.get enclosed_env.enclosing)
-                with FunctionReturn v -> (v, env)) }
+                let v, env =
+                  Base.List.fold ~init:(Nil, env)
+                    ~f:(fun (_, env) stmt ->
+                      try
+                        let _, env = eval stmt env in
+                        (Nil, env)
+                      with FunctionReturn (v, env) -> (v, env))
+                    body
+                in
+                Printf.printf "Fn call `%s` finished\n" name ;
+                env_debug env ;
+                print_endline "---" ;
+                (v, env)) }
       in
       let env =
-        {env with values= Base.Map.set ~key:name ~data:fn env.values}
+        {decl_env with values= Base.Map.set ~key:name ~data:fn decl_env.values}
       in
+      Printf.printf "Finished fn decl `%s`, env debug incoming\n" name ;
+      env_debug env ;
       (Nil, env)
   | Function _ ->
       failwith "Invalid function declaration"
