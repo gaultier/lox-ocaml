@@ -179,7 +179,6 @@ let rec eval s env =
       (Nil, env)
   | Return (_, expr) ->
       let v, env = eval_exp expr env in
-      env_debug env ;
       raise (FunctionReturn (v, env))
   | Function ({Lex.kind= Lex.Identifier name; _}, decl_args, body) ->
       let decl_env = env in
@@ -190,7 +189,6 @@ let rec eval s env =
           ; decl_environment= decl_env
           ; fn=
               (fun call_args env ->
-                print_endline "---" ;
                 (* Printf.printf "\nFn call starting `%s`\n" name ; *)
                 (* env_debug env ; *)
                 let env = {values= empty; enclosing= Some env} in
