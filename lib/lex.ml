@@ -41,7 +41,7 @@ type token_kind =
 type token = {kind: token_kind; lines: int; columns: int}
 
 let keywords =
-  Base.Hashtbl.of_alist_exn
+  Base.Map.of_alist_exn
     (module Base.String)
     [ ("and", And)
     ; ("class", Class)
@@ -109,7 +109,7 @@ let lex_identifier rest lines columns =
   let identifier, rest = Base.List.split_while rest ~f:Base.Char.is_alphanum in
   let s = Base.String.of_char_list identifier in
   let new_columns = columns + String.length s in
-  match Base.Hashtbl.find keywords s with
+  match Base.Map.find keywords s with
   | Some k ->
       (Ok {kind= k; lines; columns}, rest, lines, new_columns)
   | _ ->
