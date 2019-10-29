@@ -180,26 +180,26 @@ let rec eval s env =
           ; name
           ; fn=
               (fun call_args env ->
-                let env = {values= empty; enclosing= Some env} in
+                let enclosed_env = {values= empty; enclosing= Some env} in
                 List.iter2
                   (fun decl_arg call_arg ->
                     match decl_arg with
                     | {Lex.kind= Identifier n; _} ->
-                        env.values <-
-                          Base.Map.set ~key:n ~data:call_arg env.values
+                        enclosed_env.values <-
+                          Base.Map.set ~key:n ~data:call_arg
+                            enclosed_env.values
                     | _ ->
                         failwith "Invalid function argument")
                   decl_args call_args ;
                 try
-                  let env =
-                    Base.List.fold ~init:env
-                      ~f:(fun env stmt ->
-                        let _, env = eval stmt env in
-                        env)
-                      body
-                  in
+                  Base.List.fold ~init:enclosed_env
+                    ~f:(fun env stmt ->
+                      let _, env = eval stmt env in
+                      env)
+                    body
+                  |> ignore ;
                   (Nil, env)
-                with FunctionReturn (v, env) -> (v, env)) }
+                with FunctionReturn (v, _) -> (v, env)) }
       in
       env.values <- Base.Map.set ~key:name ~data:fn env.values ;
       (Nil, env)
