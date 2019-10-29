@@ -484,10 +484,10 @@ and program decls = function
         match d with Ok (_, rest) -> rest | Error (_, rest) -> rest
       in
       let ok_or_err = map ~f:fst d |> map_error ~f:fst in
-      let decls = Base.Array.append decls [|ok_or_err|] in
+      let decls = ok_or_err :: decls in
       (program [@tailcall]) decls rest
 
-let parse tokens = program [||] tokens |> Base.Array.to_list |> combine_errors
+let parse tokens = program [] tokens |> List.rev |> combine_errors
 
 let value_to_string = function
   | String s ->
