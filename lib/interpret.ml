@@ -1,5 +1,7 @@
 open Parse
 
+let empty = Base.Map.empty (module Base.String)
+
 let rec find_in_environment env v =
   match Base.Map.find env.values v with
   | Some v ->
@@ -21,12 +23,6 @@ let rec assign_in_environment env n v =
         assign_in_environment env n v
     | None ->
         Base.Printf.failwithf "Accessing unbound variable %s" n () )
-
-let rec assign_in_global_environment n v = function
-  | {enclosing= None; _} as env ->
-      env.values <- Base.Map.set ~key:n ~data:v env.values
-  | {enclosing= Some enc; _} ->
-      (assign_in_global_environment [@tailcall]) n v enc
 
 let rec eval_exp exp env =
   match exp with
@@ -163,7 +159,7 @@ let rec eval s env =
       Base.Printf.failwithf "Invalid variable declaration: %s"
         (Lex.token_to_string t) ()
   | Block stmts ->
-      let enclosed_env = {values= globals; enclosing= Some env} in
+      let enclosed_env = {values= empty; enclosing= Some env} in
       let _ =
         Array.fold_left
           (fun enclosed_env s ->
@@ -179,6 +175,7 @@ let rec eval s env =
           ; name
           ; fn=
               (fun call_args env ->
+                let env = {values= empty; enclosing= Some env} in
                 List.iter2
                   (fun decl_arg call_arg ->
                     match decl_arg with
@@ -196,7 +193,7 @@ let rec eval s env =
                 in
                 (Nil, env)) }
       in
-      assign_in_global_environment name fn env ;
+      assign_in_environment env name fn ;
       (Nil, env)
   | Function _ ->
       failwith "Invalid function declaration"
