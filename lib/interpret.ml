@@ -122,7 +122,7 @@ let rec eval_exp exp env =
             Base.Printf.failwithf "Value `%s` cannot be called as a function"
               (value_to_string e) ()
       in
-      let args, env =
+      let args, _ =
         Base.List.fold ~init:([], env)
           ~f:(fun acc a ->
             let values, env = acc in
@@ -140,7 +140,7 @@ let rec eval_exp exp env =
               "Wrong arity in function call: expected %d, got %d" f.arity len
               ()
       in
-      let v, env = f.fn args env in
+      let v, env = f.fn args f.decl_environment in
       (v, env)
 
 let rec eval s env =
@@ -178,8 +178,8 @@ let rec eval s env =
           ; name
           ; decl_environment= env
           ; fn=
-              (fun call_args _ ->
-                let enclosed_env = {values= empty; enclosing= Some env} in
+              (fun call_args decl_env ->
+                let enclosed_env = {values= empty; enclosing= Some decl_env} in
                 let enclosed_env =
                   List.fold_left2
                     (fun enclosed_env decl_arg call_arg ->
@@ -194,13 +194,14 @@ let rec eval s env =
                     enclosed_env decl_args call_args
                 in
                 try
-                  Base.List.fold ~init:enclosed_env
-                    ~f:(fun enc_env stmt ->
-                      let _, enc_env = eval stmt enc_env in
-                      enc_env)
-                    body
-                  |> ignore ;
-                  (Nil, env)
+                  let enclosed_env =
+                    Base.List.fold ~init:enclosed_env
+                      ~f:(fun enc_env stmt ->
+                        let _, enc_env = eval stmt enc_env in
+                        enc_env)
+                      body
+                  in
+                  (Nil, Option.get enclosed_env.enclosing)
                 with FunctionReturn v -> (v, env)) }
       in
       let env =
