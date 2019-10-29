@@ -12,7 +12,7 @@ count(5);
 // 2
 // 1
 
-
+print "";
 fun count2(n) {
     if (n <= 2) return n;
     return count2(n-1) * count2(n-1);

@@ -191,10 +191,9 @@ let rec eval s env =
               (fun call_args env ->
                 (* Printf.printf "\nFn call starting `%s`\n" name ; *)
                 (* env_debug env ; *)
-                let env = {values= empty; enclosing= Some env} in
                 let env =
-                  List.fold_left2
-                    (fun env decl_arg call_arg ->
+                  Base.List.fold2_exn
+                    ~f:(fun env decl_arg call_arg ->
                       match decl_arg with
                       | {Lex.kind= Identifier n; _} ->
                           { env with
@@ -202,7 +201,8 @@ let rec eval s env =
                               Base.Map.set ~key:n ~data:call_arg env.values }
                       | _ ->
                           failwith "Invalid function argument")
-                    env decl_args call_args
+                    ~init:{values= empty; enclosing= Some env}
+                    decl_args call_args
                 in
                 let v, env =
                   Base.List.fold ~init:(None, env)
@@ -225,7 +225,7 @@ let rec eval s env =
                 (* (value_to_string v) ; *)
                 (* env_debug env ; *)
                 (* print_endline "---" ; *)
-                (v, env)) }
+                (v, Option.get env.enclosing)) }
       in
       let env =
         {decl_env with values= Base.Map.set ~key:name ~data:fn decl_env.values}
