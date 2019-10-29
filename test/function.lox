@@ -1,3 +1,4 @@
+// One argument
 fun simplePrint(a) { print a; }
 
 simplePrint(1); // 1
@@ -18,3 +19,48 @@ simplePrint(a); // 2
     a = 4;
     simplePrint(a); // 4
 }
+
+// New local
+{
+    var b = 5;
+    simplePrint(b); // 5
+}
+
+
+// Two arguments
+fun printAdd(a, b) { 
+    var c = a+b;
+    print(c); 
+}
+
+printAdd(a, 2); // 6
+
+printAdd(2+2, 4-1); // 7
+
+// Local should not conflict with function body
+{
+    var c = 99;
+    printAdd(8, 0); // 8
+}
+
+
+// Modifying globals
+fun setGlobal(b) {
+    a = b * b;
+}
+
+setGlobal(3); 
+print a; // 9
+
+
+// Recursion
+fun simpleRec(i) {
+    if (i == 10) print i;
+    else simpleRec(i-1);
+}
+
+simpleRec(20); // 10
+
+
+
+
