@@ -2,15 +2,6 @@ open Parse
 
 exception FunctionReturn of value * environment
 
-let rec env_debug = function
-  | {values; enclosing= None} ->
-      Base.Map.iteri values ~f:(fun ~key ~data ->
-          Printf.printf "Env: `%s`=`%s`\n" key (value_to_string data))
-  | {values; enclosing= Some enclosing} ->
-      Base.Map.iteri values ~f:(fun ~key ~data ->
-          Printf.printf "Env: `%s`=`%s`\n" key (value_to_string data)) ;
-      env_debug enclosing
-
 let rec find_in_environment env n =
   match Base.Map.find env.values n with
   | Some v ->
@@ -189,8 +180,6 @@ let rec eval s env =
           ; decl_environment= decl_env
           ; fn=
               (fun call_args env ->
-                (* Printf.printf "\nFn call starting `%s`\n" name ; *)
-                (* env_debug env ; *)
                 let env =
                   Base.List.fold2_exn
                     ~f:(fun env decl_arg call_arg ->
@@ -214,17 +203,10 @@ let rec eval s env =
                         try
                           let _, env = eval stmt env in
                           (None, env)
-                        with FunctionReturn (v, env) ->
-                          (* Printf.printf "Return value = %s\n" *)
-                          (* (value_to_string v) ; *)
-                          (Some v, env) ))
+                        with FunctionReturn (v, env) -> (Some v, env) ))
                     body
                 in
                 let v = Base.Option.value v ~default:Nil in
-                (* Printf.printf "Fn call `%s` finished with value %s\n" name *)
-                (* (value_to_string v) ; *)
-                (* env_debug env ; *)
-                (* print_endline "---" ; *)
                 (v, Option.get env.enclosing)) }
       in
       decl_env.values <- Base.Map.set ~key:name ~data:fn decl_env.values ;
