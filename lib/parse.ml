@@ -286,11 +286,6 @@ and while_stmt = function
       error "While statement"
         "Expected while statement: (e.g `while(true) {}`)" rest
 
-(*
-forStmt   → "for" "(" ( varDecl | exprStmt | ";" )
-                      expression? ";"
-                      expression? ")" statement ;
-                      *)
 and for_stmt = function
   (* for (;;) *)
   (* for (;i; i = i+1) *)
