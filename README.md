@@ -45,3 +45,11 @@ You can `opam install patdiff` for a better output, by default it uses `diff`.
 $ make docker
 $ docker run -it lox
 ```
+
+## Better REPL experience
+
+ˋlox replˋ works out of the box with ˋrlwrapˋ if you have it installed:
+
+ˋrlwrap lox replˋ will provide command history for free.
+
+
