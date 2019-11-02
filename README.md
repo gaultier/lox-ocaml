@@ -31,6 +31,7 @@ $ ./lox repl
 - Boolean logic (and, or, not)
 - Loops (while, for)
 - All errors are reported with line and column number
+- Functions (including recursion, closures)
 
 ## Test
 
