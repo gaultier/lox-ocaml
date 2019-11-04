@@ -49,8 +49,8 @@ $ docker run -it lox
 
 ## Better REPL experience
 
-ˋlox replˋ works out of the box with ˋrlwrapˋ if you have it installed:
+`lox repl` works out of the box with `rlwrap` if you have it installed:
 
-ˋrlwrap lox replˋ will provide command history for free.
+`rlwrap lox repl` will provide command history for free.
 
 
