@@ -439,6 +439,9 @@ and fn_decl_comma_argument = function
   | {Lex.kind= Lex.Comma; _}
     :: ({Lex.kind= Lex.Identifier _; _} as identifier) :: rest ->
       Ok (identifier, rest)
+  | {Lex.kind= Lex.Comma; _} :: {Lex.kind= Lex.ParenRight; _} :: _ as rest ->
+      error "Function declaration"
+        "Trailing commas are not allowed in function arguments" rest
   | _ as rest ->
       error "Function declaration" "Expected `,` before argument" rest
 
