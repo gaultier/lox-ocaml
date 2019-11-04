@@ -11,10 +11,19 @@ let read_whole_file filename =
     Stdlib.close_in ch ; Ok s
   with Sys_error e -> Result.fail [e]
 
+let read_from_stdin () =
+  let rec read acc =
+    try
+      let s = Stdlib.read_line () in
+      read (acc ^ s)
+    with _ -> acc
+  in
+  Ok (read "")
+
 let print_errors = List.iter ~f:Stdlib.prerr_endline
 
-let lox_run filename =
-  read_whole_file filename >>= Lox.Lex.lex >>= Lox.Parse.parse
+let lox_run input =
+  input >>= Lox.Lex.lex >>= Lox.Parse.parse
   >>= Lox.Interpret.interpret
         {Lox.Parse.values= Lox.Parse.globals; Lox.Parse.enclosing= None}
   |> Result.iter_error ~f:print_errors
@@ -41,7 +50,9 @@ let main () =
   | [|_; "repl"|] ->
       repl {Lox.Parse.values= Lox.Parse.globals; Lox.Parse.enclosing= None}
   | [|_; "run"; filename|] ->
-      lox_run filename
+      filename |> read_whole_file |> lox_run
+  | [|_; "run"|] ->
+      read_from_stdin () |> lox_run
   | _ ->
       Stdlib.prerr_endline
         "Bad CLI invocation.\n\
