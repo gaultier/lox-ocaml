@@ -4,9 +4,9 @@ let ( let* ) x f = Result.bind x ~f
 
 let ( let+ ) x f = Result.map ~f x
 
-let ( >>| ) x f = Result.map ~f x
+let ( >>| ) = Result.( >>| )
 
-let ( >>= ) x f = Result.bind ~f x
+let ( >>= ) = Result.( >>= )
 
 type callable =
   { arity: int
