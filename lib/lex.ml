@@ -1,3 +1,5 @@
+open Base
+
 type token_kind =
   | CurlyBraceLeft
   | CurlyBraceRight
@@ -41,8 +43,8 @@ type token_kind =
 type token = {kind: token_kind; lines: int; columns: int}
 
 let keywords =
-  Base.Map.of_alist_exn
-    (module Base.String)
+  Map.of_alist_exn
+    (module String)
     [ ("and", And)
     ; ("class", Class)
     ; ("else", Else)
@@ -69,8 +71,8 @@ let rec string_count_lines_columns lines columns = function
       (string_count_lines_columns [@tailcall]) lines (columns + 1) rest
 
 let lex_string rest lines columns =
-  let sl, rest = Base.List.split_while rest ~f:(fun c -> c != '"') in
-  let s = Base.String.of_char_list sl in
+  let sl, rest = List.split_while rest ~f:(fun c -> not (Char.equal c '"')) in
+  let s = String.of_char_list sl in
   match rest with
   | '"' :: rest ->
       let t = {kind= String s; lines; columns} in
@@ -79,7 +81,7 @@ let lex_string rest lines columns =
   | _ ->
       (* TODO: we should sync at newlines probably here *)
       let lines, columns = string_count_lines_columns lines columns sl in
-      ( Base.Result.failf
+      ( Result.failf
           "%d:%d:Missing closing quote, no more tokens for string: `%s`" lines
           columns s
       , rest
@@ -89,12 +91,12 @@ let lex_string rest lines columns =
 let lex_num rest lines columns =
   (* trailing dot is allowed for now *)
   let digits, rest =
-    Base.List.split_while rest ~f:(fun c -> Base.Char.is_digit c || c == '.')
+    List.split_while rest ~f:(fun c -> Char.is_digit c || Char.equal c '.')
   in
-  let s = digits |> Base.String.of_char_list in
+  let s = digits |> String.of_char_list in
   let new_columns = columns + String.length s in
-  if Base.String.is_suffix s ~suffix:"." then
-    ( Base.Result.failf "%d:%d:Trailing `.` in number not allowed: `%s`" lines
+  if String.is_suffix s ~suffix:"." then
+    ( Result.failf "%d:%d:Trailing `.` in number not allowed: `%s`" lines
         (new_columns - 1) s
     , rest
     , lines
@@ -106,10 +108,10 @@ let lex_num rest lines columns =
     , new_columns )
 
 let lex_identifier rest lines columns =
-  let identifier, rest = Base.List.split_while rest ~f:Base.Char.is_alphanum in
-  let s = Base.String.of_char_list identifier in
+  let identifier, rest = List.split_while rest ~f:Char.is_alphanum in
+  let s = String.of_char_list identifier in
   let new_columns = columns + String.length s in
-  match Base.Map.find keywords s with
+  match Map.find keywords s with
   | Some k ->
       (Ok {kind= k; lines; columns}, rest, lines, new_columns)
   | _ ->
@@ -161,7 +163,7 @@ let rec lex_r acc rest lines columns =
         rest lines (columns + 1)
   | '/' :: '/' :: rest ->
       (lex_r [@tailcall]) acc
-        (Base.List.drop_while rest ~f:(fun c -> c != '\n'))
+        (List.drop_while rest ~f:(fun c -> not (Char.equal c '\n')))
         lines (columns + 1)
   | '/' :: rest ->
       (lex_r [@tailcall])
@@ -210,16 +212,15 @@ let rec lex_r acc rest lines columns =
   | '0' .. '9' :: _ ->
       let t, rest, lines, columns = lex_num rest lines columns in
       (lex_r [@tailcall]) (t :: acc) rest lines columns
-  | x :: _ when Base.Char.is_alpha x ->
+  | x :: _ when Char.is_alpha x ->
       let t, rest, lines, columns = lex_identifier rest lines columns in
       (lex_r [@tailcall]) (t :: acc) rest lines columns
   | x :: rest ->
-      let err = Base.Result.failf "%d:%d:Unkown token: `%c`" lines columns x in
+      let err = Result.failf "%d:%d:Unkown token: `%c`" lines columns x in
       (lex_r [@tailcall]) (err :: acc) rest lines (columns + 1)
 
 let lex s =
-  lex_r [] (Base.String.to_list s) 1 1
-  |> List.rev |> Base.Result.combine_errors
+  lex_r [] (String.to_list s) 1 1 |> List.rev |> Result.combine_errors
 
 let token_to_string = function
   | CurlyBraceLeft ->
