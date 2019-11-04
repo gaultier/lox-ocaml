@@ -92,7 +92,7 @@ let rec eval_exp exp env =
       | Number a, Lex.LessEqual, Number b ->
           (Bool (Float.( <= ) a b), env)
       | Number a, Lex.Greater, Number b ->
-          (Bool (Float.( < ) a b), env)
+          (Bool (Float.( > ) a b), env)
       | Number a, Lex.GreaterEqual, Number b ->
           (Bool (Float.( >= ) a b), env)
       | Number a, Lex.BangEqual, Number b ->
