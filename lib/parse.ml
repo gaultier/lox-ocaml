@@ -1,8 +1,12 @@
-open Base.Result
+open Base
 
-let ( let* ) x f = Result.bind x f
+let ( let* ) x f = Result.bind x ~f
 
-let ( let+ ) x f = Result.map f x
+let ( let+ ) x f = Result.map ~f x
+
+let ( >>| ) x f = Result.map ~f x
+
+let ( >>= ) x f = Result.bind ~f x
 
 type callable =
   { arity: int
@@ -10,7 +14,7 @@ type callable =
   ; decl_environment: environment
   ; fn: value list -> environment -> value * environment }
 
-and t = (string, value, Base.String.comparator_witness) Base.Map.t
+and t = (string, value, String.comparator_witness) Map.t
 
 and environment = {mutable values: t; enclosing: environment option}
 
@@ -21,11 +25,11 @@ and value =
   | String of string
   | Callable of callable
 
-let empty = Base.Map.empty (module Base.String)
+let empty = Map.empty (module String)
 
 let globals =
-  Base.Map.of_alist_exn
-    (module Base.String)
+  Map.of_alist_exn
+    (module String)
     [ ( "clock"
       , Callable
           { arity= 0
@@ -67,10 +71,10 @@ let rec sync acc = function
 
 let error ctx expected rest =
   let lines, columns =
-    Base.List.hd rest
-    |> Base.Option.map ~f:(fun {Lex.lines; Lex.columns; _} -> (lines, columns))
+    List.hd rest
+    |> Option.map ~f:(fun {Lex.lines; Lex.columns; _} -> (lines, columns))
     (*FIXME*)
-    |> Base.Option.value ~default:(1, 1)
+    |> Option.value ~default:(1, 1)
   in
   let invalid, rest = sync [] rest in
   let invalid_s =
@@ -79,11 +83,10 @@ let error ctx expected rest =
         "no more tokens"
     | _ :: _ ->
         invalid
-        |> Base.List.rev_map ~f:(fun {Lex.kind= x; _} -> Lex.token_to_string x)
-        |> Base.List.fold ~init:"" ~f:(fun acc x -> acc ^ " " ^ x)
-        |> String.trim
+        |> List.rev_map ~f:(fun {Lex.kind= x; _} -> Lex.token_to_string x)
+        |> List.fold ~init:"" ~f:(fun acc x -> acc ^ " " ^ x)
   in
-  fail
+  Result.fail
     ( Printf.sprintf "%d:%d:Context: %s. %s. Got: `%s`." lines columns ctx
         expected invalid_s
     , rest )
@@ -141,7 +144,7 @@ and fn_call_arguments callee args = function
       let* args, closing_paren, rest = fn_call_comma_arguments [expr] rest in
       let len = List.length args in
       if len >= 255 then
-        prerr_endline
+        Stdlib.prerr_endline
           (Printf.sprintf
              "Function call: Too many arguments: limit is 255, got: %d" len) ;
       Ok (Call (callee, closing_paren, List.rev args), rest)
@@ -424,7 +427,7 @@ and function_decl = function
       let* block, rest = block_stmt rest in
       match block with
       | Block statements ->
-          Ok (Function (name, args, Base.Array.to_list statements), rest)
+          Ok (Function (name, args, Array.to_list statements), rest)
       | _ ->
           error "Function declaration"
             "Expected function body (e.g `{ print 1; print 2;}`)" rest )
@@ -453,7 +456,7 @@ and fn_decl_arguments args = function
       let* args, rest = fn_decl_comma_arguments [identifier] rest in
       let len = List.length args in
       if len >= 255 then
-        prerr_endline
+        Stdlib.prerr_endline
           (Printf.sprintf
              "Function definition: Too many arguments: limit is 255, got: %d"
              len) ;
@@ -478,11 +481,11 @@ and program decls = function
       let rest =
         match d with Ok (_, rest) -> rest | Error (_, rest) -> rest
       in
-      let ok_or_err = map ~f:fst d |> map_error ~f:fst in
+      let ok_or_err = Result.map ~f:fst d |> Result.map_error ~f:fst in
       let decls = ok_or_err :: decls in
       (program [@tailcall]) decls rest
 
-let parse tokens = program [] tokens |> List.rev |> combine_errors
+let parse tokens = program [] tokens |> List.rev |> Result.combine_errors
 
 let value_to_string = function
   | String s ->
