@@ -1,9 +1,10 @@
 open Parse
+open Base
 
 exception FunctionReturn of value * environment
 
 let rec find_in_environment env n =
-  match Base.Map.find env.values n with
+  match Map.find env.values n with
   | Some v ->
       v
   | None -> (
@@ -11,18 +12,18 @@ let rec find_in_environment env n =
     | Some env ->
         find_in_environment env n
     | None ->
-        Base.Printf.failwithf "Accessing unbound variable `%s`" n () )
+        Printf.failwithf "Accessing unbound variable `%s`" n () )
 
 let rec assign_in_environment env n v =
-  match Base.Map.find env.values n with
+  match Map.find env.values n with
   | Some _ ->
-      env.values <- Base.Map.set ~key:n ~data:v env.values
+      env.values <- Map.set ~key:n ~data:v env.values
   | None -> (
     match env.enclosing with
     | Some env ->
         assign_in_environment env n v
     | None ->
-        Base.Printf.failwithf "Assigning unbound variable %s" n () )
+        Printf.failwithf "Assigning unbound variable %s" n () )
 
 let rec eval_exp exp env =
   match exp with
@@ -39,7 +40,7 @@ let rec eval_exp exp env =
         | Lex.Bang, _ ->
             Bool false
         | _ ->
-            Base.Printf.failwithf "Unary expression not allowed: %s %s"
+            Printf.failwithf "Unary expression not allowed: %s %s"
               (Lex.token_to_string t) (value_to_string v) ()
       in
       (res, env)
@@ -68,8 +69,7 @@ let rec eval_exp exp env =
       assign_in_environment env n v ;
       (v, env)
   | Assign (t, _) ->
-      Base.Printf.failwithf "Invalid assignment: %s " (Lex.token_to_string t)
-        ()
+      Printf.failwithf "Invalid assignment: %s " (Lex.token_to_string t) ()
   | Binary (l, t, r) -> (
       let l, env = eval_exp l env in
       let r, env = eval_exp r env in
@@ -81,28 +81,28 @@ let rec eval_exp exp env =
       | Number a, Lex.Minus, Number b ->
           (Number (a -. b), env)
       | Number _, Lex.Slash, Number 0. ->
-          Base.Printf.failwithf "Division by zero not allowed: %s %s %s"
+          Printf.failwithf "Division by zero not allowed: %s %s %s"
             (value_to_string l) (Lex.token_to_string t) (value_to_string r) ()
       | Number a, Lex.Slash, Number b ->
           (Number (a /. b), env)
       | Number a, Lex.Star, Number b ->
           (Number (a *. b), env)
       | Number a, Lex.Less, Number b ->
-          (Bool (a < b), env)
+          (Bool (Float.( < ) a b), env)
       | Number a, Lex.LessEqual, Number b ->
-          (Bool (a <= b), env)
+          (Bool (Float.( <= ) a b), env)
       | Number a, Lex.Greater, Number b ->
-          (Bool (a > b), env)
+          (Bool (Float.( < ) a b), env)
       | Number a, Lex.GreaterEqual, Number b ->
-          (Bool (a >= b), env)
+          (Bool (Float.( >= ) a b), env)
       | Number a, Lex.BangEqual, Number b ->
-          (Bool (a != b), env)
+          (Bool (not (Float.equal a b)), env)
       | Number a, Lex.EqualEqual, Number b ->
           (Bool (Float.equal a b), env)
       | String a, Lex.EqualEqual, String b ->
           (Bool (String.equal a b), env)
       | Bool a, Lex.EqualEqual, Bool b ->
-          (Bool (a == b), env)
+          (Bool (Bool.equal a b), env)
       | Nil, Lex.EqualEqual, Nil ->
           (Bool true, env)
       | Nil, Lex.EqualEqual, _ ->
@@ -110,7 +110,7 @@ let rec eval_exp exp env =
       | _, Lex.EqualEqual, Nil ->
           (Bool false, env)
       | _ ->
-          Base.Printf.failwithf "Binary expression not allowed: %s"
+          Printf.failwithf "Binary expression not allowed: %s"
             (Lex.token_to_string t) () )
   | Call (callee, _, args) ->
       let e, env = eval_exp callee env in
@@ -119,11 +119,11 @@ let rec eval_exp exp env =
         | Callable f ->
             f
         | _ ->
-            Base.Printf.failwithf "Value `%s` cannot be called as a function"
+            Printf.failwithf "Value `%s` cannot be called as a function"
               (value_to_string e) ()
       in
       let args, env =
-        Base.List.fold ~init:([], env)
+        List.fold ~init:([], env)
           ~f:(fun acc a ->
             let values, env = acc in
             let v, env = eval_exp a env in
@@ -136,7 +136,7 @@ let rec eval_exp exp env =
         | l when l = f.arity ->
             l
         | _ ->
-            Base.Printf.failwithf
+            Printf.failwithf
               "Wrong arity in function call: expected %d, got %d" f.arity len
               ()
       in
@@ -149,23 +149,23 @@ let rec eval s env =
       (eval_exp [@tailcall]) e env
   | Print e ->
       let v, env = eval_exp e env in
-      v |> Parse.value_to_string |> print_endline ;
+      v |> Parse.value_to_string |> Stdlib.print_endline ;
       (Nil, env)
   | Var (Lex.Identifier n, e) ->
       let e, env = eval_exp e env in
-      let env = {env with values= Base.Map.set ~key:n ~data:e env.values} in
+      let env = {env with values= Map.set ~key:n ~data:e env.values} in
       (e, env)
   | Var (t, _) ->
-      Base.Printf.failwithf "Invalid variable declaration: %s"
+      Printf.failwithf "Invalid variable declaration: %s"
         (Lex.token_to_string t) ()
   | Block stmts ->
       let enclosed_env = {values= empty; enclosing= Some env} in
       let _ =
-        Array.fold_left
-          (fun enclosed_env s ->
+        Array.fold
+          ~f:(fun enclosed_env s ->
             let _, enclosed_env = eval s enclosed_env in
             enclosed_env)
-          enclosed_env stmts
+          ~init:enclosed_env stmts
       in
       (Nil, env)
   | Return (_, expr) ->
@@ -181,20 +181,19 @@ let rec eval s env =
           ; fn=
               (fun call_args env ->
                 let env =
-                  Base.List.fold2_exn
+                  List.fold2_exn
                     ~f:(fun env decl_arg call_arg ->
                       match decl_arg with
                       | {Lex.kind= Identifier n; _} ->
                           { env with
-                            values=
-                              Base.Map.set ~key:n ~data:call_arg env.values }
+                            values= Map.set ~key:n ~data:call_arg env.values }
                       | _ ->
                           failwith "Invalid function argument")
                     ~init:{values= empty; enclosing= Some env}
                     decl_args call_args
                 in
                 let v, env =
-                  Base.List.fold ~init:(None, env)
+                  List.fold ~init:(None, env)
                     ~f:(fun (v, env) stmt ->
                       match v with
                       | Some _ as ret_value ->
@@ -206,10 +205,10 @@ let rec eval s env =
                         with FunctionReturn (v, env) -> (Some v, env) ))
                     body
                 in
-                let v = Base.Option.value v ~default:Nil in
-                (v, Option.get env.enclosing)) }
+                let v = Option.value v ~default:Nil in
+                (v, Option.value_exn env.enclosing)) }
       in
-      decl_env.values <- Base.Map.set ~key:name ~data:fn decl_env.values ;
+      decl_env.values <- Map.set ~key:name ~data:fn decl_env.values ;
       (Nil, decl_env)
   | Function _ ->
       failwith "Invalid function declaration"
@@ -245,11 +244,11 @@ and eval_while w env =
 
 let interpret env stmts =
   try
-    stmts |> Base.List.to_array
-    |> Base.Array.fold
+    stmts |> List.to_array
+    |> Array.fold
          ~init:([||], env)
          ~f:(fun (acc, env) s ->
            let e, env = eval s env in
            (Array.append acc [|e|], env))
-    |> Result.ok
+    |> fun (stmts, env) -> Ok (stmts, env)
   with Failure err -> Result.Error [err]
