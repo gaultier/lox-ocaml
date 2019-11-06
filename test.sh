@@ -1,5 +1,5 @@
 #!/bin/sh
-set -ex
+set -e
 
 if command -v patdiff
 then
@@ -10,7 +10,7 @@ fi
 
 for i in test/*.lox
 do
-    printf "Testing [%s]" "$i"
+    printf "Testing [%s]\n" "$i"
     ./lox run "$i" > "${i%.lox}.output" 2>&1
     $DIFFTOOL "${i%.lox}.expected" "${i%.lox}.output"
 done
