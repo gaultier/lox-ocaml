@@ -1,0 +1,7 @@
+fun printNumbers(i) {
+    if (i == 5) return;
+    print i;
+    printNumbers(i+1);
+}
+
+printNumbers(1);
