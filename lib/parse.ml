@@ -5,10 +5,6 @@ let ( let* ) x f = Result.bind x ~f
 
 let ( let+ ) x f = Result.map ~f x
 
-let ( >>| ) = Result.( >>| )
-
-let ( >>= ) = Result.( >>= )
-
 type callable =
   { arity: int
   ; name: string
@@ -301,18 +297,18 @@ and for_stmt = function
         | {kind= SemiColon; _} :: rest ->
             Ok (Expr (Literal (Bool true)), rest)
         | _ ->
-            expression_stmt rest >>| fun (e, r) -> (Expr e, r)
+            let+ e, rest = expression_stmt rest in
+            (Expr e, rest)
       in
       let* stop_cond, rest =
         match rest with
         | {kind= SemiColon; _} :: rest ->
             Ok (Literal (Bool true), rest)
         | _ -> (
-            expression rest
-            >>= fun (e, r) ->
-            match r with
-            | {kind= SemiColon; _} :: r ->
-                Ok (e, r)
+            let* e, rest = expression rest in
+            match rest with
+            | {kind= SemiColon; _} :: rest ->
+                Ok (e, rest)
             | _ ->
                 error "For-loop"
                   "Expected terminating semicolon after stop condition" rest )
