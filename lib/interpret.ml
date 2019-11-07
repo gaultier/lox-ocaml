@@ -17,7 +17,8 @@ let rec find_in_environment env n =
 let rec assign_in_environment env n v =
   match Map.find env.values n with
   | Some _ ->
-      env.values <- Map.set ~key:n ~data:v env.values
+      env.values <- Map.set ~key:n ~data:v env.values ;
+      (v, env)
   | None -> (
     match env.enclosing with
     | Some env ->
@@ -66,8 +67,7 @@ let rec eval_exp exp env =
       failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e) ->
       let v, env = eval_exp e env in
-      assign_in_environment env n v ;
-      (v, env)
+      assign_in_environment env n v
   | Assign (t, _) ->
       Printf.failwithf "Invalid assignment: %s " (Lex.token_to_string t) ()
   | Binary (l, t, r) -> (
