@@ -26,6 +26,9 @@ let rec assign_in_environment env n v =
     | None ->
         Printf.failwithf "Assigning unbound variable %s" n () )
 
+let create_in_env env n v =
+  (v, {env with values= Map.set ~key:n ~data:v env.values})
+
 let rec eval_exp exp env =
   match exp with
   | Grouping e ->
@@ -153,8 +156,7 @@ let rec eval s env =
       (Nil, env)
   | Var (Lex.Identifier n, e) ->
       let e, env = eval_exp e env in
-      let env = {env with values= Map.set ~key:n ~data:e env.values} in
-      (e, env)
+      create_in_env env n e
   | Var (t, _) ->
       Printf.failwithf "Invalid variable declaration: %s"
         (Lex.token_to_string t) ()
@@ -185,8 +187,8 @@ let rec eval s env =
                     ~f:(fun env decl_arg call_arg ->
                       match decl_arg with
                       | {Lex.kind= Identifier n; _} ->
-                          { env with
-                            values= Map.set ~key:n ~data:call_arg env.values }
+                          let _, env = create_in_env env n call_arg in
+                          env
                       | _ ->
                           failwith "Invalid function argument")
                     ~init:{values= empty; enclosing= Some env}
@@ -208,7 +210,7 @@ let rec eval s env =
                 let v = Option.value v ~default:Nil in
                 (v, Option.value_exn env.enclosing)) }
       in
-      decl_env.values <- Map.set ~key:name ~data:fn decl_env.values ;
+      let _, decl_env = create_in_env decl_env name fn in
       (Nil, decl_env)
   | Function _ ->
       failwith "Invalid function declaration"
