@@ -148,6 +148,10 @@ let rec eval_exp exp env =
             Printf.failwithf "Value `%s` cannot be called as a function"
               (value_to_string e) ()
       in
+      Stdlib.print_string "Entering call fn. Call env: " ;
+      print_env call_env ;
+      Stdlib.print_string " Decl env: " ;
+      print_env f.decl_environment ;
       let args =
         List.fold ~init:[]
           ~f:(fun values a ->
@@ -165,7 +169,15 @@ let rec eval_exp exp env =
               "Wrong arity in function call: expected %d, got %d" f.arity len
               ()
       in
+      Stdlib.print_string "Calling fn. Call env: " ;
+      print_env call_env ;
+      Stdlib.print_string " Decl env: " ;
+      print_env f.decl_environment ;
       let v, env = f.fn args f.decl_environment in
+      Stdlib.print_string "Called fn. Call env: " ;
+      print_env call_env ;
+      Stdlib.print_string " Decl env: " ;
+      print_env f.decl_environment ;
       (v, env)
 
 let rec eval s env =
@@ -199,6 +211,9 @@ let rec eval s env =
   | Function ({Lex.kind= Lex.Identifier name; _}, decl_args, body) ->
       let decl_env = env in
       let fn call_args env =
+        let env = empty :: env in
+        Stdlib.print_string "Entering fn body. env: " ;
+        print_env env ;
         let env =
           List.fold2_exn
             ~f:(fun env decl_arg call_arg ->
@@ -207,8 +222,10 @@ let rec eval s env =
                   create_in_current_env n call_arg env
               | _ ->
                   failwith "Invalid function argument")
-            ~init:(empty :: env) decl_args call_args
+            ~init:env decl_args call_args
         in
+        Stdlib.print_string "Bound fn args. env: " ;
+        print_env env ;
         let v, env =
           List.fold ~init:(None, env)
             ~f:(fun (v, env) stmt ->
