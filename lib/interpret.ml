@@ -3,16 +3,24 @@ open Base
 
 exception FunctionReturn of value * environment
 
-let rec print_env = function
-  | [] ->
-      ()
-  | x :: xs ->
-      Map.iteri
-        ~f:(fun ~key:k ~data:v ->
-          Stdlib.Printf.printf "%s=%s\n" k (value_to_string v))
-        x ;
-      Stdlib.print_endline "" ;
-      print_env xs
+let print_env env =
+  let rec print_env_rec = function
+    | [] ->
+        ()
+    | [x] ->
+        Map.iteri
+          ~f:(fun ~key:k ~data:v ->
+            Stdlib.Printf.printf "%s=%s " k (value_to_string v))
+          x
+    | x :: xs ->
+        Map.iteri
+          ~f:(fun ~key:k ~data:v ->
+            Stdlib.Printf.printf "%s=%s " k (value_to_string v))
+          x ;
+        Stdlib.print_string ", " ;
+        print_env_rec xs
+  in
+  Stdlib.print_string "[ " ; print_env_rec env ; Stdlib.print_string "]\n"
 
 let rec find_in_environment n = function
   | [] ->
@@ -29,11 +37,11 @@ let assign_in_environment n v env =
       match Map.find x n with
       | Some _ ->
           let x = Map.set ~key:n ~data:v x in
-          xs @ (x :: acc)
+          List.rev acc @ (x :: xs)
       | None ->
           assign_rec (x :: acc) xs )
   in
-  assign_rec [] env |> List.rev
+  assign_rec [] env
 
 let create_in_current_env n v = function
   | [] ->
@@ -178,7 +186,7 @@ let rec eval s env =
         (Lex.token_to_string t) ()
   | Block stmts ->
       let env = empty :: env in
-      let env : environment =
+      let env =
         Array.fold
           ~f:(fun env s ->
             let _, env = eval s env in
