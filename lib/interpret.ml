@@ -139,7 +139,7 @@ let rec eval_exp exp env =
           Printf.failwithf "Binary expression not allowed: %s"
             (Lex.token_to_string t) () )
   | Call (callee, _, args) ->
-      let e, env = eval_exp callee env in
+      let e, call_env = eval_exp callee env in
       let f =
         match e with
         | Callable f ->
@@ -148,12 +148,11 @@ let rec eval_exp exp env =
             Printf.failwithf "Value `%s` cannot be called as a function"
               (value_to_string e) ()
       in
-      let args, env =
-        List.fold ~init:([], env)
-          ~f:(fun acc a ->
-            let values, env = acc in
-            let v, env = eval_exp a env in
-            (v :: values, env))
+      let args =
+        List.fold ~init:[]
+          ~f:(fun values a ->
+            let v, _ = eval_exp a call_env in
+            v :: values)
           args
       in
       let len = List.length args in
@@ -166,7 +165,7 @@ let rec eval_exp exp env =
               "Wrong arity in function call: expected %d, got %d" f.arity len
               ()
       in
-      let v, _ = f.fn args f.decl_environment in
+      let v, env = f.fn args f.decl_environment in
       (v, env)
 
 let rec eval s env =
