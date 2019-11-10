@@ -180,40 +180,38 @@ let rec eval s env =
       raise (FunctionReturn (v, env))
   | Function ({Lex.kind= Lex.Identifier name; _}, decl_args, body) ->
       let decl_env = env in
-      let fn =
-        Callable
-          { arity= List.length decl_args
-          ; name
-          ; decl_environment= decl_env
-          ; fn=
-              (fun call_args env ->
-                let env =
-                  List.fold2_exn
-                    ~f:(fun env decl_arg call_arg ->
-                      match decl_arg with
-                      | {Lex.kind= Identifier n; _} ->
-                          create_in_current_env n call_arg env
-                      | _ ->
-                          failwith "Invalid function argument")
-                    ~init:(empty :: env) decl_args call_args
-                in
-                let v, env =
-                  List.fold ~init:(None, env)
-                    ~f:(fun (v, env) stmt ->
-                      match v with
-                      | Some _ as ret_value ->
-                          (ret_value, env)
-                      | None -> (
-                        try
-                          let _, env = eval stmt env in
-                          (None, env)
-                        with FunctionReturn (v, env) -> (Some v, env) ))
-                    body
-                in
-                let v = Option.value v ~default:Nil in
-                (v, List.tl_exn env)) }
+      let fn call_args env =
+        let env =
+          List.fold2_exn
+            ~f:(fun env decl_arg call_arg ->
+              match decl_arg with
+              | {Lex.kind= Identifier n; _} ->
+                  create_in_current_env n call_arg env
+              | _ ->
+                  failwith "Invalid function argument")
+            ~init:(empty :: env) decl_args call_args
+        in
+        let v, env =
+          List.fold ~init:(None, env)
+            ~f:(fun (v, env) stmt ->
+              match v with
+              | Some _ as ret_value ->
+                  (ret_value, env)
+              | None -> (
+                try
+                  let _, env = eval stmt env in
+                  (None, env)
+                with FunctionReturn (v, env) -> (Some v, env) ))
+            body
+        in
+        let v = Option.value v ~default:Nil in
+        (v, List.tl_exn env)
       in
-      let decl_env = create_in_current_env name fn decl_env in
+      let call =
+        {arity= List.length decl_args; name; decl_environment= decl_env; fn}
+      in
+      let decl_env = create_in_current_env name (Callable call) decl_env in
+      call.decl_environment <- decl_env ;
       (Nil, decl_env)
   | Function _ ->
       failwith "Invalid function declaration"

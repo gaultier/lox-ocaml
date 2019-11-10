@@ -8,7 +8,7 @@ let ( let+ ) x f = Result.map ~f x
 type callable =
   { arity: int
   ; name: string
-  ; decl_environment: environment
+  ; mutable decl_environment: environment
   ; fn: value list -> environment -> value * environment }
 
 and t = (string, value, String.comparator_witness) Map.t
