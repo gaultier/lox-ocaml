@@ -18,7 +18,7 @@ let assign_in_environment n v env =
       match Map.find x n with
       | Some _ ->
           let x = Map.set ~key:n ~data:v x in
-          acc @ (x :: xs)
+          xs @ (x :: acc)
       | None ->
           assign_rec (x :: acc) xs )
   in
