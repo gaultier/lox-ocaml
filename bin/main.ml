@@ -24,8 +24,7 @@ let print_errors = List.iter ~f:Stdlib.prerr_endline
 
 let lox_run input =
   input >>= Lox.Lex.lex >>= Lox.Parse.parse
-  >>= Lox.Interpret.interpret
-        {Lox.Parse.values= Lox.Parse.globals; Lox.Parse.enclosing= None}
+  >>= Lox.Interpret.interpret [Lox.Parse.globals]
   |> Result.iter_error ~f:print_errors
 
 let rec repl env =
@@ -48,7 +47,7 @@ let rec repl env =
 let main () =
   match Sys.argv with
   | [|_; "repl"|] ->
-      repl {Lox.Parse.values= Lox.Parse.globals; Lox.Parse.enclosing= None}
+      repl [Lox.Parse.globals]
   | [|_; "run"; "-"|] ->
       read_from_stdin () |> lox_run
   | [|_; "run"; filename|] ->

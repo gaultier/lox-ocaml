@@ -3,31 +3,33 @@ open Base
 
 exception FunctionReturn of value * environment
 
-let rec find_in_environment env n =
-  match Map.find env.values n with
-  | Some v ->
-      v
-  | None -> (
-    match env.enclosing with
-    | Some env ->
-        find_in_environment env n
-    | None ->
-        Printf.failwithf "Accessing unbound variable `%s`" n () )
+let rec find_in_environment n = function
+  | [] ->
+      Printf.failwithf "Accessing unbound variable `%s`" n ()
+  | x :: xs -> (
+    match Map.find x n with Some v -> v | None -> find_in_environment n xs )
 
-let rec assign_in_environment env n v =
-  match Map.find env.values n with
-  | Some _ ->
-      let env = {env with values= Map.set ~key:n ~data:v env.values} in
-      (v, env)
-  | None -> (
-    match env.enclosing with
-    | Some env ->
-        assign_in_environment env n v
-    | None ->
-        Printf.failwithf "Assigning unbound variable %s" n () )
+let assign_in_environment n v env =
+  let rec assign_rec acc = function
+    | [] ->
+        Printf.failwithf "Assigning unbound variable `%s` to `%s`" n
+          (value_to_string v) ()
+    | x :: xs -> (
+      match Map.find x n with
+      | Some _ ->
+          let x = Map.set ~key:n ~data:v x in
+          acc @ (x :: xs)
+      | None ->
+          assign_rec (x :: acc) xs )
+  in
+  assign_rec [] env |> List.rev
 
-let create_in_current_env env n v =
-  (v, {env with values= Map.set ~key:n ~data:v env.values})
+let create_in_current_env n v = function
+  | [] ->
+      failwith "Empty environment, should never happen"
+  | x :: xs ->
+      let x = Map.set ~key:n ~data:v x in
+      x :: xs
 
 let rec eval_exp exp env =
   match exp with
@@ -65,12 +67,14 @@ let rec eval_exp exp env =
       | _ ->
           (eval_exp [@tailcall]) r env )
   | Variable (Lex.Identifier n) ->
-      (find_in_environment env n, env)
+      let v = find_in_environment n env in
+      (v, env)
   | Variable _ ->
       failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e) ->
       let v, env = eval_exp e env in
-      assign_in_environment env n v
+      let env = assign_in_environment n v env in
+      (v, env)
   | Assign (t, _) ->
       Printf.failwithf "Invalid assignment: %s " (Lex.token_to_string t) ()
   | Binary (l, t, r) -> (
@@ -156,12 +160,13 @@ let rec eval s env =
       (Nil, env)
   | Var (Lex.Identifier n, e) ->
       let e, env = eval_exp e env in
-      create_in_current_env env n e
+      let env = create_in_current_env n e env in
+      (e, env)
   | Var (t, _) ->
       Printf.failwithf "Invalid variable declaration: %s"
         (Lex.token_to_string t) ()
   | Block stmts ->
-      let enclosed_env = {values= empty; enclosing= Some env} in
+      let enclosed_env = empty :: env in
       let _ =
         Array.fold
           ~f:(fun enclosed_env s ->
@@ -187,12 +192,10 @@ let rec eval s env =
                     ~f:(fun env decl_arg call_arg ->
                       match decl_arg with
                       | {Lex.kind= Identifier n; _} ->
-                          let _, env = create_in_current_env env n call_arg in
-                          env
+                          create_in_current_env n call_arg env
                       | _ ->
                           failwith "Invalid function argument")
-                    ~init:{values= empty; enclosing= Some env}
-                    decl_args call_args
+                    ~init:(empty :: env) decl_args call_args
                 in
                 let v, env =
                   List.fold ~init:(None, env)
@@ -208,9 +211,9 @@ let rec eval s env =
                     body
                 in
                 let v = Option.value v ~default:Nil in
-                (v, Option.value_exn env.enclosing)) }
+                (v, List.tl_exn env)) }
       in
-      let _, decl_env = create_in_current_env decl_env name fn in
+      let decl_env = create_in_current_env name fn decl_env in
       (Nil, decl_env)
   | Function _ ->
       failwith "Invalid function declaration"

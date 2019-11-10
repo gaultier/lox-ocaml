@@ -13,7 +13,7 @@ type callable =
 
 and t = (string, value, String.comparator_witness) Map.t
 
-and environment = {values: t; enclosing: environment option}
+and environment = t list
 
 and value =
   | Bool of bool
@@ -31,7 +31,7 @@ let globals =
       , Callable
           { arity= 0
           ; name= "clock"
-          ; decl_environment= {values= empty; enclosing= None}
+          ; decl_environment= [empty]
           ; fn= (fun _ env -> (Number (Unix.gettimeofday ()), env)) } ) ]
 
 type expr =
