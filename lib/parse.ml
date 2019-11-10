@@ -13,7 +13,7 @@ type callable =
 
 and t = (string, value, String.comparator_witness) Map.t
 
-and environment = {mutable values: t; enclosing: environment option}
+and environment = {values: t; enclosing: environment option}
 
 and value =
   | Bool of bool
