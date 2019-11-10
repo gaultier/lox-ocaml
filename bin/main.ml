@@ -54,9 +54,12 @@ let main () =
       filename |> read_whole_file |> lox_run
   | _ ->
       Stdlib.prerr_endline
-        "Use: `lox run foo.lox` to execute a file.\n\
-         Use: `printf 'print 2*3;' | lox run -` to read and execute from stdin.\n\
-         Use `lox repl` or `rlwrap lox repl` to launch the repl."
+        ( "Use: `lox run foo.lox` to execute a file.\n\
+           Use: `printf 'print 2*3;' | lox run -` to read and execute from \
+           stdin.\n\
+           Use `lox repl` or `rlwrap lox repl` to launch the repl.CLI \
+           invocation was: "
+        ^ Array.fold ~f:(fun acc s -> acc ^ s) ~init:"" Sys.argv )
 
 ;;
 main ()
