@@ -3,6 +3,17 @@ open Base
 
 exception FunctionReturn of value * environment
 
+let rec print_env = function
+  | [] ->
+      ()
+  | x :: xs ->
+      Map.iteri
+        ~f:(fun ~key:k ~data:v ->
+          Stdlib.Printf.printf "%s=%s\n" k (value_to_string v))
+        x ;
+      Stdlib.print_endline "" ;
+      print_env xs
+
 let rec find_in_environment n = function
   | [] ->
       Printf.failwithf "Accessing unbound variable `%s`" n ()
@@ -167,7 +178,7 @@ let rec eval s env =
         (Lex.token_to_string t) ()
   | Block stmts ->
       let env = empty :: env in
-      let _ =
+      let env : environment =
         Array.fold
           ~f:(fun env s ->
             let _, env = eval s env in
