@@ -166,15 +166,15 @@ let rec eval s env =
       Printf.failwithf "Invalid variable declaration: %s"
         (Lex.token_to_string t) ()
   | Block stmts ->
-      let enclosed_env = empty :: env in
+      let env = empty :: env in
       let _ =
         Array.fold
-          ~f:(fun enclosed_env s ->
-            let _, enclosed_env = eval s enclosed_env in
-            enclosed_env)
-          ~init:enclosed_env stmts
+          ~f:(fun env s ->
+            let _, env = eval s env in
+            env)
+          ~init:env stmts
       in
-      (Nil, env)
+      (Nil, List.tl_exn env)
   | Return (_, expr) ->
       let v, env = eval_exp expr env in
       raise (FunctionReturn (v, env))
