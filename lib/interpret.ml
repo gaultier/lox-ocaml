@@ -7,12 +7,14 @@ let print_env env =
   let rec print_env_rec = function
     | [] ->
         ()
-    | [x] ->
+    | [{values= x; scope_level= s}] ->
+        Stdlib.Printf.printf "scope: %d " s ;
         Map.iteri
           ~f:(fun ~key:k ~data:v ->
             Stdlib.Printf.printf "%s=%s " k (value_to_string v))
           x
-    | x :: xs ->
+    | {values= x; scope_level= s} :: xs ->
+        Stdlib.Printf.printf "scope: %d " s ;
         Map.iteri
           ~f:(fun ~key:k ~data:v ->
             Stdlib.Printf.printf "%s=%s " k (value_to_string v))
@@ -26,7 +28,11 @@ let rec find_in_environment n = function
   | [] ->
       Printf.failwithf "Accessing unbound variable `%s`" n ()
   | x :: xs -> (
-    match Map.find x n with Some v -> v | None -> find_in_environment n xs )
+    match Map.find x.values n with
+    | Some v ->
+        v
+    | None ->
+        find_in_environment n xs )
 
 let assign_in_environment n v env =
   let rec assign_rec acc = function
@@ -34,9 +40,10 @@ let assign_in_environment n v env =
         Printf.failwithf "Assigning unbound variable `%s` to `%s`" n
           (value_to_string v) ()
     | x :: xs -> (
-      match Map.find x n with
+      match Map.find x.values n with
       | Some _ ->
-          let x = Map.set ~key:n ~data:v x in
+          let values = Map.set ~key:n ~data:v x.values in
+          let x = {x with values} in
           List.rev acc @ (x :: xs)
       | None ->
           assign_rec (x :: acc) xs )
@@ -47,11 +54,12 @@ let create_in_current_env n v = function
   | [] ->
       failwith "Empty environment, should never happen"
   | x :: xs ->
-      let x = Map.set ~key:n ~data:v x in
-      x :: xs
+      let values = Map.set ~key:n ~data:v x.values in
+      {x with values} :: xs
 
-let make_env_with_call_args decl_args call_args decl_env =
-  let decl_env = empty :: decl_env in
+let make_env_with_call_args decl_args call_args (decl_env : environment) =
+  let scope_level = (List.hd_exn decl_env).scope_level in
+  let decl_env = {values= empty; scope_level= scope_level + 1} :: decl_env in
   Stdlib.print_string "Entering fn body. decl_env: " ;
   print_env decl_env ;
   let decl_env =
@@ -190,7 +198,7 @@ let rec eval_exp exp env =
       print_env call_env ;
       Stdlib.print_string " Decl env: " ;
       print_env f.decl_environment ;
-      let v, return_env = f.fn args f.decl_environment in
+      let v, _ = f.fn args f.decl_environment in
       (* TODO *)
       (* List.map2_exn ~f(fun call_env return_env -> ) call_env return_env *)
       Stdlib.print_string "Called fn. Call env: " ;
@@ -199,7 +207,7 @@ let rec eval_exp exp env =
       print_env f.decl_environment ;
       (v, env)
 
-let rec eval s env =
+let rec eval s (env : environment) =
   match s with
   | Expr e ->
       (eval_exp [@tailcall]) e env
@@ -215,7 +223,8 @@ let rec eval s env =
       Printf.failwithf "Invalid variable declaration: %s"
         (Lex.token_to_string t) ()
   | Block stmts ->
-      let env = empty :: env in
+      let scope_level = (List.hd_exn env).scope_level in
+      let env = {values= empty; scope_level= scope_level + 1} :: env in
       let env =
         Array.fold
           ~f:(fun env s ->
@@ -286,7 +295,7 @@ and eval_while w env =
   | _ ->
       failwith "Invalid while statement"
 
-let interpret env stmts =
+let interpret (env : environment) stmts =
   try
     stmts |> List.to_array
     |> Array.fold

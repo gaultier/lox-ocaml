@@ -13,7 +13,9 @@ type callable =
 
 and t = (string, value, String.comparator_witness) Map.t
 
-and environment = t list
+and environment_scope = {values: t; scope_level: int}
+
+and environment = environment_scope list
 
 and value =
   | Bool of bool
@@ -24,15 +26,18 @@ and value =
 
 let empty = Map.empty (module String)
 
-let globals =
-  Map.of_alist_exn
-    (module String)
-    [ ( "clock"
-      , Callable
-          { arity= 0
-          ; name= "clock"
-          ; decl_environment= [empty]
-          ; fn= (fun _ env -> (Number (Unix.gettimeofday ()), env)) } ) ]
+let globals : environment =
+  [ { values=
+        Map.of_alist_exn
+          (module String)
+          [ ( "clock"
+            , Callable
+                { arity= 0
+                ; name= "clock"
+                ; decl_environment= []
+                ; fn= (fun _ env -> (Number (Unix.gettimeofday ()), env)) } )
+          ]
+    ; scope_level= 1 } ]
 
 type expr =
   | Binary of expr * token_kind * expr
