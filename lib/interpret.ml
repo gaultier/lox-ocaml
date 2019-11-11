@@ -50,6 +50,22 @@ let create_in_current_env n v = function
       let x = Map.set ~key:n ~data:v x in
       x :: xs
 
+let make_env_with_call_args decl_args call_args decl_env =
+  let decl_env = empty :: decl_env in
+  Stdlib.print_string "Entering fn body. decl_env: " ;
+  print_env decl_env ;
+  let decl_env =
+    List.fold2_exn
+      ~f:(fun decl_env decl_arg call_arg ->
+        match decl_arg with
+        | {Lex.kind= Identifier n; _} ->
+            create_in_current_env n call_arg decl_env
+        | _ ->
+            failwith "Invalid function argument")
+      ~init:decl_env decl_args call_args
+  in
+  decl_env
+
 let rec eval_exp exp env =
   match exp with
   | Grouping e ->
@@ -152,6 +168,7 @@ let rec eval_exp exp env =
       print_env call_env ;
       Stdlib.print_string " Decl env: " ;
       print_env f.decl_environment ;
+      (* Functions arguments do not change the calling environment *)
       let args =
         List.fold ~init:[]
           ~f:(fun values a ->
@@ -209,21 +226,8 @@ let rec eval s env =
       let v, env = eval_exp expr env in
       raise (FunctionReturn (v, env))
   | Function ({Lex.kind= Lex.Identifier name; _}, decl_args, body) ->
-      let decl_env = env in
       let fn call_args env =
-        let env = empty :: env in
-        Stdlib.print_string "Entering fn body. env: " ;
-        print_env env ;
-        let env =
-          List.fold2_exn
-            ~f:(fun env decl_arg call_arg ->
-              match decl_arg with
-              | {Lex.kind= Identifier n; _} ->
-                  create_in_current_env n call_arg env
-              | _ ->
-                  failwith "Invalid function argument")
-            ~init:env decl_args call_args
-        in
+        let env = make_env_with_call_args decl_args call_args env in
         Stdlib.print_string "Bound fn args. env: " ;
         print_env env ;
         let v, env =
@@ -243,11 +247,11 @@ let rec eval s env =
         (v, List.tl_exn env)
       in
       let call =
-        {arity= List.length decl_args; name; decl_environment= decl_env; fn}
+        {arity= List.length decl_args; name; decl_environment= env; fn}
       in
-      let decl_env = create_in_current_env name (Callable call) decl_env in
-      call.decl_environment <- decl_env ;
-      (Nil, decl_env)
+      let env = create_in_current_env name (Callable call) env in
+      call.decl_environment <- env ;
+      (Nil, env)
   | Function _ ->
       failwith "Invalid function declaration"
   | IfElseStmt (e, then_stmt, else_stmt) -> (
