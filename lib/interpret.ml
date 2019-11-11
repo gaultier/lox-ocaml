@@ -77,10 +77,8 @@ let make_env_with_call_args decl_args call_args (decl_env : environment) =
 let merge_env_with_max_scope onto from =
   let rec merge_env_with_max_scope_rec acc onto from =
     match (onto, from) with
-    | [], _ ->
-        acc
-    | _, [] ->
-        onto
+    | [], x | x, [] ->
+        x @ acc
     | ( {values= v_onto; scope_level= onto_s} :: ontos
       , {values= v_from; scope_level= from_s} :: froms )
       when from_s <= onto_s ->
@@ -101,7 +99,7 @@ let merge_env_with_max_scope onto from =
     | o :: onto, _ :: from ->
         merge_env_with_max_scope_rec (o :: acc) onto from
   in
-  merge_env_with_max_scope_rec [] onto from
+  merge_env_with_max_scope_rec [] onto from |> List.rev
 
 let rec eval_exp exp env =
   match exp with
