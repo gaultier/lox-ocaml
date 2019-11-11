@@ -79,16 +79,16 @@ let merge_env_with_max_scope onto from =
     match (onto, from) with
     | [], [] ->
         acc
-    | [], {values; _} :: xs ->
+    | [], {values; scope_level} :: xs ->
         let scope_level =
           List.hd acc
           |> Option.map ~f:(fun x -> x.scope_level)
-          |> Option.value ~default:1 |> ( + ) 1
+          |> Option.value ~default:(scope_level + 1)
+          |> ( - ) 1
         in
         merge_env_with_max_scope_rec ({values; scope_level} :: acc) [] xs
-    | {values; scope_level} :: xs, [] ->
-        let scope_level = scope_level + 1 in
-        merge_env_with_max_scope_rec ({values; scope_level} :: acc) xs []
+    | xs, [] ->
+        xs @ acc
     | ( {values= v_onto; scope_level= onto_s} :: ontos
       , {values= v_from; scope_level= from_s} :: froms )
       when from_s <= onto_s ->
