@@ -77,8 +77,18 @@ let make_env_with_call_args decl_args call_args (decl_env : environment) =
 let merge_env_with_max_scope onto from =
   let rec merge_env_with_max_scope_rec acc onto from =
     match (onto, from) with
-    | [], x | x, [] ->
-        x @ acc
+    | [], [] ->
+        acc
+    | [], {values; _} :: xs ->
+        let scope_level =
+          List.hd acc
+          |> Option.map ~f:(fun x -> x.scope_level)
+          |> Option.value ~default:1 |> ( + ) 1
+        in
+        merge_env_with_max_scope_rec ({values; scope_level} :: acc) [] xs
+    | {values; scope_level} :: xs, [] ->
+        let scope_level = scope_level + 1 in
+        merge_env_with_max_scope_rec ({values; scope_level} :: acc) xs []
     | ( {values= v_onto; scope_level= onto_s} :: ontos
       , {values= v_from; scope_level= from_s} :: froms )
       when from_s <= onto_s ->
