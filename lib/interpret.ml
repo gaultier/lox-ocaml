@@ -74,6 +74,35 @@ let make_env_with_call_args decl_args call_args (decl_env : environment) =
   in
   decl_env
 
+let merge_env_with_max_scope onto from =
+  let rec merge_env_with_max_scope_rec acc onto from =
+    match (onto, from) with
+    | [], _ ->
+        acc
+    | _, [] ->
+        onto
+    | ( {values= v_onto; scope_level= onto_s} :: ontos
+      , {values= v_from; scope_level= from_s} :: froms )
+      when from_s <= onto_s ->
+        let values =
+          Map.merge
+            ~f:(fun ~key:_ x ->
+              match x with
+              | `Both (_, b) ->
+                  Some b
+              | `Left a ->
+                  Some a
+              | `Right b ->
+                  Some b)
+            v_onto v_from
+        in
+        let onto = {values; scope_level= onto_s} in
+        merge_env_with_max_scope_rec (onto :: acc) ontos froms
+    | o :: onto, _ :: from ->
+        merge_env_with_max_scope_rec (o :: acc) onto from
+  in
+  merge_env_with_max_scope_rec [] onto from
+
 let rec eval_exp exp env =
   match exp with
   | Grouping e ->
@@ -198,13 +227,16 @@ let rec eval_exp exp env =
       print_env call_env ;
       Stdlib.print_string " Decl env: " ;
       print_env f.decl_environment ;
-      let v, _ = f.fn args f.decl_environment in
-      (* TODO *)
-      (* List.map2_exn ~f(fun call_env return_env -> ) call_env return_env *)
+      let v, return_env = f.fn args f.decl_environment in
+      let env = merge_env_with_max_scope call_env return_env in
       Stdlib.print_string "Called fn. Call env: " ;
       print_env call_env ;
       Stdlib.print_string " Decl env: " ;
       print_env f.decl_environment ;
+      Stdlib.print_string " Return env: " ;
+      print_env return_env ;
+      Stdlib.print_string " Merged env: " ;
+      print_env env ;
       (v, env)
 
 let rec eval s (env : environment) =
