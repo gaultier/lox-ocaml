@@ -60,8 +60,8 @@ let create_in_current_env n v = function
 let make_env_with_call_args decl_args call_args (decl_env : environment) =
   let scope_level = (List.hd_exn decl_env).scope_level in
   let decl_env = {values= empty; scope_level= scope_level + 1} :: decl_env in
-  Stdlib.print_string "Entering fn body. decl_env: " ;
-  print_env decl_env ;
+  (* Stdlib.print_string "Entering fn body. decl_env: " ; *)
+  (* print_env decl_env ; *)
   let decl_env =
     List.fold2_exn
       ~f:(fun decl_env decl_arg call_arg ->
@@ -82,9 +82,8 @@ let merge_env_with_max_scope onto from =
     | [], {values; scope_level} :: xs ->
         let scope_level =
           List.hd acc
-          |> Option.map ~f:(fun x -> x.scope_level)
-          |> Option.value ~default:(scope_level + 1)
-          |> ( - ) 1
+          |> Option.map ~f:(fun x -> x.scope_level - 1)
+          |> Option.value ~default:scope_level
         in
         merge_env_with_max_scope_rec ({values; scope_level} :: acc) [] xs
     | xs, [] ->
@@ -209,10 +208,10 @@ let rec eval_exp exp env =
             Printf.failwithf "Value `%s` cannot be called as a function"
               (value_to_string e) ()
       in
-      Stdlib.print_string "Entering call fn. Call env: " ;
-      print_env call_env ;
-      Stdlib.print_string " Decl env: " ;
-      print_env f.decl_environment ;
+      (* Stdlib.print_string "Entering call fn. Call env: " ; *)
+      (* print_env call_env ; *)
+      (* Stdlib.print_string " Decl env: " ; *)
+      (* print_env f.decl_environment ; *)
       (* Functions arguments do not change the calling environment *)
       let args =
         List.fold ~init:[]
@@ -231,20 +230,17 @@ let rec eval_exp exp env =
               "Wrong arity in function call: expected %d, got %d" f.arity len
               ()
       in
-      Stdlib.print_string "Calling fn. Call env: " ;
-      print_env call_env ;
-      Stdlib.print_string " Decl env: " ;
-      print_env f.decl_environment ;
-      let v, return_env = f.fn args f.decl_environment in
-      let env = merge_env_with_max_scope call_env return_env in
-      Stdlib.print_string "Called fn. Call env: " ;
-      print_env call_env ;
-      Stdlib.print_string " Decl env: " ;
-      print_env f.decl_environment ;
-      Stdlib.print_string " Return env: " ;
-      print_env return_env ;
-      Stdlib.print_string " Merged env: " ;
-      print_env env ;
+      (* Stdlib.print_string "Calling fn. Call env: " ; *)
+      (* print_env call_env ; *)
+      (* Stdlib.print_string " Decl env: " ; *)
+      (* print_env f.decl_environment ; *)
+      let v, env = f.fn args call_env in
+      (* Stdlib.print_string "Called fn. Call env: " ; *)
+      (* print_env call_env ; *)
+      (* Stdlib.print_string " Decl env: " ; *)
+      (* print_env f.decl_environment ; *)
+      (* Stdlib.print_string " Merged env: " ; *)
+      (* print_env env ; *)
       (v, env)
 
 let rec eval s (env : environment) =
@@ -279,8 +275,8 @@ let rec eval s (env : environment) =
   | Function ({Lex.kind= Lex.Identifier name; _}, decl_args, body) ->
       let fn call_args env =
         let env = make_env_with_call_args decl_args call_args env in
-        Stdlib.print_string "Bound fn args. env: " ;
-        print_env env ;
+        (* Stdlib.print_string "Bound fn args. env: " ; *)
+        (* print_env env ; *)
         let v, env =
           List.fold ~init:(None, env)
             ~f:(fun (v, env) stmt ->
