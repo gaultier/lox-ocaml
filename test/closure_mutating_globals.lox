@@ -1,0 +1,17 @@
+var a = 1;
+
+fun wrapper() {
+    fun incrA() {
+        a = a + 1;
+    }
+    return incrA;
+}
+
+var f = wrapper();
+
+f();
+print a;
+
+f();
+print a;
+
