@@ -1,0 +1,18 @@
+
+var a = 1;
+
+
+fun nextPrint(next) {
+    print a;
+    return next();
+}
+
+fun squareA() {
+    a = a * a;
+}
+
+fun incA() { a = a + 1; return nextPrint(squareA); }
+
+
+incA();
+print a;
