@@ -1,0 +1,7 @@
+var a = 1;
+
+fun incA(){ a = a + 1; return a; }
+
+fun add(x, y) { return x + y; }
+
+print add(incA(), incA());
