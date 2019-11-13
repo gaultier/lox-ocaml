@@ -1,0 +1,30 @@
+
+var a = 1;
+
+var constant = 2;
+
+fun incA() {
+    a = a + 1;
+}
+
+fun decA() {
+    a = a - 1;
+}
+
+fun noopAWithArgument(a) {
+    a = a * a;
+}
+
+fun noopAWithShadowing() {
+    var a = 100;
+    a = a /2;
+}
+
+incA();
+decA();
+incA();
+incA();
+noopAWithArgument(a);
+noopAWithShadowing();
+print a;
+
