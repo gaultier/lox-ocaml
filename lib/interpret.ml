@@ -212,12 +212,11 @@ let rec eval_exp exp env =
       (* print_env call_env ; *)
       (* Stdlib.print_string " Decl env: " ; *)
       (* print_env f.decl_environment ; *)
-      (* Functions arguments do not change the calling environment *)
-      let args =
-        List.fold ~init:[]
-          ~f:(fun values a ->
-            let v, _ = eval_exp a call_env in
-            v :: values)
+      let args, call_env =
+        List.fold ~init:([], call_env)
+          ~f:(fun (values, call_env) a ->
+            let v, call_env = eval_exp a call_env in
+            (v :: values, call_env))
           args
       in
       let len = List.length args in
