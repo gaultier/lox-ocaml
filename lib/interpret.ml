@@ -189,7 +189,7 @@ let rec eval_exp exp env =
       (* print_env call_env ; *)
       (* Stdlib.print_string " Decl env: " ; *)
       (* print_env f.decl_environment ; *)
-      let v, env = f.fn args call_env in
+      let v, env = f.fn args f.decl_environment in
       (* Stdlib.print_string "Called fn. Call env: " ; *)
       (* print_env call_env ; *)
       (* Stdlib.print_string " Decl env: " ; *)
