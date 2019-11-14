@@ -3,26 +3,24 @@ open Base
 
 exception FunctionReturn of value * environment
 
-(* let print_env env = *)
-(*   let rec print_env_rec = function *)
-(*     | [] -> *)
-(*         () *)
-(*     | [{values= x; scope_level= s}] -> *)
-(*         Stdlib.Printf.printf "scope: %d " s ; *)
-(*         Hashtbl.iteri *)
-(*           ~f:(fun ~key:k ~data:v -> *)
-(*             Stdlib.Printf.printf "%s=%s " k (value_to_string v)) *)
-(*           x *)
-(*     | {values= x; scope_level= s} :: xs -> *)
-(*         Stdlib.Printf.printf "scope: %d " s ; *)
-(*         Hashtbl.iteri *)
-(*           ~f:(fun ~key:k ~data:v -> *)
-(*             Stdlib.Printf.printf "%s=%s " k (value_to_string v)) *)
-(*           x ; *)
-(*         Stdlib.print_string ", " ; *)
-(*         print_env_rec xs *)
-(*   in *)
-(*   Stdlib.print_string "[ " ; print_env_rec env ; Stdlib.print_string "]\n" *)
+let print_env env =
+  let rec print_env_rec = function
+    | [] ->
+        ()
+    | [x] ->
+        Hashtbl.iteri
+          ~f:(fun ~key:k ~data:v ->
+            Stdlib.Printf.printf "%s=%s " k (value_to_string v))
+          x
+    | x :: xs ->
+        Hashtbl.iteri
+          ~f:(fun ~key:k ~data:v ->
+            Stdlib.Printf.printf "%s=%s " k (value_to_string v))
+          x ;
+        Stdlib.print_string ", " ;
+        print_env_rec xs
+  in
+  Stdlib.print_string "[ " ; print_env_rec env ; Stdlib.print_string "]\n"
 
 let rec find_in_environment n = function
   | [] ->
@@ -48,8 +46,10 @@ let rec assign_in_environment n v = function
 let create_in_current_env n v = function
   | [] ->
       failwith "Empty environment, should never happen"
-  | x :: _ ->
-      Hashtbl.set ~key:n ~data:v x
+  | (x :: _ ) as env ->
+                Stdlib.Printf.printf "Var decl: " ;
+                print_env env;
+          Hashtbl.set ~key:n ~data:v x;
 
 let make_env_with_call_args decl_args call_args (decl_env : environment) =
   let decl_env = empty :: decl_env in
@@ -205,6 +205,8 @@ let rec eval s (env : environment) =
   | Expr e ->
       (eval_exp [@tailcall]) e env
   | Print e ->
+      Stdlib.Printf.printf "Print: " ;
+      print_env env ;
       let v, env = eval_exp e env in
       v |> Parse.value_to_string |> Stdlib.print_endline ;
       (Nil, env)
@@ -216,6 +218,8 @@ let rec eval s (env : environment) =
       Printf.failwithf "Invalid variable declaration: %s"
         (Lex.token_to_string t) ()
   | Block stmts ->
+      Stdlib.Printf.printf "Block: " ;
+      print_env env ;
       let env = empty :: env in
       let env =
         Array.fold
@@ -224,6 +228,8 @@ let rec eval s (env : environment) =
             env)
           ~init:env stmts
       in
+      Stdlib.Printf.printf "End block: " ;
+      print_env env ;
       (Nil, List.tl_exn env)
   | Return (_, expr) ->
       let v, env = eval_exp expr env in
