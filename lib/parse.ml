@@ -11,11 +11,9 @@ type callable =
   ; mutable decl_environment: environment
   ; fn: value list -> environment -> value * environment }
 
-and t = (string, value, String.comparator_witness) Map.t
+and env_values_t = (string, value) Hashtbl.t
 
-and environment_scope = {values: t; scope_level: int}
-
-and environment = environment_scope list
+and environment = env_values_t list
 
 and value =
   | Bool of bool
@@ -24,20 +22,17 @@ and value =
   | String of string
   | Callable of callable
 
-let empty = Map.empty (module String)
+let empty : env_values_t = Hashtbl.create (module String)
 
 let globals : environment =
-  [ { values=
-        Map.of_alist_exn
-          (module String)
-          [ ( "clock"
-            , Callable
-                { arity= 0
-                ; name= "clock"
-                ; decl_environment= []
-                ; fn= (fun _ env -> (Number (Unix.gettimeofday ()), env)) } )
-          ]
-    ; scope_level= 1 } ]
+  [ Hashtbl.of_alist_exn
+      (module String)
+      [ ( "clock"
+        , Callable
+            { arity= 0
+            ; name= "clock"
+            ; decl_environment= []
+            ; fn= (fun _ env -> (Number (Unix.gettimeofday ()), env)) } ) ] ]
 
 type expr =
   | Binary of expr * token_kind * expr
