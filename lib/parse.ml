@@ -22,7 +22,7 @@ and value =
   | String of string
   | Callable of callable
 
-let empty : env_values_t = Hashtbl.create (module String)
+let empty () : env_values_t = Hashtbl.create (module String)
 
 let globals : environment =
   [ Hashtbl.of_alist_exn

@@ -46,15 +46,11 @@ let rec assign_in_environment n v = function
 let create_in_current_env n v = function
   | [] ->
       failwith "Empty environment, should never happen"
-  | x :: _ as env ->
-      Stdlib.Printf.printf "Var decl: " ;
-      print_env env ;
-      Hashtbl.set ~key:n ~data:v x ;
-      Stdlib.Printf.printf "End Var decl: " ;
-      print_env env
+  | x :: _ ->
+      Hashtbl.set ~key:n ~data:v x
 
 let make_env_with_call_args decl_args call_args (decl_env : environment) =
-  let decl_env = empty :: decl_env in
+  let decl_env = empty () :: decl_env in
   (* Stdlib.print_string "Entering fn body. decl_env: " ; *)
   (* print_env decl_env ; *)
   let decl_env =
@@ -207,8 +203,6 @@ let rec eval s (env : environment) =
   | Expr e ->
       (eval_exp [@tailcall]) e env
   | Print e ->
-      Stdlib.Printf.printf "Print: " ;
-      print_env env ;
       let v, env = eval_exp e env in
       v |> Parse.value_to_string |> Stdlib.print_endline ;
       (Nil, env)
@@ -220,9 +214,7 @@ let rec eval s (env : environment) =
       Printf.failwithf "Invalid variable declaration: %s"
         (Lex.token_to_string t) ()
   | Block stmts ->
-      Stdlib.Printf.printf "Block: " ;
-      print_env env ;
-      let env = empty :: env in
+      let env = empty () :: env in
       let env =
         Array.fold
           ~f:(fun env s ->
@@ -230,8 +222,6 @@ let rec eval s (env : environment) =
             env)
           ~init:env stmts
       in
-      Stdlib.Printf.printf "End block: " ;
-      print_env env ;
       (Nil, List.tl_exn env)
   | Return (_, expr) ->
       let v, env = eval_exp expr env in
