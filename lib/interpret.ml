@@ -52,8 +52,7 @@ let rec eval_exp exp (env : environment) =
       let e = eval_exp l env in
       match e with Bool false | Nil -> e | _ -> (eval_exp [@tailcall]) r env )
   | Variable (Lex.Identifier n) ->
-      let v = find_in_environment n env in
-      v
+      find_in_environment n env
   | Variable _ ->
       failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e) ->
