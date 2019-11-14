@@ -195,7 +195,7 @@ and eval_while w env =
       | Bool false | Nil ->
           Nil
       | _ ->
-          let _ = eval s env in
+          eval s env |> ignore ;
           eval_while w env )
   | _ ->
       failwith "Invalid while statement"
