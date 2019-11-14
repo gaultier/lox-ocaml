@@ -124,13 +124,7 @@ let rec eval_exp exp (env : environment) =
             Printf.failwithf "Value `%s` cannot be called as a function"
               (value_to_string e) ()
       in
-      let args =
-        List.fold ~init:[]
-          ~f:(fun values a ->
-            let v = eval_exp a env in
-            v :: values)
-          args
-      in
+      let args = List.map ~f:(fun a -> eval_exp a env) args in
       let len = List.length args in
       let _ =
         match len with
