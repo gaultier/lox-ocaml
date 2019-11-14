@@ -46,10 +46,12 @@ let rec assign_in_environment n v = function
 let create_in_current_env n v = function
   | [] ->
       failwith "Empty environment, should never happen"
-  | (x :: _ ) as env ->
-                Stdlib.Printf.printf "Var decl: " ;
-                print_env env;
-          Hashtbl.set ~key:n ~data:v x;
+  | x :: _ as env ->
+      Stdlib.Printf.printf "Var decl: " ;
+      print_env env ;
+      Hashtbl.set ~key:n ~data:v x ;
+      Stdlib.Printf.printf "End Var decl: " ;
+      print_env env
 
 let make_env_with_call_args decl_args call_args (decl_env : environment) =
   let decl_env = empty :: decl_env in
