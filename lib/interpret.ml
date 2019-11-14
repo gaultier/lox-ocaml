@@ -3,16 +3,6 @@ open Base
 
 exception FunctionReturn of value
 
-let print_env env =
-  let rec print_env_rec {values; enclosing} =
-    Hashtbl.iteri
-      ~f:(fun ~key:k ~data:v ->
-        Stdlib.Printf.printf "%s=%s " k (value_to_string v))
-      values ;
-    Option.iter ~f:print_env_rec enclosing
-  in
-  Stdlib.print_string "[ " ; print_env_rec env ; Stdlib.print_string "]\n"
-
 let rec find_in_environment n {values; enclosing} =
   match (Hashtbl.find values n, enclosing) with
   | Some v, _ ->
