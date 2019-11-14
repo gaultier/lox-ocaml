@@ -135,8 +135,7 @@ let rec eval_exp exp (env : environment) =
               "Wrong arity in function call: expected %d, got %d" f.arity len
               ()
       in
-      let v = f.fn args f.decl_environment in
-      v
+      f.fn args f.decl_environment
 
 let rec eval s (env : environment) =
   match s with
@@ -230,8 +229,6 @@ and eval_while w env =
 let interpret (env : environment) stmts =
   try
     stmts |> List.to_array
-    |> Array.fold ~init:[||] ~f:(fun acc s ->
-           let e = eval s env in
-           Array.append acc [|e|])
+    |> Array.map ~f:(fun s -> eval s env)
     |> fun stmts -> Ok stmts
   with Failure err -> Result.Error [err]
