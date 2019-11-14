@@ -173,19 +173,11 @@ let rec eval s (env : environment) =
                 failwith "Invalid function argument")
           decl_args call_args ;
         let v =
-          List.fold ~init:None
-            ~f:(fun v stmt ->
-              match v with
-              | Some _ as ret_value ->
-                  ret_value
-              | None -> (
-                try
-                  let _ = eval stmt env in
-                  None
-                with FunctionReturn v -> Some v ))
-            body
+          try
+            List.iter ~f:(fun stmt -> eval stmt env |> ignore) body ;
+            Nil
+          with FunctionReturn v -> v
         in
-        let v = Option.value v ~default:Nil in
         v
       in
       let call =
