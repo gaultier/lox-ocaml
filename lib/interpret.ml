@@ -27,7 +27,7 @@ let create_in_current_env n v {values; _} = Hashtbl.set ~key:n ~data:v values
 let rec eval_exp exp (env : environment) =
   match exp with
   | Grouping e ->
-      (eval_exp [@tailcall]) e env
+      eval_exp e env
   | Unary (t, e) ->
       let v = eval_exp e env in
       let res =
@@ -47,10 +47,10 @@ let rec eval_exp exp (env : environment) =
       l
   | LogicalOr (l, r) -> (
       let e = eval_exp l env in
-      match e with Bool false | Nil -> (eval_exp [@tailcall]) r env | _ -> e )
+      match e with Bool false | Nil -> eval_exp r env | _ -> e )
   | LogicalAnd (l, r) -> (
       let e = eval_exp l env in
-      match e with Bool false | Nil -> e | _ -> (eval_exp [@tailcall]) r env )
+      match e with Bool false | Nil -> e | _ -> eval_exp r env )
   | Variable (Lex.Identifier n) ->
       find_in_environment n env
   | Variable _ ->
@@ -129,7 +129,7 @@ let rec eval_exp exp (env : environment) =
 let rec eval s (env : environment) =
   match s with
   | Expr e ->
-      (eval_exp [@tailcall]) e env
+      eval_exp e env
   | Print e ->
       let v = eval_exp e env in
       v |> Parse.value_to_string |> Stdlib.print_endline ;
@@ -178,18 +178,14 @@ let rec eval s (env : environment) =
       let e = eval_exp e env in
       match e with
       | Bool false | Nil ->
-          (eval [@tailcall]) else_stmt env
+          eval else_stmt env
       | _ ->
-          (eval [@tailcall]) then_stmt env )
+          eval then_stmt env )
   | IfStmt (e, then_stmt) -> (
       let e = eval_exp e env in
-      match e with
-      | Bool false | Nil ->
-          Nil
-      | _ ->
-          (eval [@tailcall]) then_stmt env )
+      match e with Bool false | Nil -> Nil | _ -> eval then_stmt env )
   | WhileStmt _ ->
-      (eval_while [@tailcall]) s env
+      eval_while s env
 
 and eval_while w env =
   match w with
@@ -200,7 +196,7 @@ and eval_while w env =
           Nil
       | _ ->
           let _ = eval s env in
-          (eval_while [@tailcall]) w env )
+          eval_while w env )
   | _ ->
       failwith "Invalid while statement"
 
