@@ -124,10 +124,6 @@ let rec eval_exp exp (env : environment) =
             Printf.failwithf "Value `%s` cannot be called as a function"
               (value_to_string e) ()
       in
-      (* Stdlib.print_string "Entering call fn. Call env: " ; *)
-      (* print_env call_env ; *)
-      (* Stdlib.print_string " Decl env: " ; *)
-      (* print_env f.decl_environment ; *)
       let args =
         List.fold ~init:[]
           ~f:(fun values a ->
@@ -145,17 +141,7 @@ let rec eval_exp exp (env : environment) =
               "Wrong arity in function call: expected %d, got %d" f.arity len
               ()
       in
-      (* Stdlib.print_string "Calling fn. Call env: " ; *)
-      (* print_env call_env ; *)
-      (* Stdlib.print_string " Decl env: " ; *)
-      (* print_env f.decl_environment ; *)
       let v = f.fn args f.decl_environment in
-      (* Stdlib.print_string "Called fn. Call env: " ; *)
-      (* print_env call_env ; *)
-      (* Stdlib.print_string " Decl env: " ; *)
-      (* print_env f.decl_environment ; *)
-      (* Stdlib.print_string " Merged env: " ; *)
-      (* print_env env ; *)
       v
 
 let rec eval s (env : environment) =
@@ -193,9 +179,6 @@ let rec eval s (env : environment) =
             | _ ->
                 failwith "Invalid function argument")
           decl_args call_args ;
-        (* let env = make_env_with_call_args decl_args call_args env in *)
-        (* Stdlib.print_string "Bound fn args. env: " ; *)
-        (* print_env env ; *)
         let v =
           List.fold ~init:None
             ~f:(fun v stmt ->
