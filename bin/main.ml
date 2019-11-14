@@ -33,7 +33,7 @@ let rec repl env =
     (try Stdlib.read_line () with End_of_file -> Stdlib.exit 0)
     |> Lox.Lex.lex >>= Lox.Parse.parse
     >>= Lox.Interpret.interpret env
-    >>| (fun (stmts, env) ->
+    >>| (fun stmts ->
           Array.iter
             ~f:(fun s ->
               s |> Lox.Parse.value_to_string |> Stdlib.print_endline)

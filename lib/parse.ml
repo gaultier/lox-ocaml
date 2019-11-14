@@ -9,7 +9,7 @@ type callable =
   { arity: int
   ; name: string
   ; mutable decl_environment: environment
-  ; fn: value list -> environment -> value * environment }
+  ; fn: value list -> environment -> value }
 
 and env_values_t = (string, value) Hashtbl.t
 
@@ -33,7 +33,7 @@ let globals : environment =
               { arity= 0
               ; name= "clock"
               ; decl_environment= {values= empty (); enclosing= None}
-              ; fn= (fun _ env -> (Number (Unix.gettimeofday ()), env)) } ) ]
+              ; fn= (fun _ _ -> Number (Unix.gettimeofday ())) } ) ]
   ; enclosing= None }
 
 type expr =
