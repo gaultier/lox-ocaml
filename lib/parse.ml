@@ -13,7 +13,7 @@ type callable =
 
 and env_values_t = (string, value) Hashtbl.t
 
-and environment = env_values_t list
+and environment = {values: env_values_t; enclosing: environment option}
 
 and value =
   | Bool of bool
@@ -25,14 +25,16 @@ and value =
 let empty () : env_values_t = Hashtbl.create (module String)
 
 let globals : environment =
-  [ Hashtbl.of_alist_exn
-      (module String)
-      [ ( "clock"
-        , Callable
-            { arity= 0
-            ; name= "clock"
-            ; decl_environment= []
-            ; fn= (fun _ env -> (Number (Unix.gettimeofday ()), env)) } ) ] ]
+  { values=
+      Hashtbl.of_alist_exn
+        (module String)
+        [ ( "clock"
+          , Callable
+              { arity= 0
+              ; name= "clock"
+              ; decl_environment= {values= empty (); enclosing= None}
+              ; fn= (fun _ env -> (Number (Unix.gettimeofday ()), env)) } ) ]
+  ; enclosing= None }
 
 type expr =
   | Binary of expr * token_kind * expr

@@ -4,69 +4,37 @@ open Base
 exception FunctionReturn of value * environment
 
 let print_env env =
-  let rec print_env_rec = function
-    | [] ->
-        ()
-    | [x] ->
-        Hashtbl.iteri
-          ~f:(fun ~key:k ~data:v ->
-            Stdlib.Printf.printf "%s=%s " k (value_to_string v))
-          x
-    | x :: xs ->
-        Hashtbl.iteri
-          ~f:(fun ~key:k ~data:v ->
-            Stdlib.Printf.printf "%s=%s " k (value_to_string v))
-          x ;
-        Stdlib.print_string ", " ;
-        print_env_rec xs
+  let rec print_env_rec {values; enclosing} =
+    Hashtbl.iteri
+      ~f:(fun ~key:k ~data:v ->
+        Stdlib.Printf.printf "%s=%s " k (value_to_string v))
+      values ;
+    Option.iter ~f:print_env_rec enclosing
   in
   Stdlib.print_string "[ " ; print_env_rec env ; Stdlib.print_string "]\n"
 
-let rec find_in_environment n = function
-  | [] ->
+let rec find_in_environment n {values; enclosing} =
+  match (Hashtbl.find values n, enclosing) with
+  | Some v, _ ->
+      v
+  | None, Some enclosing ->
+      find_in_environment n enclosing
+  | None, None ->
       Printf.failwithf "Accessing unbound variable `%s`" n ()
-  | x :: xs -> (
-    match Hashtbl.find x n with
-    | Some v ->
-        v
-    | None ->
-        find_in_environment n xs )
 
-let rec assign_in_environment n v = function
-  | [] ->
+let rec assign_in_environment n v {values; enclosing} =
+  match (Hashtbl.find values n, enclosing) with
+  | Some _, _ ->
+      Hashtbl.set ~key:n ~data:v values
+  | None, Some enclosing ->
+      assign_in_environment n v enclosing
+  | None, None ->
       Printf.failwithf "Assigning unbound variable `%s` to `%s`" n
         (value_to_string v) ()
-  | x :: xs -> (
-    match Hashtbl.find x n with
-    | Some _ ->
-        Hashtbl.set ~key:n ~data:v x
-    | None ->
-        assign_in_environment n v xs )
 
-let create_in_current_env n v = function
-  | [] ->
-      failwith "Empty environment, should never happen"
-  | x :: _ ->
-      Hashtbl.set ~key:n ~data:v x
+let create_in_current_env n v {values; _} = Hashtbl.set ~key:n ~data:v values
 
-let make_env_with_call_args decl_args call_args (decl_env : environment) =
-  let decl_env = empty () :: decl_env in
-  (* Stdlib.print_string "Entering fn body. decl_env: " ; *)
-  (* print_env decl_env ; *)
-  let decl_env =
-    List.fold2_exn
-      ~f:(fun decl_env decl_arg call_arg ->
-        match decl_arg with
-        | {Lex.kind= Identifier n; _} ->
-            create_in_current_env n call_arg decl_env ;
-            decl_env
-        | _ ->
-            failwith "Invalid function argument")
-      ~init:decl_env decl_args call_args
-  in
-  decl_env
-
-let rec eval_exp exp env =
+let rec eval_exp exp (env : environment) =
   match exp with
   | Grouping e ->
       (eval_exp [@tailcall]) e env
@@ -214,7 +182,7 @@ let rec eval s (env : environment) =
       Printf.failwithf "Invalid variable declaration: %s"
         (Lex.token_to_string t) ()
   | Block stmts ->
-      let env = empty () :: env in
+      let env = {values= empty (); enclosing= Some env} in
       let env =
         Array.fold
           ~f:(fun env s ->
@@ -222,13 +190,22 @@ let rec eval s (env : environment) =
             env)
           ~init:env stmts
       in
-      (Nil, List.tl_exn env)
+      (Nil, Option.value_exn env.enclosing)
   | Return (_, expr) ->
       let v, env = eval_exp expr env in
       raise (FunctionReturn (v, env))
   | Function ({Lex.kind= Lex.Identifier name; _}, decl_args, body) ->
-      let fn call_args env =
-        let env = make_env_with_call_args decl_args call_args env in
+      let fn call_args (env : environment) =
+        let env = {values= empty (); enclosing= Some env} in
+        List.iter2_exn
+          ~f:(fun n v ->
+            match n with
+            | {Lex.kind= Identifier n; _} ->
+                create_in_current_env n v env
+            | _ ->
+                failwith "Invalid function argument")
+          decl_args call_args ;
+        (* let env = make_env_with_call_args decl_args call_args env in *)
         (* Stdlib.print_string "Bound fn args. env: " ; *)
         (* print_env env ; *)
         let v, env =
@@ -245,7 +222,7 @@ let rec eval s (env : environment) =
             body
         in
         let v = Option.value v ~default:Nil in
-        (v, List.tl_exn env)
+        (v, Option.value_exn env.enclosing)
       in
       let call =
         {arity= List.length decl_args; name; decl_environment= env; fn}
