@@ -172,13 +172,10 @@ let rec eval s (env : environment) =
             | _ ->
                 failwith "Invalid function argument")
           decl_args call_args ;
-        let v =
-          try
-            List.iter ~f:(fun stmt -> eval stmt env |> ignore) body ;
-            Nil
-          with FunctionReturn v -> v
-        in
-        v
+        try
+          List.iter ~f:(fun stmt -> eval stmt env |> ignore) body ;
+          Nil
+        with FunctionReturn v -> v
       in
       let call =
         {arity= List.length decl_args; name; decl_environment= env; fn}
