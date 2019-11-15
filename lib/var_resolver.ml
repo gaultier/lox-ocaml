@@ -5,6 +5,8 @@ type scope = (string, bool) Hashtbl.t
 
 type scopes = scope Stack.t
 
+type local_var_resolution = (expr, int) Hashtbl.t
+
 let new_scope () : scope = Hashtbl.create (module String)
 
 let declare_var scopes name =
@@ -14,6 +16,16 @@ let declare_var scopes name =
 let define_var scopes name =
   Stack.top scopes
   |> Option.iter ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:true)
+
+let resolve_local scopes expr n =
+  Stack.fold_until ~init:0
+    ~f:(fun depth scope ->
+      match Hashtbl.find scope n with
+      | Some _ ->
+          Stop depth
+      | None ->
+          Continue depth)
+    scopes
 
 let rec var_resolve scopes = function
   | Block stmts ->
@@ -32,6 +44,7 @@ let var_resolve_expr scopes = function
       |> Option.iter ~f:(fun b ->
              if !b then
                Printf.failwithf
-                 "Cannot read local variable `%s` in its own initializer" n ())
+                 "Cannot read local variable `%s` in its own initializer" n ()) ;
+      resolve_local scopes
   | _ ->
       ()
