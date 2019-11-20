@@ -24,6 +24,10 @@ let print_errors = List.iter ~f:Stdlib.prerr_endline
 
 let lox_run input =
   input >>= Lox.Lex.lex >>= Lox.Parse.parse
+  >>= (fun stmts ->
+        let resolution = Lox.Var_resolver.resolve stmts in
+        Lox.Var_resolver.print_resolution resolution ;
+        stmts)
   >>= Lox.Interpret.interpret Lox.Parse.globals
   |> Result.iter_error ~f:print_errors
 
