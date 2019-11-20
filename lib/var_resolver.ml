@@ -1,26 +1,19 @@
 open Parse
 open Base
 
-module Expr = struct
-  module T = struct
-    type t = expr [@@deriving compare, sexp_of]
-  end
-
-  include T
-  include Comparator.Make (T)
-end
-
 type scope = (string, bool) Hashtbl.t
 
 type scopes = scope Stack.t
 
-type resolution = (expr, int) Hashtbl.t
+type resolution = (expr * int) list
 
 let new_scope () : scope = Hashtbl.create (module String)
 
-let print_resolution =
-  Hashtbl.iteri ~f:(fun ~key:k ~data:d ->
-      Stdlib.Printf.printf "- %s: %d\n" k d)
+let print_resolution (resolution : resolution) =
+  List.iter
+    ~f:(fun (k, d) ->
+      Stdlib.Printf.printf "- %s: %d\n" (Sexp.to_string_hum (sexp_of_expr k)) d)
+    resolution
 
 let declare_var scopes name =
   Stack.top scopes
@@ -41,7 +34,7 @@ let resolve_local resolution scopes expr n =
             Continue depth)
       scopes
   in
-  Hashtbl.set ~key:expr ~data:depth resolution
+  (expr, depth) :: resolution
 
 let rec var_resolve_scope scopes = function
   | Block stmts ->
@@ -55,7 +48,7 @@ let rec var_resolve_scope scopes = function
 
 let resolve stmts =
   let scopes : scopes = Stack.create () in
-  let resolution : resolution = Hashtbl.create (module Expr) in
+  let resolution : resolution = [] in
   List.iter ~f:(fun stmt -> var_resolve_scope scopes stmt) stmts ;
   resolution
 
@@ -69,4 +62,4 @@ let var_resolve_expr resolution scopes = function
                  "Cannot read local variable `%s` in its own initializer" n ()) ;
       resolve_local resolution scopes v n
   | _ ->
-      ()
+      resolution

@@ -45,7 +45,7 @@ type expr =
   | Variable of token_kind
   | LogicalOr of expr * expr
   | LogicalAnd of expr * expr
-  | Call of expr * token * expr list
+  | Call of expr * token * expr list [@@deriving sexp_of]
 
 type statement =
   | Expr of expr
