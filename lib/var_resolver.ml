@@ -17,15 +17,18 @@ let define_var scopes name =
   Stack.top scopes
   |> Option.iter ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:true)
 
-let resolve_local scopes expr n =
-  Stack.fold_until ~init:0
-    ~f:(fun depth scope ->
-      match Hashtbl.find scope n with
-      | Some _ ->
-          Stop depth
-      | None ->
-          Continue depth)
-    scopes
+let resolve_local vars scopes expr n =
+  let depth =
+    Stack.fold_until ~init:0
+      ~f:(fun depth scope ->
+        match Hashtbl.find scope n with
+        | Some _ ->
+            Stop depth
+        | None ->
+            Continue depth)
+      scopes
+  in
+  Hashtbl.set ~key:expr ~data:depth vars
 
 let rec var_resolve scopes = function
   | Block stmts ->
@@ -37,14 +40,14 @@ let rec var_resolve scopes = function
   | _ ->
       ()
 
-let var_resolve_expr scopes = function
-  | Variable (Lex.Identifier n) ->
+let var_resolve_expr vars scopes = function
+  | Variable (Lex.Identifier n) as v ->
       Stack.top scopes
       |> Option.bind ~f:(fun scope -> Hashtbl.find scope n)
       |> Option.iter ~f:(fun b ->
              if !b then
                Printf.failwithf
                  "Cannot read local variable `%s` in its own initializer" n ()) ;
-      resolve_local scopes
+      resolve_local vars scopes v n
   | _ ->
       ()
