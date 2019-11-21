@@ -38,7 +38,6 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
 
 let var_resolve_expr (resolution : resolution) (scopes : scopes) = function
   | Variable (Lex.Identifier n) as v ->
-      Stdlib.print_endline ("Resolving variable " ^ n);
       Stack.top scopes
       |> Option.bind ~f:(fun scope -> Hashtbl.find scope n)
       |> Option.iter ~f:(fun b ->
@@ -60,13 +59,15 @@ let rec var_resolve_scope (resolution : resolution) (scopes : scopes) = function
       resolution
   | Var (Lex.Identifier n, expr) ->
       declare_var scopes n;
-      let _ = match expr with Literal Nil -> () | _ -> define_var scopes n in
+      let resolution = var_resolve_expr resolution scopes expr in
+      define_var scopes n;
       resolution
   | Print e | Expr e -> var_resolve_expr resolution scopes e
   | _ -> resolution
 
 let resolve stmts =
   let scopes : scopes = Stack.create () in
+  Stack.push scopes (new_scope ());
   List.fold
     ~f:(fun resolution stmt -> var_resolve_scope resolution scopes stmt)
     ~init:[] stmts
