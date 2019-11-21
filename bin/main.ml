@@ -8,8 +8,9 @@ let read_whole_file filename =
   try
     let ch = Stdlib.open_in filename in
     let s = Stdlib.really_input_string ch (Stdlib.in_channel_length ch) in
-    Stdlib.close_in ch ; Ok s
-  with Sys_error e -> Result.fail [e]
+    Stdlib.close_in ch;
+    Ok s
+  with Sys_error e -> Result.fail [ e ]
 
 let read_from_stdin () =
   let rec read acc =
@@ -24,24 +25,24 @@ let print_errors = List.iter ~f:Stdlib.prerr_endline
 
 let lox_run input =
   input >>= Lox.Lex.lex >>= Lox.Parse.parse
-  >>= (fun stmts ->
+  >>| (fun stmts ->
+        Stdlib.print_endline "Resolution: ";
         let resolution = Lox.Var_resolver.resolve stmts in
-        Lox.Var_resolver.print_resolution resolution ;
+        Lox.Var_resolver.print_resolution resolution;
         stmts)
   >>= Lox.Interpret.interpret Lox.Parse.globals
   |> Result.iter_error ~f:print_errors
 
 let rec repl env =
-  Stdlib.Printf.printf "> " ;
+  Stdlib.Printf.printf "> ";
   let env =
     (try Stdlib.read_line () with End_of_file -> Stdlib.exit 0)
     |> Lox.Lex.lex >>= Lox.Parse.parse
     >>= Lox.Interpret.interpret env
     >>| (fun stmts ->
           Array.iter
-            ~f:(fun s ->
-              s |> Lox.Parse.value_to_string |> Stdlib.print_endline)
-            stmts ;
+            ~f:(fun s -> s |> Lox.Parse.value_to_string |> Stdlib.print_endline)
+            stmts;
           env)
     |> Result.map_error ~f:print_errors
     |> Result.ok |> Option.value ~default:env
@@ -50,12 +51,9 @@ let rec repl env =
 
 let main () =
   match Sys.argv with
-  | [|_; "repl"|] ->
-      repl Lox.Parse.globals
-  | [|_; "run"; "-"|] ->
-      read_from_stdin () |> lox_run
-  | [|_; "run"; filename|] ->
-      filename |> read_whole_file |> lox_run
+  | [| _; "repl" |] -> repl Lox.Parse.globals
+  | [| _; "run"; "-" |] -> read_from_stdin () |> lox_run
+  | [| _; "run"; filename |] -> filename |> read_whole_file |> lox_run
   | _ ->
       Stdlib.prerr_endline
         ( "Use: `lox run foo.lox` to execute a file.\n\
