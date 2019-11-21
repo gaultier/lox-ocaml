@@ -12,7 +12,12 @@ let new_scope () : scope = Hashtbl.create (module String)
 let print_resolution (resolution : resolution) =
   List.iter
     ~f:(fun (k, d) ->
-      let n = match k with Variable (Lex.Identifier n) -> n | _ -> "unkown" in
+      let n =
+        match k with
+        | Assign (Lex.Identifier n, _) | Variable (Lex.Identifier n) -> n
+        | Literal l -> value_to_string l
+        | _ -> "unkown"
+      in
       Stdlib.Printf.printf "- %s: %d\n" n d)
     resolution
 
@@ -36,7 +41,10 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
   in
   (expr, depth) :: resolution
 
-let var_resolve_expr (resolution : resolution) (scopes : scopes) = function
+let rec var_resolve_expr (resolution : resolution) (scopes : scopes) = function
+  | Assign (Lex.Identifier n, expr) as assignment ->
+      let resolution = var_resolve_expr resolution scopes expr in
+      resolve_local resolution scopes assignment n
   | Variable (Lex.Identifier n) as v ->
       Stack.top scopes
       |> Option.bind ~f:(fun scope -> Hashtbl.find scope n)
