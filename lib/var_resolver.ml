@@ -30,7 +30,7 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
       ~f:(fun depth scope ->
         match Hashtbl.find scope n with
         | Some _ -> Stop depth
-        | None -> Continue depth)
+        | None -> Continue (depth + 1))
       ~finish:(fun depth -> depth)
       scopes
   in
@@ -38,7 +38,7 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
 
 let var_resolve_expr (resolution : resolution) (scopes : scopes) = function
   | Variable (Lex.Identifier n) as v ->
-      Stdlib.print_endline "Resolving variable";
+      Stdlib.print_endline ("Resolving variable " ^ n);
       Stack.top scopes
       |> Option.bind ~f:(fun scope -> Hashtbl.find scope n)
       |> Option.iter ~f:(fun b ->
@@ -58,8 +58,9 @@ let rec var_resolve_scope (resolution : resolution) (scopes : scopes) = function
       in
       Stack.pop_exn scopes |> ignore;
       resolution
-  | Var (Lex.Identifier n, _) ->
+  | Var (Lex.Identifier n, expr) ->
       declare_var scopes n;
+      let _ = match expr with Literal Nil -> () | _ -> define_var scopes n in
       resolution
   | Print e | Expr e -> var_resolve_expr resolution scopes e
   | _ -> resolution
