@@ -71,6 +71,9 @@ let rec var_resolve_scope (resolution : resolution) (scopes : scopes) = function
       define_var scopes n;
       resolution
   | Print e | Expr e -> var_resolve_expr resolution scopes e
+  | Function ({ Lex.kind = Lex.Identifier name; _ }, _, _) ->
+      declare_var name;
+      var_resolve_scope resolution scopes fn_name
   | _ -> resolution
 
 let resolve stmts =
