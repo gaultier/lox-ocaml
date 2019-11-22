@@ -1,11 +1,10 @@
 open Parse
-open Base
+open Base 
 
 type scope = (string, bool) Hashtbl.t
 
 type scopes = scope Stack.t
 
-type resolution = (expr * int) list
 
 module Expr = struct
   module T = struct
@@ -20,13 +19,13 @@ module Expr = struct
   include Comparator.Make (T)
 end
 
-type foo = (Expr.t, int, Expr.comparator_witness) Map.t
+type resolution = (Expr.t, int, Expr.comparator_witness) Map.t
 
 let new_scope () : scope = Hashtbl.create (module String)
 
 let print_resolution (resolution : resolution) =
-  List.iter
-    ~f:(fun (k, d) ->
+  Map.iteri
+    ~f:(fun ~key:k ~data:d ->
       let n =
         match k with
         | Assign (Lex.Identifier n, _) | Variable (Lex.Identifier n) -> n
@@ -54,7 +53,7 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
       ~finish:(fun depth -> depth)
       scopes
   in
-  (expr, depth) :: resolution
+   Map.add resolution ~key:expr ~data:depth
 
 let rec var_resolve_expr (resolution : resolution) (scopes : scopes) = function
   | Assign (Lex.Identifier n, expr) as assignment ->
@@ -96,6 +95,6 @@ let rec var_resolve_scope (resolution : resolution) (scopes : scopes) = function
 let resolve stmts =
   let scopes : scopes = Stack.create () in
   Stack.push scopes (new_scope ());
-  List.fold
+  Map.fold
     ~f:(fun resolution stmt -> var_resolve_scope resolution scopes stmt)
     ~init:[] stmts
