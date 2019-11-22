@@ -1,6 +1,5 @@
 open Lex
 open Base
-open Base.Result
 
 type function_signature = (value list -> environment -> value[@ignore])
 
