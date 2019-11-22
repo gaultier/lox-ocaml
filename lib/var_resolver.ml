@@ -53,6 +53,10 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
   in
    Map.set resolution ~key:expr ~data:depth
 
+
+let resolve_function (resolution:resolution) (scopes: scopes) fn n = 
+    resolution
+
 let rec var_resolve_expr (resolution : resolution) (scopes : scopes) = function
   | Assign (Lex.Identifier n, expr) as assignment ->
       let resolution = var_resolve_expr resolution scopes expr in
