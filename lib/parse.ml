@@ -53,7 +53,7 @@ type expr =
   | LogicalOr of expr * expr
   | LogicalAnd of expr * expr
   | Call of expr * token * expr list
-[@@deriving sexp_of]
+[@@deriving compare, sexp_of]
 
 type statement =
   | Expr of expr

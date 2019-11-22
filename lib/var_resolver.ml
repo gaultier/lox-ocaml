@@ -7,6 +7,21 @@ type scopes = scope Stack.t
 
 type resolution = (expr * int) list
 
+module Expr = struct
+  module T = struct
+    type t = expr
+
+    let compare _ _ = 0
+
+    let sexp_of_t _ : Sexp.t = List []
+  end
+
+  include T
+  include Comparator.Make (T)
+end
+
+type foo = (Expr.t, int, Expr.comparator_witness) Map.t
+
 let new_scope () : scope = Hashtbl.create (module String)
 
 let print_resolution (resolution : resolution) =

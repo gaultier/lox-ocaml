@@ -8,9 +8,11 @@ B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ocaml-compiler-libs/shad
 B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ocaml-migrate-parsetree
 B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ocaml/compiler-libs
 B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/parsexp
+B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppx_compare/runtime-lib
 B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppx_derivers
 B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppx_sexp_conv
 B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppx_sexp_conv/expander
+B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppx_sexp_conv/runtime-lib
 B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppxlib
 B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppxlib/ast
 B /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppxlib/print_diff
@@ -30,9 +32,11 @@ S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ocaml-compiler-libs/shad
 S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ocaml-migrate-parsetree
 S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ocaml/compiler-libs
 S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/parsexp
+S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppx_compare/runtime-lib
 S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppx_derivers
 S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppx_sexp_conv
 S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppx_sexp_conv/expander
+S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppx_sexp_conv/runtime-lib
 S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppxlib
 S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppxlib/ast
 S /Users/pgaultier/.opam/ocaml-variants.4.9.0+trunk/lib/ppxlib/print_diff
