@@ -10,7 +10,8 @@ Big thanks to [Bob Nystrom](https://github.com/munificent)!! You're amazing.
 Assuming `ocaml` (version `4.08.1`) and `opam` are installed and setup:
 
 ```sh
-$ opam install dune base sexplib ppx_compare ppx_sexp_conv
+$ opam switch install 4.09.0+flambda
+$ opam install dune base sexplib ppx_compare ppx_sexp_conv patdiff ocamlformat
 $ dune build
 $ ./lox run test/hello_world.lox
 hello, world
@@ -57,12 +58,3 @@ $ docker run -it lox
 `lox repl` works out of the box with `rlwrap` if you have it installed:
 
 `rlwrap lox repl` will provide command history for free.
-
-## Development
-
-```sh
-$ opam switch install 4.09.0+flambda
-$ opam install patdiff ocamlformat
-```
-
-
