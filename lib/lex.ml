@@ -39,8 +39,10 @@ type token_kind =
   | String of string
   | Number of float
   | Identifier of string
+[@@deriving compare, sexp_of]
 
 type token = { kind : token_kind; lines : int; columns : int }
+[@@deriving compare, sexp_of]
 
 let keywords =
   Map.of_alist_exn

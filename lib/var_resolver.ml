@@ -5,14 +5,12 @@ type scope = (string, bool) Hashtbl.t
 
 type scopes = scope Stack.t
 
-
 module Expr = struct
   module T = struct
     type t = expr
 
-    let compare _ _ = 0
-
-    let sexp_of_t _ : Sexp.t = List []
+    let compare = compare_expr
+    let sexp_of_t = sexp_of_expr
   end
 
   include T
@@ -53,7 +51,7 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
       ~finish:(fun depth -> depth)
       scopes
   in
-   Map.add resolution ~key:expr ~data:depth
+   Map.set resolution ~key:expr ~data:depth
 
 let rec var_resolve_expr (resolution : resolution) (scopes : scopes) = function
   | Assign (Lex.Identifier n, expr) as assignment ->
@@ -93,8 +91,9 @@ let rec var_resolve_scope (resolution : resolution) (scopes : scopes) = function
   | _ -> resolution
 
 let resolve stmts =
+    let resolution:resolution = Map.empty (module Expr) in
   let scopes : scopes = Stack.create () in
   Stack.push scopes (new_scope ());
-  Map.fold
+  List.fold
     ~f:(fun resolution stmt -> var_resolve_scope resolution scopes stmt)
-    ~init:[] stmts
+    ~init:resolution stmts
