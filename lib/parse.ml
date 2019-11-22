@@ -1,22 +1,22 @@
 open Lex
 open Base
+open Base.Result
 
-let ( let* ) x f = Result.bind x ~f
+type function_signature = (value list -> environment -> value[@ignore])
 
-let ( let+ ) x f = Result.map ~f x
-
-type function_signature = (value list -> environment -> value) [@ignore]
-
-and  callable = {
+and callable = {
   arity : int;
   name : string;
-  mutable decl_environment : (environment [@ignore]);
-  fn : (function_signature [@ignore]);
+  mutable decl_environment : (environment[@ignore]);
+  fn : (function_signature[@ignore]);
 }
 
-and env_values_t = (string, value) Hashtbl.t [@ignore]
+and env_values_t = ((string, value) Hashtbl.t[@ignore])
 
-and environment = { values : env_values_t [@ignore]; enclosing : environment option [@ignore]}
+and environment = {
+  values : env_values_t; [@ignore]
+  enclosing : environment option; [@ignore]
+}
 
 and value =
   | Bool of bool

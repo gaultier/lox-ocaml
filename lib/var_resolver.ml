@@ -1,5 +1,5 @@
 open Parse
-open Base 
+open Base
 
 type scope = (string, bool) Hashtbl.t
 
@@ -10,6 +10,7 @@ module Expr = struct
     type t = expr
 
     let compare = compare_expr
+
     let sexp_of_t = sexp_of_expr
   end
 
@@ -51,11 +52,10 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
       ~finish:(fun depth -> depth)
       scopes
   in
-   Map.set resolution ~key:expr ~data:depth
+  Map.set resolution ~key:expr ~data:depth
 
-
-let resolve_function (resolution:resolution) (scopes: scopes) fn n = 
-    resolution
+let resolve_function (resolution : resolution) (scopes : scopes) fn n =
+  resolution
 
 let rec var_resolve_expr (resolution : resolution) (scopes : scopes) = function
   | Assign (Lex.Identifier n, expr) as assignment ->
@@ -95,7 +95,7 @@ let rec var_resolve_scope (resolution : resolution) (scopes : scopes) = function
   | _ -> resolution
 
 let resolve stmts =
-    let resolution:resolution = Map.empty (module Expr) in
+  let resolution : resolution = Map.empty (module Expr) in
   let scopes : scopes = Stack.create () in
   Stack.push scopes (new_scope ());
   List.fold
