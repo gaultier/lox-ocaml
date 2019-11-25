@@ -3,22 +3,20 @@ open Base
 
 exception FunctionReturn of value
 
-let rec find_in_environment_at n {values; enclosing} = function
-    | None -> failwith "Find in globals not implemented yet"
-    | Some d when d < 0 -> failwith ("Variable not found: " ^ n)
-    | Some d when d > 0 -> find_in_environment_at n enclosing (Some (d-1))
-    | Some d when Integer.equal d 0 -> (
+let rec find_in_environment_at n {values; enclosing} depth = match (depth, enclosing) with
+    | None, _ -> failwith "Find in globals not implemented yet"
+    | Some d, _ when d < 0 -> failwith "Wrong call to find_in_environment_at"
+    | Some d, Some enclosing when d > 0 -> find_in_environment_at n enclosing (Some (d-1))
+    | Some d, _ when  d = 0 -> (
   match  Hashtbl.find values n with
   |  Some v -> v
-  |  None -> failwith ("Variable not found: " ^ n)
+  |  None -> Printf.failwithf "Accessing unbound variable `%s`" n ()
     )
+    | _, _ ->  Printf.failwithf "Accessing unbound variable `%s`" n ()
 
-let rec find_in_environment n resolution { values; enclosing } =
-    let depth = Map.find n resolution in 
-  match (Hashtbl.find values n, enclosing) with
-  | Some v, _ -> v
-  | None, Some enclosing -> find_in_environment n enclosing
-  | None, None -> Printf.failwithf "Accessing unbound variable `%s`" n ()
+let find_in_environment (n:string) resolution env =
+    let depth = Map.find resolution n in 
+    find_in_environment_at n env depth
 
 let rec assign_in_environment n v { values; enclosing } =
   match (Hashtbl.find values n, enclosing) with
@@ -52,7 +50,7 @@ let rec eval_exp exp var_resolution ( env : environment) =
   | LogicalAnd (l, r) -> (
       let e = eval_exp l var_resolution env in
       match e with Bool false | Nil -> e | _ -> eval_exp r var_resolution env )
-  | Variable (Lex.Identifier n) -> find_in_environment n env
+  | Variable (Lex.Identifier n) -> find_in_environment n var_resolution env
   | Variable _ -> failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e) ->
       let v = eval_exp e var_resolution env in
