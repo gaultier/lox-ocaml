@@ -75,6 +75,12 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
                Printf.failwithf
                  "Cannot read local variable `%s` in its own initializer" n ());
       resolve_local resolution scopes v n
+  | Call(callee, _, args) -> 
+          let resolution = resolve_expr resolution scopes callee in 
+          let resolution = List.fold ~init:resolution ~f:(fun resolution arg -> resolve_expr resolution scopes arg) args in
+          resolution
+  | Binary (left, _, right) -> let resolution = resolve_expr resolution scopes left in resolve_expr resolution scopes right 
+  | Grouping e -> resolve_expr resolution scopes e
   | _ -> resolution
 
 and resolve_stmt (resolution : resolution) (scopes : scopes) = function
