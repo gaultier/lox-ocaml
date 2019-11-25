@@ -54,12 +54,18 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
   in
   Map.set resolution ~key:expr ~data:depth
 
-let resolve_function (resolution : resolution) (scopes : scopes) fn n =
+let rec resolve_function (resolution : resolution) (scopes : scopes) = function
+    | Function(_, args, stmts) ->
+  Stack.push scopes (new_scope ());
+  List.iter ~f:(fun arg -> match arg with {kind= Identifier n; _} -> declare_var scopes n ; define_var scopes n;  | _ -> failwith "Malformed function argument") args;
+  let resolution = resolve_stmts resolution scopes stmts in 
+  Stack.pop_exn scopes |> ignore;
   resolution
+    | _ -> failwith "Malformed function declaration"
 
-let rec var_resolve_expr (resolution : resolution) (scopes : scopes) = function
+and resolve_expr (resolution : resolution) (scopes : scopes) = function
   | Assign (Lex.Identifier n, expr) as assignment ->
-      let resolution = var_resolve_expr resolution scopes expr in
+      let resolution = resolve_expr resolution scopes expr in
       resolve_local resolution scopes assignment n
   | Variable (Lex.Identifier n) as v ->
       Stack.top scopes
@@ -71,33 +77,35 @@ let rec var_resolve_expr (resolution : resolution) (scopes : scopes) = function
       resolve_local resolution scopes v n
   | _ -> resolution
 
-let rec var_resolve_scope (resolution : resolution) (scopes : scopes) = function
+and resolve_stmt (resolution : resolution) (scopes : scopes) = function
   | Block stmts ->
       Stack.push scopes (new_scope ());
       let resolution =
         Array.fold
-          ~f:(fun resolution stmt -> var_resolve_scope resolution scopes stmt)
+          ~f:(fun resolution stmt -> resolve_stmt resolution scopes stmt)
           ~init:resolution stmts
       in
       Stack.pop_exn scopes |> ignore;
       resolution
   | Var (Lex.Identifier n, expr) ->
       declare_var scopes n;
-      let resolution = var_resolve_expr resolution scopes expr in
+      let resolution = resolve_expr resolution scopes expr in
       define_var scopes n;
       resolution
-  | Print e | Expr e -> var_resolve_expr resolution scopes e
-  | Function ({ Lex.kind = Lex.Identifier name; _ }, _, _) ->
+  | Print e | Expr e -> resolve_expr resolution scopes e
+  | Function ({ Lex.kind = Lex.Identifier name; _ }, _, _) as fn ->
       declare_var scopes name;
       define_var scopes name;
-      resolution
-  (* TODO: resolve function *)
+      resolve_function resolution scopes fn
   | _ -> resolution
 
-let resolve stmts =
-  let resolution : resolution = Map.empty (module Expr) in
-  let scopes : scopes = Stack.create () in
+and resolve_stmts (resolution: resolution) (scopes: scopes) (stmts: statement list) =
   Stack.push scopes (new_scope ());
   List.fold
-    ~f:(fun resolution stmt -> var_resolve_scope resolution scopes stmt)
+    ~f:(fun resolution stmt -> resolve_stmt resolution scopes stmt)
     ~init:resolution stmts
+
+let resolve stmts = 
+  let resolution : resolution = Map.empty (module Expr) in
+  let scopes : scopes = Stack.create () in
+  resolve_stmts resolution scopes stmts
