@@ -103,6 +103,9 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
       declare_var scopes name;
       define_var scopes name;
       resolve_function resolution scopes fn
+  | IfStmt(e, then_stmt) -> let resolution = resolve_expr resolution scopes e in  resolve_stmt resolution scopes then_stmt 
+  | IfElseStmt(e, then_stmt, else_stmt) ->  let resolution = resolve_expr resolution scopes e in let resolution = resolve_stmt resolution scopes then_stmt in resolve_stmt resolution scopes else_stmt
+
   | _ -> resolution
 
 and resolve_stmts (resolution: resolution) (scopes: scopes) (stmts: statement list) =
