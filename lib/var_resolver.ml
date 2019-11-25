@@ -81,7 +81,8 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
           resolution
   | Binary (left, _, right) | LogicalOr(left, right) | LogicalAnd(left, right) -> let resolution = resolve_expr resolution scopes left in resolve_expr resolution scopes right 
   | Unary (_, e) | Grouping e -> resolve_expr resolution scopes e
-  | _ -> resolution
+  | Literal _ -> resolution
+  | Assign (_) | Variable(_) -> failwith "Malformed AST node"
 
 and resolve_stmt (resolution : resolution) (scopes : scopes) = function
   | Block stmts ->
@@ -106,7 +107,7 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
   | WhileStmt (e, stmt) | IfStmt(e, stmt) -> let resolution = resolve_expr resolution scopes e in  resolve_stmt resolution scopes stmt 
   | IfElseStmt(e, then_stmt, else_stmt) ->  let resolution = resolve_expr resolution scopes e in let resolution = resolve_stmt resolution scopes then_stmt in resolve_stmt resolution scopes else_stmt
 
-  | _ -> resolution
+  | Var(_) | Function(_) -> failwith "Malformed AST node" 
 
 and resolve_stmts (resolution: resolution) (scopes: scopes) (stmts: statement list) =
   Stack.push scopes (new_scope ());
