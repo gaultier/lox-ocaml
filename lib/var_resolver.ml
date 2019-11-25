@@ -79,7 +79,7 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
           let resolution = resolve_expr resolution scopes callee in 
           let resolution = List.fold ~init:resolution ~f:(fun resolution arg -> resolve_expr resolution scopes arg) args in
           resolution
-  | Binary (left, _, right) -> let resolution = resolve_expr resolution scopes left in resolve_expr resolution scopes right 
+  | Binary (left, _, right) | LogicalOr(left, right) | LogicalAnd(left, right) -> let resolution = resolve_expr resolution scopes left in resolve_expr resolution scopes right 
   | Grouping e -> resolve_expr resolution scopes e
   | _ -> resolution
 
@@ -98,7 +98,7 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
       let resolution = resolve_expr resolution scopes expr in
       define_var scopes n;
       resolution
-  | Print e | Expr e -> resolve_expr resolution scopes e
+  | Print e | Expr e | Return (_, e) -> resolve_expr resolution scopes e
   | Function ({ Lex.kind = Lex.Identifier name; _ }, _, _) as fn ->
       declare_var scopes name;
       define_var scopes name;
