@@ -3,7 +3,18 @@ open Base
 
 exception FunctionReturn of value
 
-let rec find_in_environment n { values; enclosing } =
+let rec find_in_environment_at n {values; enclosing} = function
+    | None -> failwith "Find in globals not implemented yet"
+    | Some d when d < 0 -> failwith ("Variable not found: " ^ n)
+    | Some d when d > 0 -> find_in_environment_at n enclosing (Some (d-1))
+    | Some d when Integer.equal d 0 -> (
+  match  Hashtbl.find values n with
+  |  Some v -> v
+  |  None -> failwith ("Variable not found: " ^ n)
+    )
+
+let rec find_in_environment n resolution { values; enclosing } =
+    let depth = Map.find n resolution in 
   match (Hashtbl.find values n, enclosing) with
   | Some v, _ -> v
   | None, Some enclosing -> find_in_environment n enclosing
