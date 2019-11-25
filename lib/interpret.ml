@@ -3,20 +3,21 @@ open Base
 
 exception FunctionReturn of value
 
-let rec find_in_environment_at n {values; enclosing} depth = match (depth, enclosing) with
+let rec find_in_environment_at (expr: expr) {values; enclosing} depth = match (depth, enclosing) with
     | None, _ -> failwith "Find in globals not implemented yet"
     | Some d, _ when d < 0 -> failwith "Wrong call to find_in_environment_at"
-    | Some d, Some enclosing when d > 0 -> find_in_environment_at n enclosing (Some (d-1))
+    | Some d, Some enclosing when d > 0 -> find_in_environment_at expr enclosing (Some (d-1))
     | Some d, _ when  d = 0 -> (
+        let n = match expr with         | Assign (Lex.Identifier n, _) | Variable (Lex.Identifier n) -> n | _ -> failwith "Malformed variable" in 
   match  Hashtbl.find values n with
   |  Some v -> v
   |  None -> Printf.failwithf "Accessing unbound variable `%s`" n ()
     )
-    | _, _ ->  Printf.failwithf "Accessing unbound variable `%s`" n ()
+    | _, _ ->  failwith "Accessing unbound variable" 
 
-let find_in_environment (n:string) resolution env =
-    let depth = Map.find resolution n in 
-    find_in_environment_at n env depth
+let find_in_environment (expr: expr) (var_resolution: Var_resolver.resolution) env =
+    let depth = Map.find var_resolution expr in 
+    find_in_environment_at expr env depth
 
 let rec assign_in_environment n v { values; enclosing } =
   match (Hashtbl.find values n, enclosing) with
@@ -28,7 +29,7 @@ let rec assign_in_environment n v { values; enclosing } =
 
 let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
 
-let rec eval_exp exp var_resolution ( env : environment) =
+let rec eval_exp exp (var_resolution: Var_resolver.resolution) ( env : environment) =
   match exp with
   | Grouping e -> eval_exp e var_resolution env
   | Unary (t, e) ->
@@ -50,7 +51,7 @@ let rec eval_exp exp var_resolution ( env : environment) =
   | LogicalAnd (l, r) -> (
       let e = eval_exp l var_resolution env in
       match e with Bool false | Nil -> e | _ -> eval_exp r var_resolution env )
-  | Variable (Lex.Identifier n) -> find_in_environment n var_resolution env
+  | Variable (Lex.Identifier _) as var  -> find_in_environment var var_resolution env
   | Variable _ -> failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e) ->
       let v = eval_exp e var_resolution env in
@@ -104,7 +105,7 @@ let rec eval_exp exp var_resolution ( env : environment) =
       in
       f.fn args f.decl_environment
 
-let rec eval s var_resolution (env : environment) =
+let rec eval s (var_resolution: Var_resolver.resolution) (env : environment) =
   match s with
   | Expr e -> eval_exp e var_resolution env
   | Print e ->
