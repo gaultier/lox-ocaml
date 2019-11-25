@@ -80,7 +80,7 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
           let resolution = List.fold ~init:resolution ~f:(fun resolution arg -> resolve_expr resolution scopes arg) args in
           resolution
   | Binary (left, _, right) | LogicalOr(left, right) | LogicalAnd(left, right) -> let resolution = resolve_expr resolution scopes left in resolve_expr resolution scopes right 
-  | Grouping e -> resolve_expr resolution scopes e
+  | Unary (_, e) | Grouping e -> resolve_expr resolution scopes e
   | _ -> resolution
 
 and resolve_stmt (resolution : resolution) (scopes : scopes) = function
