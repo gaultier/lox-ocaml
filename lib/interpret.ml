@@ -19,11 +19,11 @@ let rec assign_in_environment n v { values; enclosing } =
 
 let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
 
-let rec eval_exp exp (env : environment) =
+let rec eval_exp exp var_resolution ( env : environment) =
   match exp with
-  | Grouping e -> eval_exp e env
+  | Grouping e -> eval_exp e var_resolution env
   | Unary (t, e) ->
-      let v = eval_exp e env in
+      let v = eval_exp e var_resolution env in
       let res =
         match (t, v) with
         | Lex.Minus, Number f -> Number (-.f)
@@ -36,22 +36,22 @@ let rec eval_exp exp (env : environment) =
       res
   | Literal l -> l
   | LogicalOr (l, r) -> (
-      let e = eval_exp l env in
-      match e with Bool false | Nil -> eval_exp r env | _ -> e )
+      let e = eval_exp l var_resolution env in
+      match e with Bool false | Nil -> eval_exp r var_resolution env | _ -> e )
   | LogicalAnd (l, r) -> (
-      let e = eval_exp l env in
-      match e with Bool false | Nil -> e | _ -> eval_exp r env )
+      let e = eval_exp l var_resolution env in
+      match e with Bool false | Nil -> e | _ -> eval_exp r var_resolution env )
   | Variable (Lex.Identifier n) -> find_in_environment n env
   | Variable _ -> failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e) ->
-      let v = eval_exp e env in
+      let v = eval_exp e var_resolution env in
       assign_in_environment n v env;
       v
   | Assign (t, _) ->
       Printf.failwithf "Invalid assignment: %s " (Lex.token_to_string t) ()
   | Binary (l, t, r) -> (
-      let l = eval_exp l env in
-      let r = eval_exp r env in
+      let l = eval_exp l var_resolution env in
+      let r = eval_exp r var_resolution env in
       match (l, t, r) with
       | String a, Lex.Plus, String b -> String (a ^ b)
       | Number a, Lex.Plus, Number b -> Number (a +. b)
@@ -76,7 +76,7 @@ let rec eval_exp exp (env : environment) =
           Printf.failwithf "Binary expression not allowed: %s"
             (Lex.token_to_string t) () )
   | Call (callee, _, args) ->
-      let e = eval_exp callee env in
+      let e = eval_exp callee var_resolution env in
       let f =
         match e with
         | Callable f -> f
@@ -84,7 +84,7 @@ let rec eval_exp exp (env : environment) =
             Printf.failwithf "Value `%s` cannot be called as a function"
               (value_to_string e) ()
       in
-      let args = List.map ~f:(fun a -> eval_exp a env) args in
+      let args = List.map ~f:(fun a -> eval_exp a var_resolution env) args in
       let len = List.length args in
       let _ =
         match len with
@@ -95,15 +95,15 @@ let rec eval_exp exp (env : environment) =
       in
       f.fn args f.decl_environment
 
-let rec eval s (env : environment) =
+let rec eval s var_resolution (env : environment) =
   match s with
-  | Expr e -> eval_exp e env
+  | Expr e -> eval_exp e var_resolution env
   | Print e ->
-      let v = eval_exp e env in
+      let v = eval_exp e var_resolution env in
       v |> Parse.value_to_string |> Stdlib.print_endline;
       Nil
   | Var (Lex.Identifier n, e) ->
-      let e = eval_exp e env in
+      let e = eval_exp e var_resolution env in
       create_in_current_env n e env;
       e
   | Var (t, _) ->
@@ -112,10 +112,10 @@ let rec eval s (env : environment) =
   | Block stmts ->
       let enclosing = env in
       let env = { values = empty (); enclosing = Some enclosing } in
-      Array.iter ~f:(fun s -> eval s env |> ignore) stmts;
+      Array.iter ~f:(fun s -> eval s var_resolution env |> ignore) stmts;
       Nil
   | Return (_, expr) ->
-      let v = eval_exp expr env in
+      let v = eval_exp expr var_resolution env in
       raise (FunctionReturn v)
   | Function ({ Lex.kind = Lex.Identifier name; _ }, decl_args, body) ->
       let fn call_args (env : environment) =
@@ -128,7 +128,7 @@ let rec eval s (env : environment) =
             | _ -> failwith "Invalid function argument")
           decl_args call_args;
         try
-          List.iter ~f:(fun stmt -> eval stmt env |> ignore) body;
+          List.iter ~f:(fun stmt -> eval stmt var_resolution env |> ignore) body;
           Nil
         with FunctionReturn v -> v
       in
@@ -140,28 +140,28 @@ let rec eval s (env : environment) =
       Nil
   | Function _ -> failwith "Invalid function declaration"
   | IfElseStmt (e, then_stmt, else_stmt) -> (
-      let e = eval_exp e env in
+      let e = eval_exp e var_resolution env in
       match e with
-      | Bool false | Nil -> eval else_stmt env
-      | _ -> eval then_stmt env )
+      | Bool false | Nil -> eval else_stmt var_resolution env
+      | _ -> eval then_stmt var_resolution env )
   | IfStmt (e, then_stmt) -> (
-      let e = eval_exp e env in
-      match e with Bool false | Nil -> Nil | _ -> eval then_stmt env )
-  | WhileStmt _ -> eval_while s env
+      let e = eval_exp e var_resolution env in
+      match e with Bool false | Nil -> Nil | _ -> eval then_stmt var_resolution env )
+  | WhileStmt _ -> eval_while s var_resolution env
 
-and eval_while w env =
+and eval_while w var_resolution env =
   match w with
   | WhileStmt (e, s) -> (
-      let e = eval_exp e env in
+      let e = eval_exp e var_resolution env in
       match e with
       | Bool false | Nil -> Nil
       | _ ->
-          eval s env |> ignore;
-          eval_while w env )
+          eval s var_resolution env |> ignore;
+          eval_while w var_resolution env )
   | _ -> failwith "Invalid while statement"
 
-let interpret (env : environment) stmts =
+let interpret (var_resolution: Var_resolver.resolution) (env : environment) stmts =
   try
-    stmts |> List.to_array |> Array.map ~f:(fun s -> eval s env) |> fun stmts ->
+    stmts |> List.to_array |> Array.map ~f:(fun s -> eval s var_resolution env) |> fun stmts ->
     Ok stmts
   with Failure err -> Result.Error [ err ]
