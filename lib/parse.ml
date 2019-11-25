@@ -1,10 +1,6 @@
 open Lex
 open Base
 
-let ( let* ) x f = Result.bind x ~f
-
-let ( let+ ) x f = Result.map ~f x
-
 type function_signature = (value list -> environment -> value[@ignore])
 
 and callable = {
