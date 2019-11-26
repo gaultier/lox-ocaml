@@ -8,7 +8,7 @@ let rec find_in_environment_at (expr: expr) {values; enclosing} depth = match (d
     | Some d, _ when d < 0 -> failwith "Wrong call to find_in_environment_at"
     | Some d, Some enclosing when d > 0 -> find_in_environment_at expr enclosing (Some (d-1))
     | Some d, _ when  d = 0 -> (
-        let n = match expr with         | Assign (Lex.Identifier n, _) | Variable (Lex.Identifier n) -> n | _ -> failwith "Malformed variable" in 
+        let n = match expr with  | Variable (Lex.Identifier n) -> n | _ -> failwith "Malformed variable" in 
   match  Hashtbl.find values n with
   |  Some v -> v
   |  None -> Printf.failwithf "Accessing unbound variable `%s`" n ()
@@ -19,13 +19,26 @@ let find_in_environment (expr: expr) (var_resolution: Var_resolver.resolution) e
     let depth = Map.find var_resolution expr in 
     find_in_environment_at expr env depth
 
-let rec assign_in_environment n v { values; enclosing } =
-  match (Hashtbl.find values n, enclosing) with
-  | Some _, _ -> Hashtbl.set ~key:n ~data:v values
-  | None, Some enclosing -> assign_in_environment n v enclosing
-  | None, None ->
-      Printf.failwithf "Assigning unbound variable `%s` to `%s`" n
-        (value_to_string v) ()
+let rec assign_in_environment_at (expr: expr) v (var_resolution: Var_resolver.resolution) env = function
+    | None -> failwith "Assigning in globals NIY"
+    | Some d when d < 0 -> failwith "Wrong call to assign_in_environment_at"
+    | Some d when d > 0 -> (
+             match env with | {enclosing= Some enclosing; _} -> 
+assign_in_environment_at expr v var_resolution enclosing (Some (d -1))
+                | _ -> failwith "Trying to set unbound variable")
+    | Some d when d = 0 ->  (
+        let {values; _} = env in 
+        let n = match expr with         | Assign (Lex.Identifier n, _) -> n | _ -> failwith "Malformed variable" in 
+  match Hashtbl.find values n with
+  | Some _ -> Hashtbl.set ~key:n ~data:v values
+  | None -> Printf.failwithf "Assigning unbound variable `%s` to `%s`" n
+        (value_to_string v) ())
+  | _ -> failwith "Unreachable"
+
+
+let assign_in_environment (expr: expr) v (var_resolution: Var_resolver.resolution) env =
+    let depth = Map.find var_resolution expr in 
+    assign_in_environment_at expr v var_resolution env depth
 
 let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
 
@@ -53,9 +66,9 @@ let rec eval_exp exp (var_resolution: Var_resolver.resolution) ( env : environme
       match e with Bool false | Nil -> e | _ -> eval_exp r var_resolution env )
   | Variable (Lex.Identifier _) as var  -> find_in_environment var var_resolution env
   | Variable _ -> failwith "Badly constructed var"
-  | Assign (Lex.Identifier n, e) ->
+  | Assign (Lex.Identifier _, e) as expr ->
       let v = eval_exp e var_resolution env in
-      assign_in_environment n v env;
+      assign_in_environment expr v var_resolution env;
       v
   | Assign (t, _) ->
       Printf.failwithf "Invalid assignment: %s " (Lex.token_to_string t) ()
