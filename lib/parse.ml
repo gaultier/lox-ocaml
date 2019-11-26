@@ -14,11 +14,11 @@ and callable = {
   fn : (function_signature[@ignore]);
 }
 
-and env_values_t = ((string, value) Hashtbl.t[@ignore])
+and env_values_t = ((string, value) Hashtbl.t[@compare.ignore])
 
 and environment = {
-  values : env_values_t; [@ignore]
-  enclosing : environment option; [@ignore]
+  values : env_values_t; [@compare.ignore]
+  enclosing : environment option; [@compare.ignore]
 }
 
 and value =

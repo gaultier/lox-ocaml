@@ -13,7 +13,7 @@ let rec find_in_environment_at (expr: expr) env = function
         let n = match expr with  | Variable (Lex.Identifier n) -> n | _ -> failwith "Malformed variable" in 
   match  Hashtbl.find env.values n with
   |  Some v -> v
-  |  None -> Printf.failwithf "Accessing unbound variable `%s`" n ()
+  |  None -> Printf.failwithf "Accessing unbound variable `%s`. Should be in scope `%s`" n (env.values |> sexp_of_env_values_t |> Sexp.to_string_hum) ()
     )
     | _ -> failwith "Unreachable find_in_environment_at"
 
