@@ -37,13 +37,12 @@ let define_var scopes name =
   |> Option.iter ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:true)
 
 let resolve_local (resolution : resolution) (scopes : scopes) expr n =
-    let size = Stack.length scopes in 
   let depth =
-    Stack.fold_until ~init:(size-1)
+    Stack.fold_until ~init:0
       ~f:(fun depth scope ->
         match Hashtbl.find scope n with
         | Some _ -> Stop depth
-        | None -> Continue (depth - 1))
+        | None -> Continue (depth + 1))
       ~finish:(fun depth -> depth)
       scopes
   in

@@ -8,43 +8,24 @@ let rec climb_nth_env depth = function
     | {enclosing=None; _} when depth > 0 -> Printf.failwithf "Failed assertion: mismatch between var resolution & interpreter when finding variable: depth=%d but there are no more environments to search upwards" depth ()
     | env -> env
 
-let rec find_in_environment_at (expr: expr) env = function
-    | None -> failwith "Find in globals not implemented yet"
-    | Some d when d < 0 -> failwith "Wrong call to find_in_environment_at"
-    | Some d when d > 0 -> (     match env with | {enclosing= Some enclosing; _} -> 
- find_in_environment_at expr enclosing (Some (d-1))
-    | _ -> Printf.failwithf "Failed assertion: mismatch between var resolution & interpreter when finding variable: depth=%d expr=`%s` but there are no more environments to search upwards" d (expr |> sexp_of_expr |> Sexp.to_string_hum) ())
-    | Some d when  d = 0 -> (
-        let n = match expr with  | Variable (Lex.Identifier n) -> n | _ -> failwith "Malformed variable" in 
+let find_in_environment (expr: expr) (var_resolution: Var_resolver.resolution) env =
+    let depth: int = Map.find var_resolution expr |> Stdlib.Option.get 
+     in 
+    let env = climb_nth_env depth env in 
+     let n = match expr with  | Variable (Lex.Identifier n) -> n | _ -> failwith "Malformed variable" in 
   match  Hashtbl.find env.values n with
   |  Some v -> v
   |  None -> Printf.failwithf "Accessing unbound variable `%s`. Should be in scope `%s`" n (env.values |> sexp_of_env_values_t |> Sexp.to_string_hum) ()
-    )
-    | _ -> failwith "Unreachable find_in_environment_at"
 
-let find_in_environment (expr: expr) (var_resolution: Var_resolver.resolution) env =
-    let depth = Map.find var_resolution expr in 
-    find_in_environment_at expr env depth
-
-let rec assign_in_environment_at (expr: expr) v (var_resolution: Var_resolver.resolution) env = function
-    | None -> failwith "Assigning in globals NIY"
-    | Some d when d < 0 -> failwith "Wrong call to assign_in_environment_at"
-    | Some d when d > 0 -> (
-             match env with | {enclosing= Some enclosing; _} -> 
-assign_in_environment_at expr v var_resolution enclosing (Some (d -1))
-    | _ -> failwith "Failed assertion: mismatch between var resolution & interpreter whhen finding variable")
-    | Some d when d = 0 ->  (
-        let n = match expr with         | Assign (Lex.Identifier n, _) -> n | _ -> failwith "Malformed variable" in 
+let assign_in_environment (expr: expr) v (var_resolution: Var_resolver.resolution) env =
+    let depth: int = Map.find var_resolution expr |> Stdlib.Option.get 
+     in 
+    let env = climb_nth_env depth env in 
+       let n = match expr with         | Assign (Lex.Identifier n, _) -> n | _ -> failwith "Malformed variable" in 
   match Hashtbl.find env.values n with
   | Some _ -> Hashtbl.set ~key:n ~data:v env.values
   | None -> Printf.failwithf "Assigning unbound variable `%s` to `%s`" n
-        (value_to_string v) ())
-  | _ -> failwith "Unreachable assign_in_environment_at"
-
-
-let assign_in_environment (expr: expr) v (var_resolution: Var_resolver.resolution) env =
-    let depth = Map.find var_resolution expr in 
-    assign_in_environment_at expr v var_resolution env depth
+        (value_to_string v) ()
 
 let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
 
