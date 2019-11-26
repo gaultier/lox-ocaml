@@ -25,13 +25,7 @@ let new_scope () : scope = Hashtbl.create (module String)
 let print_resolution (resolution : resolution) =
   Map.iteri
     ~f:(fun ~key:k ~data:d ->
-      let n =
-        match k with
-        | Assign (Lex.Identifier n, _) | Variable (Lex.Identifier n) -> n
-        | Literal l -> value_to_string l
-        | _ -> "unkown"
-      in
-      Stdlib.Printf.printf "- %s: %d\n" n d)
+      Stdlib.Printf.printf "- %s: %d\n" (k |> sexp_of_expr |> Sexp.to_string_hum) d)
     resolution
 
 let declare_var scopes name =
