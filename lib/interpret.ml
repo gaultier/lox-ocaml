@@ -3,17 +3,19 @@ open Base
 
 exception FunctionReturn of value
 
-let rec find_in_environment_at (expr: expr) {values; enclosing} depth = match (depth, enclosing) with
-    | None, _ -> failwith "Find in globals not implemented yet"
-    | Some d, _ when d < 0 -> failwith "Wrong call to find_in_environment_at"
-    | Some d, Some enclosing when d > 0 -> find_in_environment_at expr enclosing (Some (d-1))
-    | Some d, _ when  d = 0 -> (
+let rec find_in_environment_at (expr: expr) env = function
+    | None -> failwith "Find in globals not implemented yet"
+    | Some d when d < 0 -> failwith "Wrong call to find_in_environment_at"
+    | Some d when d > 0 -> (     match env with | {enclosing= Some enclosing; _} -> 
+ find_in_environment_at expr enclosing (Some (d-1))
+    | _ -> failwith "Failed assertion: mismatch between var resolution & interpreter whhen finding variable")
+    | Some d when  d = 0 -> (
         let n = match expr with  | Variable (Lex.Identifier n) -> n | _ -> failwith "Malformed variable" in 
-  match  Hashtbl.find values n with
+  match  Hashtbl.find env.values n with
   |  Some v -> v
   |  None -> Printf.failwithf "Accessing unbound variable `%s`" n ()
     )
-    | _, _ ->  failwith "Accessing unbound variable" 
+    | _ -> failwith "Unreachable find_in_environment_at"
 
 let find_in_environment (expr: expr) (var_resolution: Var_resolver.resolution) env =
     let depth = Map.find var_resolution expr in 
@@ -25,15 +27,14 @@ let rec assign_in_environment_at (expr: expr) v (var_resolution: Var_resolver.re
     | Some d when d > 0 -> (
              match env with | {enclosing= Some enclosing; _} -> 
 assign_in_environment_at expr v var_resolution enclosing (Some (d -1))
-                | _ -> failwith "Trying to set unbound variable")
+    | _ -> failwith "Failed assertion: mismatch between var resolution & interpreter whhen finding variable")
     | Some d when d = 0 ->  (
-        let {values; _} = env in 
         let n = match expr with         | Assign (Lex.Identifier n, _) -> n | _ -> failwith "Malformed variable" in 
-  match Hashtbl.find values n with
-  | Some _ -> Hashtbl.set ~key:n ~data:v values
+  match Hashtbl.find env.values n with
+  | Some _ -> Hashtbl.set ~key:n ~data:v env.values
   | None -> Printf.failwithf "Assigning unbound variable `%s` to `%s`" n
         (value_to_string v) ())
-  | _ -> failwith "Unreachable"
+  | _ -> failwith "Unreachable assign_in_environment_at"
 
 
 let assign_in_environment (expr: expr) v (var_resolution: Var_resolver.resolution) env =
