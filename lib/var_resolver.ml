@@ -54,6 +54,7 @@ let rec resolve_function (resolution : resolution) (scopes : scopes) = function
     | Function(_, args, stmts) ->
   Stack.push scopes (new_scope ());
   List.iter ~f:(fun arg -> match arg with {kind= Identifier n; _} -> declare_var scopes n ; define_var scopes n;  | _ -> failwith "Malformed function argument") args;
+  Stdlib.Printf.printf "Resolving function body. Scopes=%s\n" (scopes |> sexp_of_scopes |> Sexp.to_string_hum);
   let resolution = resolve_stmts resolution scopes stmts in 
   Stack.pop_exn scopes |> ignore;
   resolution
