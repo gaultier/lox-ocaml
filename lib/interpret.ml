@@ -3,6 +3,8 @@ open Base
 
 exception FunctionReturn of value
 
+let print_env_values values = Hashtbl.iteri ~f:(fun ~key:k ~data:d -> Stdlib.Printf.printf "- %s = %s\n" k (value_to_string d )) values
+
 let rec climb_nth_env depth = function
     | {enclosing=Some enclosing; _} when depth > 0 -> climb_nth_env (depth-1) enclosing
     | {enclosing=None; _} when depth > 0 -> Printf.failwithf "Failed assertion: mismatch between var resolution & interpreter when finding variable: depth=%d but there are no more environments to search upwards" depth ()
@@ -18,7 +20,7 @@ let find_in_environment (expr: expr) (var_resolution: Var_resolver.resolution) e
      let n = match expr with  | Variable (Lex.Identifier n) -> n | _ -> failwith "Malformed variable" in 
      let v =  match  Hashtbl.find env.values n with
   |  Some v -> v
-  |  None -> Printf.failwithf "Accessing unbound variable `%s`" n ()
+  |  None -> print_env_values env.values; Printf.failwithf "Accessing unbound variable `%s`." n ()
      in 
               Stdlib.Printf.printf "Find in env: v=%s\n" (value_to_string v);
               v
