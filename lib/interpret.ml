@@ -8,7 +8,7 @@ let rec find_in_environment_at (expr: expr) env = function
     | Some d when d < 0 -> failwith "Wrong call to find_in_environment_at"
     | Some d when d > 0 -> (     match env with | {enclosing= Some enclosing; _} -> 
  find_in_environment_at expr enclosing (Some (d-1))
-    | _ -> failwith "Failed assertion: mismatch between var resolution & interpreter whhen finding variable")
+    | _ -> Printf.failwithf "Failed assertion: mismatch between var resolution & interpreter when finding variable: depth=%d expr=`%s` but there are no more environments to search upwards" d (expr |> sexp_of_expr |> Sexp.to_string_hum) ())
     | Some d when  d = 0 -> (
         let n = match expr with  | Variable (Lex.Identifier n) -> n | _ -> failwith "Malformed variable" in 
   match  Hashtbl.find env.values n with
