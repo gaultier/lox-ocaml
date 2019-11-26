@@ -106,14 +106,14 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
   | Var(_) | Function(_) -> failwith "Malformed AST node" 
 
 and resolve_stmts (resolution: resolution) (scopes: scopes) (stmts: statement list) =
-  Stack.push scopes (new_scope ());
-  let resolution = List.fold
+   List.fold
     ~f:(fun resolution stmt -> resolve_stmt resolution scopes stmt)
     ~init:resolution stmts
-  in Stack.pop_exn scopes |> ignore;
-  resolution
 
 let resolve stmts = 
   let resolution : resolution = Map.empty (module Expr) in
   let scopes : scopes = Stack.create () in
-  resolve_stmts resolution scopes stmts
+  Stack.push scopes (new_scope ());
+  let resolution = resolve_stmts resolution scopes stmts in 
+   Stack.pop_exn scopes |> ignore;
+   resolution
