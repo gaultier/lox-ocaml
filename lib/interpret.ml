@@ -3,6 +3,11 @@ open Base
 
 exception FunctionReturn of value
 
+let rec climb_nth_env depth = function
+    | {enclosing=Some enclosing; _} when depth > 0 -> climb_nth_env (depth-1) enclosing
+    | {enclosing=None; _} when depth > 0 -> Printf.failwithf "Failed assertion: mismatch between var resolution & interpreter when finding variable: depth=%d but there are no more environments to search upwards" depth ()
+    | env -> env
+
 let rec find_in_environment_at (expr: expr) env = function
     | None -> failwith "Find in globals not implemented yet"
     | Some d when d < 0 -> failwith "Wrong call to find_in_environment_at"
