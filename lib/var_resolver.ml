@@ -1,9 +1,11 @@
 open Parse
 open Base
 
-type scope = (string, bool) Hashtbl.t
+type scope = (string, bool) Hashtbl.t [@@deriving sexp_of]
+
 
 type scopes = scope Stack.t
+[@@deriving sexp_of]
 
 module Expr = struct
   module T = struct
@@ -105,9 +107,11 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
 
 and resolve_stmts (resolution: resolution) (scopes: scopes) (stmts: statement list) =
   Stack.push scopes (new_scope ());
-  List.fold
+  let resolution = List.fold
     ~f:(fun resolution stmt -> resolve_stmt resolution scopes stmt)
     ~init:resolution stmts
+  in Stack.pop_exn scopes |> ignore;
+  resolution
 
 let resolve stmts = 
   let resolution : resolution = Map.empty (module Expr) in
