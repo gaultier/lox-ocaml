@@ -6,16 +6,22 @@ exception FunctionReturn of value
 let rec climb_nth_env depth = function
     | {enclosing=Some enclosing; _} when depth > 0 -> climb_nth_env (depth-1) enclosing
     | {enclosing=None; _} when depth > 0 -> Printf.failwithf "Failed assertion: mismatch between var resolution & interpreter when finding variable: depth=%d but there are no more environments to search upwards" depth ()
-    | env -> env
+    | env when depth = 0 -> env
+    | _ -> failwith "Unreachable climb_nth_env"
 
 let find_in_environment (expr: expr) (var_resolution: Var_resolver.resolution) env =
-    let depth: int = Map.find var_resolution expr |> Stdlib.Option.get 
-     in 
+              Stdlib.Printf.printf "Find in env expr=%s\n" (expr |> sexp_of_expr |> Sexp.to_string_hum);
+    let depth: int = Map.find var_resolution expr |> Stdlib.Option.get  in
+              Stdlib.Printf.printf "Find in env depth=%d\n" depth;
     let env = climb_nth_env depth env in 
+              Stdlib.Printf.printf "Find in env: finished climbing \n" ;
      let n = match expr with  | Variable (Lex.Identifier n) -> n | _ -> failwith "Malformed variable" in 
-  match  Hashtbl.find env.values n with
+     let v =  match  Hashtbl.find env.values n with
   |  Some v -> v
-  |  None -> Printf.failwithf "Accessing unbound variable `%s`. Should be in scope `%s`" n (env.values |> sexp_of_env_values_t |> Sexp.to_string_hum) ()
+  |  None -> Printf.failwithf "Accessing unbound variable `%s`" n ()
+     in 
+              Stdlib.Printf.printf "Find in env: v=%s\n" (value_to_string v);
+              v
 
 let assign_in_environment (expr: expr) v (var_resolution: Var_resolver.resolution) env =
     let depth: int = Map.find var_resolution expr |> Stdlib.Option.get 
@@ -109,7 +115,9 @@ let rec eval s (var_resolution: Var_resolver.resolution) (env : environment) =
   match s with
   | Expr e -> eval_exp e var_resolution env
   | Print e ->
+              Stdlib.Printf.printf "Print stmt of e=%s\n" (e |> sexp_of_expr |> Sexp.to_string_hum);
       let v = eval_exp e var_resolution env in
+              Stdlib.Printf.printf "Print stmt of v=%s\n" (v |> value_to_string);
       v |> Parse.value_to_string |> Stdlib.print_endline;
       Nil
   | Var (Lex.Identifier n, e) ->

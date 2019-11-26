@@ -17,8 +17,8 @@ and callable = {
 and env_values_t = ((string, value) Hashtbl.t[@compare.ignore])
 
 and environment = {
-  values : env_values_t; [@compare.ignore]
-  enclosing : environment option; [@compare.ignore]
+    values : (env_values_t [@ignore]);
+  enclosing : (environment option [@ignore])
 }
 
 and value =
@@ -71,6 +71,7 @@ type statement =
   | IfStmt of expr * statement
   | IfElseStmt of expr * statement * statement
   | WhileStmt of expr * statement
+[@@deriving sexp_of]
 
 let rec sync acc = function
   (* | For :: _ as r -> *)
