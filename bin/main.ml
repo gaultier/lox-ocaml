@@ -27,7 +27,6 @@ let lox_run input =
   input >>= Lox.Lex.lex >>= Lox.Parse.parse
   >>| (fun stmts ->
         let resolution = Lox.Var_resolver.resolve stmts in
-        Lox.Var_resolver.print_resolution resolution;
         (stmts, resolution))
   >>= (fun (stmts, resolution) ->
         Lox.Interpret.interpret resolution Lox.Parse.globals stmts)
@@ -40,7 +39,6 @@ let rec repl env =
     |> Lox.Lex.lex >>= Lox.Parse.parse
     >>| (fun stmts ->
           let resolution = Lox.Var_resolver.resolve stmts in
-          Lox.Var_resolver.print_resolution resolution;
           (stmts, resolution))
     >>= (fun (stmts, resolution) ->
           Lox.Interpret.interpret resolution Lox.Parse.globals stmts)
