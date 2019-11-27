@@ -80,6 +80,9 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
   | Assign (Lex.Identifier n, e, _) ->
       let v = eval_exp e var_resolution env in
       let id = id_from_exp e in
+      Stdlib.Printf.printf "Assignement. n=%s e=%s v=%s e.id=%d\n" n
+        (e |> sexp_of_expr |> Sexp.to_string_hum)
+        (value_to_string v) id;
       assign_in_environment n id v var_resolution env;
       v
   | Assign (t, _, _) ->
