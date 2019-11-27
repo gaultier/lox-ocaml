@@ -1,5 +1,6 @@
 open Parse
 open Base
+open Base.Option.Let_syntax
 
 exception FunctionReturn of value
 
@@ -9,22 +10,22 @@ let print_env_values values =
       Stdlib.Printf.printf "- %s = %s\n" k (value_to_string d))
     values
 
-let rec climb_nth_env depth = function
-  | { enclosing = Some enclosing; _ } when depth > 0 ->
-      climb_nth_env (depth - 1) enclosing
-  | { enclosing = None; _ } when depth > 0 ->
-      Printf.failwithf
-        "Failed assertion: mismatch between var resolution & interpreter when \
-         finding variable: depth=%d but there are no more environments to \
-         search upwards"
-        depth ()
-  | env when depth = 0 -> env
-  | _ -> failwith "Unreachable climb_nth_env"
+let rec climb_nth_env env depth =
+  match (env, depth) with
+  | env, 0 -> Some env
+  | env, depth ->
+      let%bind enclosing = env.enclosing in
+      climb_nth_env enclosing (depth - 1)
 
 let find_in_environment (n : string) (id : id)
     (var_resolution : Var_resolver.resolution) env =
   let depth : int = Map.find var_resolution id |> Stdlib.Option.get in
-  let env = climb_nth_env depth env in
+  let env : environment =
+    climb_nth_env env depth
+    |> Option.value_exn ~here:Lexing.dummy_pos
+         ~error:(Error.of_string "Accessing unbound variable")
+         ~message:"foo"
+  in
   match Hashtbl.find env.values n with
   | Some v -> v
   | None -> Printf.failwithf "Accessing unbound variable `%s`." n ()
@@ -32,7 +33,13 @@ let find_in_environment (n : string) (id : id)
 let assign_in_environment (n : string) (id : id) v
     (var_resolution : Var_resolver.resolution) env =
   let depth : int = Map.find_exn var_resolution id in
-  let env = climb_nth_env depth env in
+  let env =
+    match climb_nth_env env depth with
+    | None ->
+        Printf.failwithf "Assigning unbound variable `%s` to `%s`" n
+          (value_to_string v) ()
+    | Some env -> env
+  in
   match Hashtbl.find env.values n with
   | Some _ -> Hashtbl.set ~key:n ~data:v env.values
   | None ->
