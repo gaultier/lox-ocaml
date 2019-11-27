@@ -53,17 +53,17 @@ let rec resolve_function (resolution : resolution) (scopes : scopes) = function
   | _ -> failwith "Malformed function declaration"
 
 and resolve_expr (resolution : resolution) (scopes : scopes) = function
-  | Assign (Lex.Identifier n, expr, _) as assignment ->
+  | Assign (Lex.Identifier n, expr, id) ->
       let resolution = resolve_expr resolution scopes expr in
-      resolve_local resolution scopes assignment n
-  | Variable (Lex.Identifier n, _) as v ->
+      resolve_local resolution scopes id n
+  | Variable (Lex.Identifier n, id) ->
       Stack.top scopes
       |> Option.bind ~f:(fun scope -> Hashtbl.find scope n)
       |> Option.iter ~f:(fun b ->
              if Bool.equal b false then
                Printf.failwithf
                  "Cannot read local variable `%s` in its own initializer" n ());
-      resolve_local resolution scopes v n
+      resolve_local resolution scopes id n
   | Call (callee, _, args, _) ->
       let resolution = resolve_expr resolution scopes callee in
       Stdlib.Printf.printf "Call fn. callee=%s scopes=%s\n"
@@ -124,7 +124,7 @@ and resolve_stmts (resolution : resolution) (scopes : scopes)
     ~init:resolution stmts
 
 let resolve stmts =
-  let resolution : resolution = Map.empty (module Expr) in
+  let resolution : resolution = Map.empty (module Int) in
   let scopes : scopes = Stack.create () in
   Stack.push scopes (new_scope ());
   let resolution = resolve_stmts resolution scopes stmts in

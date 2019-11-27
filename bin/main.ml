@@ -55,7 +55,7 @@ let rec repl env =
   repl env
 
 let main () =
-  match Sys.get_argv () with
+  match Sys.argv with
   | [| _; "repl" |] -> repl Lox.Parse.globals
   | [| _; "run"; "-" |] -> read_from_stdin () |> lox_run
   | [| _; "run"; filename |] -> filename |> read_whole_file |> lox_run
@@ -66,7 +66,7 @@ let main () =
            stdin.\n\
            Use `lox repl` or `rlwrap lox repl` to launch the repl.\n\
            CLI invocation was: "
-        ^ Array.fold ~f:(fun acc s -> acc ^ s) ~init:" " (Sys.get_argv ()) )
+        ^ Array.fold ~f:(fun acc s -> acc ^ s) ~init:" " Sys.argv )
 
 ;;
 main ()

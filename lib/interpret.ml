@@ -21,19 +21,13 @@ let rec climb_nth_env depth = function
   | env when depth = 0 -> env
   | _ -> failwith "Unreachable climb_nth_env"
 
-let find_in_environment (expr : expr) (var_resolution : Var_resolver.resolution)
-    env =
-  Stdlib.Printf.printf "Find in env expr=%s\n"
-    (expr |> sexp_of_expr |> Sexp.to_string_hum);
-  let depth : int = Map.find var_resolution expr |> Stdlib.Option.get in
+let find_in_environment (n : string) (id : id)
+    (var_resolution : Var_resolver.resolution) env =
+  Stdlib.Printf.printf "Find in env id=%d\n" id;
+  let depth : int = Map.find var_resolution id |> Stdlib.Option.get in
   Stdlib.Printf.printf "Find in env depth=%d\n" depth;
   let env = climb_nth_env depth env in
   Stdlib.Printf.printf "Find in env: finished climbing \n";
-  let n =
-    match expr with
-    | Variable (Lex.Identifier n, _) -> n
-    | _ -> failwith "Malformed variable"
-  in
   let v =
     match Hashtbl.find env.values n with
     | Some v -> v
@@ -45,15 +39,10 @@ let find_in_environment (expr : expr) (var_resolution : Var_resolver.resolution)
   Stdlib.Printf.printf "Find in env: v=%s\n" (value_to_string v);
   v
 
-let assign_in_environment (expr : expr) v
+let assign_in_environment (n : string) (id : id) v
     (var_resolution : Var_resolver.resolution) env =
-  let depth : int = Map.find var_resolution expr |> Stdlib.Option.get in
+  let depth : int = Map.find_exn var_resolution id in
   let env = climb_nth_env depth env in
-  let n =
-    match expr with
-    | Assign (Lex.Identifier n, _, _) -> n
-    | _ -> failwith "Malformed variable"
-  in
   match Hashtbl.find env.values n with
   | Some _ -> Hashtbl.set ~key:n ~data:v env.values
   | None ->
@@ -85,12 +74,13 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
   | LogicalAnd (l, r, _) -> (
       let e = eval_exp l var_resolution env in
       match e with Bool false | Nil -> e | _ -> eval_exp r var_resolution env )
-  | Variable (Lex.Identifier _, _) as var ->
-      find_in_environment var var_resolution env
+  | Variable (Lex.Identifier n, id) ->
+      find_in_environment n id var_resolution env
   | Variable _ -> failwith "Badly constructed var"
-  | Assign (Lex.Identifier _, e, _) as expr ->
+  | Assign (Lex.Identifier n, e, _) ->
       let v = eval_exp e var_resolution env in
-      assign_in_environment expr v var_resolution env;
+      let id = 0 in
+      assign_in_environment n id v var_resolution env;
       v
   | Assign (t, _, _) ->
       Printf.failwithf "Invalid assignment: %s " (Lex.token_to_string t) ()
