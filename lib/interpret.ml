@@ -23,20 +23,13 @@ let rec climb_nth_env depth = function
 
 let find_in_environment (n : string) (id : id)
     (var_resolution : Var_resolver.resolution) env =
-  Stdlib.Printf.printf "Find in env id=%d\n" id;
   let depth : int = Map.find var_resolution id |> Stdlib.Option.get in
-  Stdlib.Printf.printf "Find in env depth=%d\n" depth;
   let env = climb_nth_env depth env in
-  Stdlib.Printf.printf "Find in env: finished climbing \n";
   let v =
     match Hashtbl.find env.values n with
     | Some v -> v
-    | None ->
-        print_env_values env.values;
-        Stdlib.flush_all ();
-        Printf.failwithf "Accessing unbound variable `%s`." n ()
+    | None -> Printf.failwithf "Accessing unbound variable `%s`." n ()
   in
-  Stdlib.Printf.printf "Find in env: v=%s\n" (value_to_string v);
   v
 
 let assign_in_environment (n : string) (id : id) v
@@ -79,11 +72,6 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
   | Variable _ -> failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e, id) ->
       let v = eval_exp e var_resolution env in
-      Stdlib.Printf.printf "Assignement. n=%s e=%s v=%s e.id=%d\n" n
-        (e |> sexp_of_expr |> Sexp.to_string_hum)
-        (value_to_string v) id;
-      Var_resolver.print_resolution var_resolution;
-      Stdlib.flush_all ();
       assign_in_environment n id v var_resolution env;
       v
   | Assign (t, _, _) ->
@@ -132,19 +120,13 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
             Printf.failwithf "Wrong arity in function call: expected %d, got %d"
               f.arity len ()
       in
-      Stdlib.Printf.printf "Calling function. Env=\n";
-      print_env_values f.decl_environment.values;
-      Stdlib.flush_all ();
       f.fn args f.decl_environment
 
 let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
   match s with
   | Expr (e, _) -> eval_exp e var_resolution env
   | Print (e, _) ->
-      Stdlib.Printf.printf "Print stmt of e=%s\n"
-        (e |> sexp_of_expr |> Sexp.to_string_hum);
       let v = eval_exp e var_resolution env in
-      Stdlib.Printf.printf "Print stmt of v=%s\n" (v |> value_to_string);
       v |> Parse.value_to_string |> Stdlib.print_endline;
       Nil
   | Var (Lex.Identifier n, e, _) ->
@@ -173,9 +155,6 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
             | _ -> failwith "Invalid function argument")
           decl_args call_args;
         try
-          Stdlib.Printf.printf "Evaling function stmts in body. Env=\n";
-          print_env_values env.values;
-          Stdlib.flush_all ();
           List.iter ~f:(fun stmt -> eval stmt var_resolution env |> ignore) body;
           Nil
         with FunctionReturn v -> v
@@ -185,9 +164,6 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
       in
       create_in_current_env name (Callable call) env;
       call.decl_environment <- env;
-      Stdlib.Printf.printf "Created function. Env=\n";
-      print_env_values env.values;
-      Stdlib.flush_all ();
       Nil
   | Function _ -> failwith "Invalid function declaration"
   | IfElseStmt (e, then_stmt, else_stmt, _) -> (

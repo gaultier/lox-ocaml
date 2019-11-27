@@ -45,8 +45,6 @@ let rec resolve_function (resolution : resolution) (scopes : scopes) = function
               define_var scopes n
           | _ -> failwith "Malformed function argument")
         args;
-      Stdlib.Printf.printf "Resolving function body. Scopes=%s\n"
-        (scopes |> sexp_of_scopes |> Sexp.to_string_hum);
       let resolution = resolve_stmts resolution scopes stmts in
       Stack.pop_exn scopes |> ignore;
       resolution
@@ -66,12 +64,6 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
       resolve_local resolution scopes id n
   | Call (callee, _, args, _) ->
       let resolution = resolve_expr resolution scopes callee in
-      Stdlib.Printf.printf "Call fn. callee=%s scopes=%s\n"
-        (callee |> sexp_of_expr |> Sexp.to_string_hum)
-        (scopes |> sexp_of_scopes |> Sexp.to_string_hum);
-      print_resolution resolution;
-      Stdlib.flush_all ();
-
       let resolution =
         List.fold ~init:resolution
           ~f:(fun resolution arg -> resolve_expr resolution scopes arg)
