@@ -83,6 +83,8 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       Stdlib.Printf.printf "Assignement. n=%s e=%s v=%s e.id=%d\n" n
         (e |> sexp_of_expr |> Sexp.to_string_hum)
         (value_to_string v) id;
+      Var_resolver.print_resolution var_resolution;
+      Stdlib.flush_all ();
       assign_in_environment n id v var_resolution env;
       v
   | Assign (t, _, _) ->
