@@ -32,19 +32,10 @@ let find_in_environment (n : string) (id : id)
 
 let assign_in_environment (n : string) (id : id) v
     (var_resolution : Var_resolver.resolution) env =
-  let depth : int = Map.find_exn var_resolution id in
-  let env =
-    match climb_nth_env env depth with
-    | None ->
-        Printf.failwithf "Assigning unbound variable `%s` to `%s`" n
-          (value_to_string v) ()
-    | Some env -> env
-  in
-  match Hashtbl.find env.values n with
-  | Some _ -> Hashtbl.set ~key:n ~data:v env.values
-  | None ->
-      Printf.failwithf "Assigning unbound variable `%s` to `%s`" n
-        (value_to_string v) ()
+  let%bind depth = Map.find var_resolution id in
+  let%bind env = climb_nth_env env depth in
+  let%map _ = Hashtbl.find env.values n in
+  Hashtbl.set ~key:n ~data:v env.values
 
 let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
 
@@ -74,10 +65,13 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
   | Variable (Lex.Identifier n, id) ->
       find_in_environment n id var_resolution env
   | Variable _ -> failwith "Badly constructed var"
-  | Assign (Lex.Identifier n, e, id) ->
+  | Assign (Lex.Identifier n, e, id) -> (
       let v = eval_exp e var_resolution env in
-      assign_in_environment n id v var_resolution env;
-      v
+      match assign_in_environment n id v var_resolution env with
+      | Some _ -> v
+      | None ->
+          Printf.failwithf "Assigning unbound variable `%s` to `%s`" n
+            (value_to_string v) () )
   | Assign (t, _, _) ->
       Printf.failwithf "Invalid assignment: %s " (Lex.token_to_string t) ()
   | Binary (l, t, r, _) -> (
