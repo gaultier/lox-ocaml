@@ -25,12 +25,9 @@ let find_in_environment (n : string) (id : id)
     (var_resolution : Var_resolver.resolution) env =
   let depth : int = Map.find var_resolution id |> Stdlib.Option.get in
   let env = climb_nth_env depth env in
-  let v =
     match Hashtbl.find env.values n with
     | Some v -> v
     | None -> Printf.failwithf "Accessing unbound variable `%s`." n ()
-  in
-  v
 
 let assign_in_environment (n : string) (id : id) v
     (var_resolution : Var_resolver.resolution) env =
