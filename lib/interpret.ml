@@ -79,7 +79,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
   | Variable _ -> failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e, _) ->
       let v = eval_exp e var_resolution env in
-      let id = 0 in
+      let id = id_from_exp e in
       assign_in_environment n id v var_resolution env;
       v
   | Assign (t, _, _) ->

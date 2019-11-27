@@ -78,6 +78,18 @@ type statement =
   | WhileStmt of expr * statement * id
 [@@deriving sexp_of]
 
+let id_from_exp = function
+  | Binary (_, _, _, id)
+  | Unary (_, _, id)
+  | Assign (_, _, id)
+  | Variable (_, id)
+  | LogicalOr (_, _, id)
+  | LogicalAnd (_, _, id)
+  | Call (_, _, _, id)
+  | Grouping (_, id)
+  | Literal (_, id) ->
+      id
+
 let rec sync acc = function
   (* | For :: _ as r -> *)
   (*     (acc, r) *)
