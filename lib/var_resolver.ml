@@ -51,7 +51,7 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
   Map.add_exn resolution ~key:expr ~data:depth
 
 let rec resolve_function (resolution : resolution) (scopes : scopes) = function
-    | Function(_, args, stmts) ->
+    | Function(_, args, stmts, _) ->
   Stack.push scopes (new_scope ());
   List.iter ~f:(fun arg -> match arg with {kind= Identifier n; _} -> declare_var scopes n ; define_var scopes n;  | _ -> failwith "Malformed function argument") args;
   Stdlib.Printf.printf "Resolving function body. Scopes=%s\n" (scopes |> sexp_of_scopes |> Sexp.to_string_hum);
@@ -61,10 +61,10 @@ let rec resolve_function (resolution : resolution) (scopes : scopes) = function
     | _ -> failwith "Malformed function declaration"
 
 and resolve_expr (resolution : resolution) (scopes : scopes) = function
-  | Assign (Lex.Identifier n, expr) as assignment ->
+  | Assign (Lex.Identifier n, expr, _) as assignment ->
       let resolution = resolve_expr resolution scopes expr in
       resolve_local resolution scopes assignment n
-  | Variable (Lex.Identifier n) as v ->
+  | Variable (Lex.Identifier n, _) as v ->
       Stack.top scopes
       |> Option.bind ~f:(fun scope -> Hashtbl.find scope n)
       |> Option.iter ~f:(fun b ->
@@ -72,7 +72,7 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
                Printf.failwithf
                  "Cannot read local variable `%s` in its own initializer" n ());
       resolve_local resolution scopes v n
-  | Call(callee, _, args) -> 
+  | Call(callee, _, args, _) -> 
           let resolution = resolve_expr resolution scopes callee in 
           Stdlib.Printf.printf "Call fn. callee=%s scopes=%s\n" (callee |> sexp_of_expr |> Sexp.to_string_hum) (scopes |> sexp_of_scopes |> Sexp.to_string_hum);
           print_resolution resolution ;
@@ -80,13 +80,13 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
 
           let resolution = List.fold ~init:resolution ~f:(fun resolution arg -> resolve_expr resolution scopes arg) args in
           resolution
-  | Binary (left, _, right) | LogicalOr(left, right) | LogicalAnd(left, right) -> let resolution = resolve_expr resolution scopes left in resolve_expr resolution scopes right 
-  | Unary (_, e) | Grouping e -> resolve_expr resolution scopes e
+  | Binary (left, _, right, _) | LogicalOr(left, right, _) | LogicalAnd(left, right, _) -> let resolution = resolve_expr resolution scopes left in resolve_expr resolution scopes right 
+  | Unary (_, e, _) | Grouping (e, _) -> resolve_expr resolution scopes e
   | Literal _ -> resolution
   | Assign (_) | Variable(_) -> failwith "Malformed AST node"
 
 and resolve_stmt (resolution : resolution) (scopes : scopes) = function
-  | Block stmts ->
+  | Block (stmts, _) ->
       Stack.push scopes (new_scope ());
       let resolution =
         Array.fold
@@ -95,18 +95,18 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
       in
       Stack.pop_exn scopes |> ignore;
       resolution
-  | Var (Lex.Identifier n, expr) ->
+  | Var (Lex.Identifier n, expr, _) ->
       declare_var scopes n;
       let resolution = resolve_expr resolution scopes expr in
       define_var scopes n;
       resolution
-  | Print e | Expr e | Return (_, e) -> resolve_expr resolution scopes e
-  | Function ({ Lex.kind = Lex.Identifier name; _ }, _, _) as fn ->
+  | Print (e, _) | Expr (e, _) | Return (_, e, _) -> resolve_expr resolution scopes e
+  | Function ({ Lex.kind = Lex.Identifier name; _ }, _, _, _) as fn ->
       declare_var scopes name;
       define_var scopes name;
       resolve_function resolution scopes fn
-  | WhileStmt (e, stmt) | IfStmt(e, stmt) -> let resolution = resolve_expr resolution scopes e in  resolve_stmt resolution scopes stmt 
-  | IfElseStmt(e, then_stmt, else_stmt) ->  let resolution = resolve_expr resolution scopes e in let resolution = resolve_stmt resolution scopes then_stmt in resolve_stmt resolution scopes else_stmt
+  | WhileStmt (e, stmt, _) | IfStmt(e, stmt, _) -> let resolution = resolve_expr resolution scopes e in  resolve_stmt resolution scopes stmt 
+  | IfElseStmt(e, then_stmt, else_stmt, _) ->  let resolution = resolve_expr resolution scopes e in let resolution = resolve_stmt resolution scopes then_stmt in resolve_stmt resolution scopes else_stmt
 
   | Var(_) | Function(_) -> failwith "Malformed AST node" 
 
