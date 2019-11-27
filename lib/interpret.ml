@@ -17,7 +17,7 @@ let find_in_environment (expr: expr) (var_resolution: Var_resolver.resolution) e
               Stdlib.Printf.printf "Find in env depth=%d\n" depth;
     let env = climb_nth_env depth env in 
               Stdlib.Printf.printf "Find in env: finished climbing \n" ;
-     let n = match expr with  | Variable (Lex.Identifier n) -> n | _ -> failwith "Malformed variable" in 
+     let n = match expr with  | Variable (Lex.Identifier n, _) -> n | _ -> failwith "Malformed variable" in 
      let v =  match  Hashtbl.find env.values n with
   |  Some v -> v
   |  None -> print_env_values env.values; Stdlib.flush_all(); Printf.failwithf "Accessing unbound variable `%s`." n ()
@@ -29,7 +29,7 @@ let assign_in_environment (expr: expr) v (var_resolution: Var_resolver.resolutio
     let depth: int = Map.find var_resolution expr |> Stdlib.Option.get 
      in 
     let env = climb_nth_env depth env in 
-       let n = match expr with         | Assign (Lex.Identifier n, _) -> n | _ -> failwith "Malformed variable" in 
+       let n = match expr with         | Assign (Lex.Identifier n, _, _) -> n | _ -> failwith "Malformed variable" in 
   match Hashtbl.find env.values n with
   | Some _ -> Hashtbl.set ~key:n ~data:v env.values
   | None -> Printf.failwithf "Assigning unbound variable `%s` to `%s`" n
@@ -39,8 +39,8 @@ let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
 
 let rec eval_exp exp (var_resolution: Var_resolver.resolution) ( env : environment) =
   match exp with
-  | Grouping e -> eval_exp e var_resolution env
-  | Unary (t, e) ->
+  | Grouping (e, _) -> eval_exp e var_resolution env
+  | Unary (t, e, _) ->
       let v = eval_exp e var_resolution env in
       let res =
         match (t, v) with
@@ -52,22 +52,22 @@ let rec eval_exp exp (var_resolution: Var_resolver.resolution) ( env : environme
               (Lex.token_to_string t) (value_to_string v) ()
       in
       res
-  | Literal l -> l
-  | LogicalOr (l, r) -> (
+  | Literal (l, _) -> l
+  | LogicalOr (l, r, _) -> (
       let e = eval_exp l var_resolution env in
       match e with Bool false | Nil -> eval_exp r var_resolution env | _ -> e )
-  | LogicalAnd (l, r) -> (
+  | LogicalAnd (l, r, _) -> (
       let e = eval_exp l var_resolution env in
       match e with Bool false | Nil -> e | _ -> eval_exp r var_resolution env )
-  | Variable (Lex.Identifier _) as var  -> find_in_environment var var_resolution env
+  | Variable (Lex.Identifier _, _) as var  -> find_in_environment var var_resolution env
   | Variable _ -> failwith "Badly constructed var"
-  | Assign (Lex.Identifier _, e) as expr ->
+  | Assign (Lex.Identifier _, e, _) as expr ->
       let v = eval_exp e var_resolution env in
       assign_in_environment expr v var_resolution env;
       v
-  | Assign (t, _) ->
+  | Assign (t, _, _) ->
       Printf.failwithf "Invalid assignment: %s " (Lex.token_to_string t) ()
-  | Binary (l, t, r) -> (
+  | Binary (l, t, r, _) -> (
       let l = eval_exp l var_resolution env in
       let r = eval_exp r var_resolution env in
       match (l, t, r) with
@@ -93,7 +93,7 @@ let rec eval_exp exp (var_resolution: Var_resolver.resolution) ( env : environme
       | _ ->
           Printf.failwithf "Binary expression not allowed: %s"
             (Lex.token_to_string t) () )
-  | Call (callee, _, args) ->
+  | Call (callee, _, args, _) ->
       let e = eval_exp callee var_resolution env in
       let f =
         match e with
@@ -118,29 +118,29 @@ let rec eval_exp exp (var_resolution: Var_resolver.resolution) ( env : environme
 
 let rec eval s (var_resolution: Var_resolver.resolution) (env : environment) =
   match s with
-  | Expr e -> eval_exp e var_resolution env
-  | Print e ->
+  | Expr (e, _) -> eval_exp e var_resolution env
+  | Print (e, _) ->
               Stdlib.Printf.printf "Print stmt of e=%s\n" (e |> sexp_of_expr |> Sexp.to_string_hum);
       let v = eval_exp e var_resolution env in
               Stdlib.Printf.printf "Print stmt of v=%s\n" (v |> value_to_string);
       v |> Parse.value_to_string |> Stdlib.print_endline;
       Nil
-  | Var (Lex.Identifier n, e) ->
+  | Var (Lex.Identifier n, e, _) ->
       let e = eval_exp e var_resolution env in
       create_in_current_env n e env;
       e
-  | Var (t, _) ->
+  | Var (t, _, _) ->
       Printf.failwithf "Invalid variable declaration: %s"
         (Lex.token_to_string t) ()
-  | Block stmts ->
+  | Block (stmts, _) ->
       let enclosing = env in
       let env = { values = empty (); enclosing = Some enclosing } in
       Array.iter ~f:(fun s -> eval s var_resolution env |> ignore) stmts;
       Nil
-  | Return (_, expr) ->
+  | Return (_, expr, _) ->
       let v = eval_exp expr var_resolution env in
       raise (FunctionReturn v)
-  | Function ({ Lex.kind = Lex.Identifier name; _ }, decl_args, body) ->
+  | Function ({ Lex.kind = Lex.Identifier name; _ }, decl_args, body, _) ->
       let fn call_args (env : environment) =
         let enclosing = env in
         let env = { values = empty (); enclosing = Some enclosing } in
@@ -168,19 +168,19 @@ let rec eval s (var_resolution: Var_resolver.resolution) (env : environment) =
             Stdlib.flush_all();
       Nil
   | Function _ -> failwith "Invalid function declaration"
-  | IfElseStmt (e, then_stmt, else_stmt) -> (
+  | IfElseStmt (e, then_stmt, else_stmt, _) -> (
       let e = eval_exp e var_resolution env in
       match e with
       | Bool false | Nil -> eval else_stmt var_resolution env
       | _ -> eval then_stmt var_resolution env )
-  | IfStmt (e, then_stmt) -> (
+  | IfStmt (e, then_stmt, _) -> (
       let e = eval_exp e var_resolution env in
       match e with Bool false | Nil -> Nil | _ -> eval then_stmt var_resolution env )
   | WhileStmt _ -> eval_while s var_resolution env
 
 and eval_while w var_resolution env =
   match w with
-  | WhileStmt (e, s) -> (
+  | WhileStmt (e, s, _) -> (
       let e = eval_exp e var_resolution env in
       match e with
       | Bool false | Nil -> Nil
