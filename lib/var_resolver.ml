@@ -48,7 +48,7 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
       ~finish:(fun depth -> depth)
       scopes
   in
-  Map.set resolution ~key:expr ~data:depth
+  Map.add_exn resolution ~key:expr ~data:depth
 
 let rec resolve_function (resolution : resolution) (scopes : scopes) = function
     | Function(_, args, stmts) ->
@@ -74,6 +74,10 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
       resolve_local resolution scopes v n
   | Call(callee, _, args) -> 
           let resolution = resolve_expr resolution scopes callee in 
+          Stdlib.Printf.printf "Call fn. callee=%s scopes=%s\n" (callee |> sexp_of_expr |> Sexp.to_string_hum) (scopes |> sexp_of_scopes |> Sexp.to_string_hum);
+          print_resolution resolution ;
+          Stdlib.flush_all ();
+
           let resolution = List.fold ~init:resolution ~f:(fun resolution arg -> resolve_expr resolution scopes arg) args in
           resolution
   | Binary (left, _, right) | LogicalOr(left, right) | LogicalAnd(left, right) -> let resolution = resolve_expr resolution scopes left in resolve_expr resolution scopes right 
