@@ -77,9 +77,8 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
   | Variable (Lex.Identifier n, id) ->
       find_in_environment n id var_resolution env
   | Variable _ -> failwith "Badly constructed var"
-  | Assign (Lex.Identifier n, e, _) ->
+  | Assign (Lex.Identifier n, e, id) ->
       let v = eval_exp e var_resolution env in
-      let id = id_from_exp e in
       Stdlib.Printf.printf "Assignement. n=%s e=%s v=%s e.id=%d\n" n
         (e |> sexp_of_expr |> Sexp.to_string_hum)
         (value_to_string v) id;
