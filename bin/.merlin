@@ -1,6 +1,5 @@
 EXCLUDE_QUERY_DIR
 B /Users/pgaultier/.opam/4.09.0+flambda/lib/base
-B /Users/pgaultier/.opam/4.09.0+flambda/lib/base/base_internalhash_types
 B /Users/pgaultier/.opam/4.09.0+flambda/lib/base/caml
 B /Users/pgaultier/.opam/4.09.0+flambda/lib/base/shadow_stdlib
 B /Users/pgaultier/.opam/4.09.0+flambda/lib/ocaml
@@ -25,7 +24,6 @@ B /Users/pgaultier/.opam/4.09.0+flambda/lib/stdio
 B ../_build/default/bin/.main.eobjs/byte
 B ../_build/default/lib/.lox.objs/byte
 S /Users/pgaultier/.opam/4.09.0+flambda/lib/base
-S /Users/pgaultier/.opam/4.09.0+flambda/lib/base/base_internalhash_types
 S /Users/pgaultier/.opam/4.09.0+flambda/lib/base/caml
 S /Users/pgaultier/.opam/4.09.0+flambda/lib/base/shadow_stdlib
 S /Users/pgaultier/.opam/4.09.0+flambda/lib/ocaml

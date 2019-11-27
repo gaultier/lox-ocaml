@@ -2,18 +2,19 @@ open Lex
 open Base
 open Base.Result.Let_syntax
 
-type id = int 
-[@@deriving compare, sexp_of]
+type id = int [@@deriving compare, sexp_of]
 
-let id: id ref = ref 0 
+let id : id ref = ref 0
 
-let next_id () = id := !id + 1; !id
+let next_id () =
+  id := !id + 1;
+  !id
 
 type function_signature = (value list -> environment -> value[@ignore])
 
 and callable = {
-    arity : (int [@compare.ignore]);
-  name : (string [@compare.ignore]);
+  arity : (int[@compare.ignore]);
+  name : (string[@compare.ignore]);
   mutable decl_environment : (environment[@ignore]);
   fn : (function_signature[@ignore]);
 }
@@ -21,16 +22,16 @@ and callable = {
 and env_values_t = ((string, value) Hashtbl.t[@compare.ignore])
 
 and environment = {
-    values : (env_values_t [@ignore]);
-  enclosing : (environment option [@ignore])
+  values : (env_values_t[@ignore]);
+  enclosing : (environment option[@ignore]);
 }
 
 and value =
   | Bool of bool
-  | Number of float 
+  | Number of float
   | Nil
-  | String of string 
-  | Callable of callable 
+  | String of string
+  | Callable of callable
 [@@deriving sexp_of]
 
 let empty () : env_values_t = Hashtbl.create (module String)
@@ -42,13 +43,13 @@ let globals : environment =
         (module String)
         [
           ( "clock",
-            Callable (
+            Callable
               {
                 arity = 0;
                 name = "clock";
                 decl_environment = { values = empty (); enclosing = None };
                 fn = (fun _ _ -> Number (Unix.gettimeofday ()));
-              }) );
+              } );
         ];
     enclosing = None;
   }
@@ -56,14 +57,14 @@ let globals : environment =
 type expr =
   | Binary of expr * token_kind * expr * id
   | Grouping of expr * id
-  | Literal of (value [@compare.ignore]) * id
+  | Literal of value * id
   | Unary of token_kind * expr * id
   | Assign of token_kind * expr * id
   | Variable of token_kind * id
   | LogicalOr of expr * expr * id
   | LogicalAnd of expr * expr * id
   | Call of expr * token * expr list * id
-[@@deriving compare, sexp_of]
+[@@deriving sexp_of]
 
 type statement =
   | Expr of expr * id
@@ -75,7 +76,7 @@ type statement =
   | IfStmt of expr * statement * id
   | IfElseStmt of expr * statement * statement * id
   | WhileStmt of expr * statement * id
-[@@deriving compare, sexp_of]
+[@@deriving sexp_of]
 
 let rec sync acc = function
   (* | For :: _ as r -> *)
@@ -116,7 +117,8 @@ let rec primary = function
       match rest with
       | { kind = ParenRight; _ } :: rest -> Ok (Grouping (e, next_id ()), rest)
       | _ as rest -> error "Primary" "Expected closing parenthesis `)`" rest )
-  | { kind = Identifier _ as i; _ } :: rest -> Ok (Variable (i, next_id ()), rest)
+  | { kind = Identifier _ as i; _ } :: rest ->
+      Ok (Variable (i, next_id ()), rest)
   | _ as rest ->
       error "Primary" "Expected primary (e.g `1` or `(true)` or \"hello\")" rest
 
@@ -138,10 +140,13 @@ and fn_call_comma_arguments args = function
       (fn_call_comma_arguments [@tailcall]) (arg :: args) rest
 
 and fn_call_arguments callee args = function
-  | ({ kind = ParenRight; _ } as t) :: rest -> Ok (Call (callee, t, args, next_id ()), rest)
+  | ({ kind = ParenRight; _ } as t) :: rest ->
+      Ok (Call (callee, t, args, next_id ()), rest)
   | _ as rest ->
       let%bind expr, rest = expression rest in
-      let%bind args, closing_paren, rest = fn_call_comma_arguments [ expr ] rest in
+      let%bind args, closing_paren, rest =
+        fn_call_comma_arguments [ expr ] rest
+      in
       let len = List.length args in
       if len >= 255 then
         Stdlib.prerr_endline
@@ -151,7 +156,7 @@ and fn_call_arguments callee args = function
 
 and unary = function
   | { kind = Bang as t; _ } :: rest | { kind = Minus as t; _ } :: rest ->
-    let%map   right, rest = unary rest in
+      let%map right, rest = unary rest in
       (Unary (t, right, next_id ()), rest)
   | _ as t -> (fn_call [@tailcall]) t
 
@@ -159,7 +164,7 @@ and multiplication tokens =
   let%bind left, rest = unary tokens in
   match rest with
   | { kind = Star as t; _ } :: rest | { kind = Slash as t; _ } :: rest ->
-          let%map right, rest = multiplication rest in
+      let%map right, rest = multiplication rest in
       (Binary (left, t, right, next_id ()), rest)
   | _ -> Ok (left, rest)
 
@@ -167,7 +172,7 @@ and addition tokens =
   let%bind left, rest = multiplication tokens in
   match rest with
   | { kind = Plus as t; _ } :: rest | { kind = Minus as t; _ } :: rest ->
-     let%map  right, rest = addition rest in
+      let%map right, rest = addition rest in
       (Binary (left, t, right, next_id ()), rest)
   | _ -> Ok (left, rest)
 
@@ -178,7 +183,7 @@ and comparison tokens =
   | { kind = GreaterEqual as t; _ } :: rest
   | { kind = Less as t; _ } :: rest
   | { kind = LessEqual as t; _ } :: rest ->
-   let%map    right, rest = comparison rest in
+      let%map right, rest = comparison rest in
       (Binary (left, t, right, next_id ()), rest)
   | _ -> Ok (left, rest)
 
@@ -187,7 +192,7 @@ and equality tokens =
   match rest with
   | { kind = BangEqual as t; _ } :: rest | { kind = EqualEqual as t; _ } :: rest
     ->
-       let%map right, rest = equality rest in
+      let%map right, rest = equality rest in
       (Binary (left, t, right, next_id ()), rest)
   | _ -> Ok (left, rest)
 
@@ -201,7 +206,7 @@ and assignment = function
       | { kind = Equal; _ } :: rest -> (
           let%bind a, rest = assignment rest in
           match e with
-          | Variable (v,_) -> Ok (Assign (v, a, next_id ()), rest)
+          | Variable (v, _) -> Ok (Assign (v, a, next_id ()), rest)
           | _ -> error "Assignement" "Expected valid assignment target" t )
       | _ -> Ok (e, rest) )
 
@@ -209,7 +214,7 @@ and logic_and tokens =
   let%bind l, rest = equality tokens in
   match rest with
   | { kind = And; _ } :: rest ->
-     let%map  r, rest = logic_and rest in
+      let%map r, rest = logic_and rest in
       (LogicalAnd (l, r, next_id ()), rest)
   | [] ->
       error "Logical and expression" "Expected and (e.g `true and false`)" rest
@@ -237,7 +242,7 @@ and expression_stmt = function
 
 and print_stmt = function
   | { kind = Print; _ } :: rest ->
-     let%map  expr, rest = expression_stmt rest in
+      let%map expr, rest = expression_stmt rest in
       (Print (expr, next_id ()), rest)
   | _ as rest ->
       error "Print statement" "Expected print statement (e.g `print 1;`)" rest
@@ -250,7 +255,7 @@ and if_stmt = function
           let%bind then_stmt, rest = statement rest in
           match rest with
           | { kind = Else; _ } :: rest ->
-             let%map  else_stmt, rest = statement rest in
+              let%map else_stmt, rest = statement rest in
               (IfElseStmt (e, then_stmt, else_stmt, next_id ()), rest)
           | _ -> Ok (IfStmt (e, then_stmt, next_id ()), rest) )
       | _ -> error "If statement" "Expected closing `)`" rest )
@@ -263,7 +268,7 @@ and while_stmt = function
       let%bind e, rest = expression rest in
       match rest with
       | { kind = ParenRight; _ } :: rest ->
-         let%map  s, rest = statement rest in
+          let%map s, rest = statement rest in
           (WhileStmt (e, s, next_id ()), rest)
       | _ -> error "While statement" "Missing closing `)`" rest )
   | _ as rest ->
@@ -282,14 +287,15 @@ and for_stmt = function
         match rest with
         | { kind = Var; _ } :: _ -> var_decl rest
         | { kind = SemiColon; _ } :: rest ->
-            Ok (Expr (Literal (Bool true , next_id ()), next_id ()), rest)
+            Ok (Expr (Literal (Bool true, next_id ()), next_id ()), rest)
         | _ ->
-          let%map   e, rest = expression_stmt rest in
+            let%map e, rest = expression_stmt rest in
             (Expr (e, next_id ()), rest)
       in
       let%bind stop_cond, rest =
         match rest with
-        | { kind = SemiColon; _ } :: rest -> Ok (Literal (Bool true, next_id ()), rest)
+        | { kind = SemiColon; _ } :: rest ->
+            Ok (Literal (Bool true, next_id ()), rest)
         | _ -> (
             let%bind e, rest = expression rest in
             match rest with
@@ -300,7 +306,8 @@ and for_stmt = function
       in
       let%bind incr_stmt, rest =
         match rest with
-        | { kind = ParenRight; _ } :: _ -> Ok (Literal (Bool true, next_id ()), rest)
+        | { kind = ParenRight; _ } :: _ ->
+            Ok (Literal (Bool true, next_id ()), rest)
         | _ -> expression rest
       in
       let%bind _, rest =
@@ -314,10 +321,14 @@ and for_stmt = function
       let%bind enclosed_body =
         Ok
           (Block
-             ([|
-               init_clause;
-               WhileStmt (stop_cond, Block ([| body; Expr (incr_stmt , next_id ())|], next_id () ), next_id ());
-             |], next_id ()))
+             ( [|
+                 init_clause;
+                 WhileStmt
+                   ( stop_cond,
+                     Block ([| body; Expr (incr_stmt, next_id ()) |], next_id ()),
+                     next_id () );
+               |],
+               next_id () ))
       in
       Ok (enclosed_body, rest)
   | _ as rest -> error "For-loop" "Expected loop (e.g `for (;;)`)" rest
@@ -333,7 +344,7 @@ and block_stmt_inner tokens acc =
 
 and block_stmt = function
   | { kind = CurlyBraceLeft; _ } :: rest ->
-       let%map stmts, rest = block_stmt_inner rest [||] in
+      let%map stmts, rest = block_stmt_inner rest [||] in
       (Block (stmts, next_id ()), rest)
   | _ as rest ->
       error "Block statement" "Expected block statement with opening `{`" rest
@@ -371,7 +382,8 @@ and var_decl = function
     :: { kind = Identifier n; _ } :: { kind = Equal; _ } :: rest -> (
       let%bind e, rest = expression rest in
       match rest with
-      | { kind = SemiColon; _ } :: rest -> Ok (Var (Identifier n, e, next_id ()), rest)
+      | { kind = SemiColon; _ } :: rest ->
+          Ok (Var (Identifier n, e, next_id ()), rest)
       | _ -> error "Variable declaration" "Expected terminating `;`" rest )
   | { kind = Var; _ }
     :: { kind = Identifier n; _ } :: { kind = SemiColon; _ } :: rest ->

@@ -28,8 +28,9 @@ let lox_run input =
   >>| (fun stmts ->
         let resolution = Lox.Var_resolver.resolve stmts in
         Lox.Var_resolver.print_resolution resolution;
-        (stmts, resolution) )
-  >>= (fun (stmts, resolution) -> Lox.Interpret.interpret resolution Lox.Parse.globals stmts)
+        (stmts, resolution))
+  >>= (fun (stmts, resolution) ->
+        Lox.Interpret.interpret resolution Lox.Parse.globals stmts)
   |> Result.iter_error ~f:print_errors
 
 let rec repl env =
@@ -37,12 +38,13 @@ let rec repl env =
   let env =
     (try Stdlib.read_line () with End_of_file -> Stdlib.exit 0)
     |> Lox.Lex.lex >>= Lox.Parse.parse
-  >>| (fun stmts ->
-        let resolution = Lox.Var_resolver.resolve stmts in
-        Lox.Var_resolver.print_resolution resolution;
-        (stmts, resolution) )
-  >>= (fun (stmts, resolution) -> Lox.Interpret.interpret resolution Lox.Parse.globals stmts)
-  >>| (fun stmts ->
+    >>| (fun stmts ->
+          let resolution = Lox.Var_resolver.resolve stmts in
+          Lox.Var_resolver.print_resolution resolution;
+          (stmts, resolution))
+    >>= (fun (stmts, resolution) ->
+          Lox.Interpret.interpret resolution Lox.Parse.globals stmts)
+    >>| (fun stmts ->
           Array.iter
             ~f:(fun s -> s |> Lox.Parse.value_to_string |> Stdlib.print_endline)
             stmts;
