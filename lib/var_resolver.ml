@@ -115,7 +115,7 @@ and resolve_stmt (resolution : resolution) (scopes : scopes)
       match current_fn_type with
       | None ->
           Printf.failwithf
-            "Cannot return outside of a function body: return of: `%s`"
+            "Cannot return outside of a function body. Returning: `%s`"
             (e |> sexp_of_expr |> Sexp.to_string_hum)
             ()
       | Some _ -> resolve_expr resolution scopes e )
