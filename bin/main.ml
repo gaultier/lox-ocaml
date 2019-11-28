@@ -43,9 +43,16 @@ let rec repl env =
   in
   repl env
 
+let dump_ast stmts =
+  stmts |> Lox.Parse.sexp_of_statements |> Sexp.to_string_hum
+  |> Stdlib.print_endline
+
 let main () =
   match Sys.argv with
   | [| _; "repl" |] -> repl Lox.Parse.globals
+  | [| _; "dump"; "ast" |] ->
+      read_from_stdin () >>= Lox.Lex.lex >>= Lox.Parse.parse
+      |> Result.iter ~f:dump_ast
   | [| _; "run" |] -> read_from_stdin () |> lox_run
   | [| _; "run"; filename |] -> filename |> read_whole_file |> lox_run
   | _ ->

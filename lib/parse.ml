@@ -78,6 +78,8 @@ type statement =
   | WhileStmt of expr * statement * id
 [@@deriving sexp_of]
 
+type statements = statement list [@@deriving sexp_of]
+
 let rec sync acc = function
   (* | For :: _ as r -> *)
   (*     (acc, r) *)
