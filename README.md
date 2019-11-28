@@ -1,7 +1,7 @@
 # Lox
 
 Implementation of the [Lox language](http://www.craftinginterpreters.com/) in
-OCaml, comprised of a front-end compiler and an interpreter.
+OCaml, comprised of a front-end compiler and an interpreter, in roughly 1KLOC !
 
 Big thanks to [Bob Nystrom](https://github.com/munificent)!! You're amazing.
 
