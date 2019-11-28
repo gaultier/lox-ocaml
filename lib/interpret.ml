@@ -10,6 +10,8 @@ let print_env_values values =
       Stdlib.Printf.printf "- %s = %s\n" k (value_to_string d))
     values
 
+let opt_get s o = Option.value_exn ~error:(Error.of_exn (Failure s)) o
+
 let rec climb_nth_env env depth =
   match (env, depth) with
   | env, 0 -> Some env
@@ -19,16 +21,9 @@ let rec climb_nth_env env depth =
 
 let find_in_environment (n : string) (id : id)
     (var_resolution : Var_resolver.resolution) env =
-  let depth : int = Map.find var_resolution id |> Stdlib.Option.get in
-  let env : environment =
-    climb_nth_env env depth
-    |> Option.value_exn ~here:Lexing.dummy_pos
-         ~error:(Error.of_string "Accessing unbound variable")
-         ~message:"foo"
-  in
-  match Hashtbl.find env.values n with
-  | Some v -> v
-  | None -> Printf.failwithf "Accessing unbound variable `%s`." n ()
+  let%bind depth = Map.find var_resolution id in
+  let%bind env = climb_nth_env env depth in
+  Hashtbl.find env.values n
 
 let assign_in_environment (n : string) (id : id) v
     (var_resolution : Var_resolver.resolution) env =
@@ -64,16 +59,14 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       match e with Bool false | Nil -> e | _ -> eval_exp r var_resolution env )
   | Variable (Lex.Identifier n, id) ->
       find_in_environment n id var_resolution env
+      |> opt_get (Printf.sprintf "Accessing unbound variable `%s`" n)
   | Variable _ -> failwith "Badly constructed var"
   | Assign (Lex.Identifier n, e, id) ->
       let v = eval_exp e var_resolution env in
-      Option.value_exn
-        ~error:
-          (Error.of_exn
-             (Failure
-                (Printf.sprintf "Assigning unbound variable `%s` to `%s`" n
-                   (value_to_string v))))
-        (assign_in_environment n id v var_resolution env);
+      assign_in_environment n id v var_resolution env
+      |> opt_get
+           (Printf.sprintf "Assigning unbound variable `%s` to `%s`" n
+              (value_to_string v));
       v
   | Assign (t, _, _) ->
       Printf.failwithf "Invalid assignment: %s " (Lex.token_to_string t) ()
