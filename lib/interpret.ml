@@ -149,7 +149,7 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
       create_in_current_env name (Callable call) env;
       call.decl_environment <- env;
       Nil
-  | Function _ -> failwith "Invalid function declaration"
+  | Function _ -> assert false
   | IfElseStmt (e, then_stmt, else_stmt, _) -> (
       let e = eval_exp e var_resolution env in
       match e with
@@ -171,7 +171,7 @@ and eval_while w var_resolution env =
       | _ ->
           eval s var_resolution env |> ignore;
           eval_while w var_resolution env )
-  | _ -> failwith "Invalid while statement"
+  | _ -> assert false
 
 let interpret (var_resolution : Var_resolver.resolution) (env : environment)
     stmts =
