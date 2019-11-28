@@ -28,7 +28,8 @@ let find_in_environment (n : string) (id : id)
 let assign_in_environment (n : string) (id : id) v
     (var_resolution : Var_resolver.resolution) env =
   let%map _ = find_in_environment n id var_resolution env in
-  Hashtbl.set ~key:n ~data:v env.values
+  Hashtbl.set ~key:n ~data:v env.values;
+  v
 
 let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
 
@@ -64,8 +65,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       assign_in_environment n id v var_resolution env
       |> opt_get
            (Printf.sprintf "Assigning unbound variable `%s` to `%s`" n
-              (value_to_string v));
-      v
+              (value_to_string v))
   | Assign (t, _, _) ->
       Printf.failwithf "Invalid assignment: %s " (Lex.token_to_string t) ()
   | Binary (l, t, r, _) -> (
