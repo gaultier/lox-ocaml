@@ -1,5 +1,6 @@
 open Parse
 open Base
+open Base.Result.Let_syntax
 
 type scope = (string, bool) Hashtbl.t [@@deriving sexp_of]
 
@@ -16,16 +17,17 @@ let print_resolution (resolution : resolution) =
 
 let declare_var scopes name =
   Stack.top scopes
-  |> Option.iter ~f:(fun scope ->
+  |> Option.map ~f:(fun scope ->
          match Hashtbl.add scope ~key:name ~data:false with
-         | `Ok -> ()
+         | `Ok -> Result.ok_unit
          | `Duplicate ->
-             Printf.failwithf
-               "Forbidden shadowing of variable `%s` in the same scope" name ())
+             Result.failf
+               "Forbidden shadowing of variable `%s` in the same scope" name)
 
 let define_var scopes name =
   Stack.top scopes
-  |> Option.iter ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:true)
+  |> Option.iter ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:true);
+  Result.ok_unit
 
 let resolve_local (resolution : resolution) (scopes : scopes) expr n =
   let depth =
@@ -46,7 +48,7 @@ let rec resolve_function (resolution : resolution) (scopes : scopes) = function
         ~f:(fun arg ->
           match arg with
           | { kind = Identifier n; _ } ->
-              declare_var scopes n;
+              let%bind _ = declare_var scopes n in
               define_var scopes n
           | { kind; _ } ->
               Printf.failwithf "Invalid function argument: %s "
@@ -109,7 +111,7 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
       resolution
   | Var (Lex.Identifier n, expr, _) ->
       declare_var scopes n;
-      let resolution = resolve_expr resolution scopes expr in
+      let%map resolution = resolve_expr resolution scopes expr in
       define_var scopes n;
       resolution
   | Print (e, _) | Expr (e, _) | Return (_, e, _) ->
@@ -137,15 +139,17 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
 and resolve_stmts (resolution : resolution) (scopes : scopes)
     (stmts : statement list) =
   List.fold
-    ~f:(fun resolution stmt -> resolve_stmt resolution scopes stmt)
-    ~init:resolution stmts
+    ~f:(fun resolution stmt ->
+      let%bind resolution = resolution in
+      resolve_stmt resolution scopes stmt)
+    ~init:(Ok resolution) stmts
 
 let resolve stmts =
   try
     let resolution : resolution = Map.empty (module Int) in
     let scopes : scopes = Stack.create () in
     Stack.push scopes (new_scope ());
-    let resolution = resolve_stmts resolution scopes stmts in
+    let%bind resolution = resolve_stmts resolution scopes stmts in
     Stack.pop_exn scopes |> ignore;
     Ok (stmts, resolution)
   with Failure err -> Result.Error [ err ]
