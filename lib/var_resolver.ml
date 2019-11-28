@@ -60,7 +60,10 @@ let rec resolve_function (resolution : resolution) (scopes : scopes) = function
                   (kind |> Lex.sexp_of_token_kind |> Sexp.to_string_hum))
           args
       in
-      let%bind resolution = resolve_stmts resolution scopes stmts in
+      let resolution : (resolution, string) result =
+        resolve_stmts resolution scopes stmts
+      in
+      let%bind resolution = resolution in
       Stack.pop_exn scopes |> ignore;
       resolution
   | _ as f ->
@@ -105,7 +108,7 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
 and resolve_stmt (resolution : resolution) (scopes : scopes) = function
   | Block (stmts, _) ->
       Stack.push scopes (new_scope ());
-      let resolution =
+      let%bind resolution =
         Array.fold
           ~f:(fun resolution stmt ->
             let%bind resolution = resolution in
@@ -113,7 +116,7 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
           ~init:(Ok resolution) stmts
       in
       Stack.pop_exn scopes |> ignore;
-      resolution
+      Ok resolution
   | Var (Lex.Identifier n, expr, _) ->
       let%bind _ = declare_var scopes n in
       let%bind resolution = resolve_expr resolution scopes expr in
@@ -133,13 +136,11 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
       let%bind resolution = resolve_stmt resolution scopes then_stmt in
       resolve_stmt resolution scopes else_stmt
   | Function _ as f ->
-      Printf.failwithf "Invalid function declaration: %s "
+      Result.failf "Invalid function declaration: %s "
         (f |> sexp_of_statement |> Sexp.to_string_hum)
-        ()
   | Var _ as v ->
-      Printf.failwithf "Invalid variable declaration: %s "
+      Result.failf "Invalid variable declaration: %s "
         (v |> sexp_of_statement |> Sexp.to_string_hum)
-        ()
 
 and resolve_stmts (resolution : resolution) (scopes : scopes)
     (stmts : statement list) =
