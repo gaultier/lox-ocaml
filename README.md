@@ -10,22 +10,20 @@ Big thanks to [Bob Nystrom](https://github.com/munificent)!! You're amazing.
 Assuming `ocaml` (version `4.08.1`) and `opam` are installed and setup:
 
 ```sh
-$ opam switch install 4.08.1+flambda
-$ opam install dune base sexplib ppx_compare ppx_sexp_conv patdiff ocamlformat merlin
-$ dune build
-$ ./lox run test/hello_world.lox
+$ opam install .
+$ lox run test/hello_world.lox
 hello, world
 
-$ printf 'print 4 * 3 - 1;' | ./lox run
+$ printf 'print 4 * 3 - 1;' | lox run
 11
 
-$ ./lox repl
+$ lox repl
 > 1+1;
 2.
 > ^C
 
 # The last field of an AST node is an internal unique id
-$ echo "print 1 + 2;" | ./lox dump ast
+$ echo "print 1 + 2;" | lox dump ast
 ((Print (Binary (Literal (Number 1) 1) Plus (Literal (Number 2) 2) 3) 4))
 
 ```
