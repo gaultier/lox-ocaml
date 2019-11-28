@@ -1,8 +1,5 @@
 open Base
-
-let ( >>| ) = Result.( >>| )
-
-let ( >>= ) = Result.( >>= )
+open Base.Result.Monad_infix
 
 let read_whole_file filename =
   try
