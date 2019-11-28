@@ -71,7 +71,7 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
       |> Option.iter ~f:(fun b ->
              if Bool.equal b false then
                Printf.failwithf
-                 "Cannot read local variable `%s` in its own initializer" n ());
+                 "Cannot read variable `%s` in its own initializer" n ());
       resolve_local resolution scopes id n
   | Call (callee, _, args, _) ->
       let resolution = resolve_expr resolution scopes callee in
