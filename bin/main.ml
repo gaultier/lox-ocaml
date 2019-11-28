@@ -1,6 +1,8 @@
 open Base
 open Base.Result.Monad_infix
 
+let ( >> ) f g x = g (f x)
+
 let read_whole_file filename =
   try
     let ch = Stdlib.open_in filename in
@@ -43,9 +45,8 @@ let rec repl env =
   in
   repl env
 
-let dump_ast stmts =
-  stmts |> Lox.Parse.sexp_of_statements |> Sexp.to_string_hum
-  |> Stdlib.print_endline
+let dump_ast =
+  Lox.Parse.sexp_of_statements >> Sexp.to_string_hum >> Stdlib.print_endline
 
 let main () =
   match Sys.argv with
