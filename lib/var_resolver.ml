@@ -60,12 +60,10 @@ let rec resolve_function (resolution : resolution) (scopes : scopes) = function
                   (kind |> Lex.sexp_of_token_kind |> Sexp.to_string_hum))
           args
       in
-      let resolution : (resolution, string) result =
-        resolve_stmts resolution scopes stmts
-      in
-      let%bind resolution = resolution in
+      let%bind resolution = 
+        resolve_stmts resolution scopes stmts in
       Stack.pop_exn scopes |> ignore;
-      resolution
+      Ok resolution
   | _ as f ->
       Result.failf "Invalid function declaration: %s "
         (f |> sexp_of_statement |> Sexp.to_string_hum)
@@ -75,13 +73,15 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
       let%bind resolution = resolve_expr resolution scopes expr in
       resolve_local resolution scopes id n
   | Variable (Lex.Identifier n, id) ->
-      Stack.top scopes
-      |> Option.bind ~f:(fun scope -> Hashtbl.find scope n)
-      |> Option.iter ~f:(fun b ->
-             if Bool.equal b false then
-               Printf.failwithf
-                 "Cannot read variable `%s` in its own initializer" n ());
-      resolve_local resolution scopes id n
+      let%bind scope =
+        Stack.top scopes |> Result.of_option ~error:"Missing scope"
+      in
+      let%bind initialized =
+        Hashtbl.find scope n |> Result.of_option ~error:"Missing variable"
+      in
+      if Bool.equal initialized false then
+        Result.failf "Cannot read variable `%s` in its own initializer" n
+      else resolve_local resolution scopes id n
   | Call (callee, _, args, _) ->
       let resolution = resolve_expr resolution scopes callee in
       List.fold ~init:resolution
@@ -97,13 +97,11 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
   | Unary (_, e, _) | Grouping (e, _) -> resolve_expr resolution scopes e
   | Literal _ -> Ok resolution
   | Assign _ as a ->
-      Printf.failwithf "Invalid assignment: %s "
+      Result.failf "Invalid assignment: %s "
         (a |> sexp_of_expr |> Sexp.to_string_hum)
-        ()
   | Variable _ as v ->
-      Printf.failwithf "Invalid variable: %s "
+      Result.failf "Invalid variable: %s "
         (v |> sexp_of_expr |> Sexp.to_string_hum)
-        ()
 
 and resolve_stmt (resolution : resolution) (scopes : scopes) = function
   | Block (stmts, _) ->
@@ -151,11 +149,9 @@ and resolve_stmts (resolution : resolution) (scopes : scopes)
     ~init:(Ok resolution) stmts
 
 let resolve stmts =
-  try
-    let resolution : resolution = Map.empty (module Int) in
-    let scopes : scopes = Stack.create () in
-    Stack.push scopes (new_scope ());
-    let%bind resolution = resolve_stmts resolution scopes stmts in
-    Stack.pop_exn scopes |> ignore;
-    Ok (stmts, resolution)
-  with Failure err -> Result.Error [ err ]
+  let resolution : resolution = Map.empty (module Int) in
+  let scopes : scopes = Stack.create () in
+  Stack.push scopes (new_scope ());
+  let%bind resolution = resolve_stmts resolution scopes stmts in
+  Stack.pop_exn scopes |> ignore;
+  Ok (stmts, resolution)
