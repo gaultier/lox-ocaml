@@ -65,13 +65,16 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
   | Variable (Lex.Identifier n, id) ->
       find_in_environment n id var_resolution env
   | Variable _ -> failwith "Badly constructed var"
-  | Assign (Lex.Identifier n, e, id) -> (
+  | Assign (Lex.Identifier n, e, id) ->
       let v = eval_exp e var_resolution env in
-      match assign_in_environment n id v var_resolution env with
-      | Some _ -> v
-      | None ->
-          Printf.failwithf "Assigning unbound variable `%s` to `%s`" n
-            (value_to_string v) () )
+      Option.value_exn
+        ~error:
+          (Error.of_exn
+             (Failure
+                (Printf.sprintf "Assigning unbound variable `%s` to `%s`" n
+                   (value_to_string v))))
+        (assign_in_environment n id v var_resolution env);
+      v
   | Assign (t, _, _) ->
       Printf.failwithf "Invalid assignment: %s " (Lex.token_to_string t) ()
   | Binary (l, t, r, _) -> (
