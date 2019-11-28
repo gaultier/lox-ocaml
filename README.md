@@ -36,6 +36,10 @@ $ ./lox repl
 - Loops (while, for)
 - All errors are reported with line and column number
 - Functions (including recursion, closures)
+- Basic static analysis:
+  * Return statement outside of a function body e.g `return 1;`
+  * Variables assigned to themselves e.g `var a = a;`
+  * Same-scope variable shadowing e.g `var a = 1; var a = 2;`
 
 ## Test
 
