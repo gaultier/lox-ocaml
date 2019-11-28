@@ -5,6 +5,8 @@ synopsis: "A compiler and interpreter for the lox programming language"
 description: """
 A compiler and interpreter for the lox programming language
 """
+maintainer: "Philippe Gaultier <philigaultier@gmail.com>"
+authors: "Philippe Gaultier <philigaultier@gmail.com>"
 license: "MIT"
 homepage: "https://github.com/gaultier/lox-ocaml"
 dev-repo: "git@github.com:gaultier/lox-ocaml.git"
