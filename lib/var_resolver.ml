@@ -85,20 +85,19 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
   | Assign (Lex.Identifier n, expr, id) ->
       let%bind resolution = resolve_expr resolution scopes expr in
       resolve_local resolution scopes id n
-  | Variable (Lex.Identifier n, id) ->
+  | Variable (Lex.Identifier n, id) -> (
       let%bind scope =
         Stack.top scopes |> Result.of_option ~error:[ "Missing scope" ]
       in
 
-      let%bind initialized =
-        Hashtbl.find scope n |> Result.of_option ~error:[ "Missing variable" ]
-      in
-      if Bool.equal initialized false then
-        Result.fail
-          [
-            Printf.sprintf "Cannot read variable `%s` in its own initializer" n;
-          ]
-      else resolve_local resolution scopes id n
+      match Hashtbl.find scope n with
+      | Some false ->
+          Result.fail
+            [
+              Printf.sprintf "Cannot read variable `%s` in its own initializer"
+                n;
+            ]
+      | _ -> resolve_local resolution scopes id n )
   | Call (callee, _, args, _) ->
       let resolution = resolve_expr resolution scopes callee in
       List.fold ~init:resolution
