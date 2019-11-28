@@ -16,20 +16,20 @@ let print_resolution (resolution : resolution) =
     resolution
 
 let declare_var scopes name =
-  Stack.top scopes
-  |> Option.map ~f:(fun scope ->
-         match Hashtbl.add scope ~key:name ~data:false with
-         | `Ok -> Result.ok_unit
-         | `Duplicate ->
-             Result.failf
-               "Forbidden shadowing of variable `%s` in the same scope" name)
+  let%bind scope =
+    Stack.top scopes |> Result.of_option ~error:"Expected scope"
+  in
+  match Hashtbl.add scope ~key:name ~data:false with
+  | `Ok -> Result.ok_unit
+  | `Duplicate ->
+      Result.failf "Forbidden shadowing of variable `%s` in the same scope" name
 
 let define_var scopes name =
   Stack.top scopes
-  |> Option.iter ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:true);
-  Result.ok_unit
+  |> Option.map ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:true)
+  |> Result.of_option ~error:"Expected scope"
 
-let resolve_local (resolution : resolution) (scopes : scopes) expr n =
+let resolve_local (resolution : resolution) (scopes : scopes) id n =
   let depth =
     Stack.fold_until ~init:0
       ~f:(fun depth scope ->
@@ -39,33 +39,37 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
       ~finish:(fun depth -> depth)
       scopes
   in
-  Map.add_exn resolution ~key:expr ~data:depth
+  match Map.add resolution ~key:id ~data:depth with
+  | `Duplicate ->
+      Result.failf "The AST node already exists in the resultion map: `%d`" id
+  | _ -> Result.ok_unit
 
 let rec resolve_function (resolution : resolution) (scopes : scopes) = function
   | Function (_, args, stmts, _) ->
       Stack.push scopes (new_scope ());
-      List.iter
-        ~f:(fun arg ->
-          match arg with
-          | { kind = Identifier n; _ } ->
-              let%bind _ = declare_var scopes n in
-              define_var scopes n
-          | { kind; _ } ->
-              Printf.failwithf "Invalid function argument: %s "
-                (kind |> Lex.sexp_of_token_kind |> Sexp.to_string_hum)
-                ())
-        args;
-      let resolution = resolve_stmts resolution scopes stmts in
+      let%bind _ =
+        List.fold ~init:Result.ok_unit
+          ~f:(fun acc arg ->
+            let%bind _ = acc in
+            match arg with
+            | { kind = Identifier n; _ } ->
+                let%bind _ = declare_var scopes n in
+                define_var scopes n
+            | { kind; _ } ->
+                Result.failf "Invalid function argument: %s "
+                  (kind |> Lex.sexp_of_token_kind |> Sexp.to_string_hum))
+          args
+      in
+      let%bind resolution = resolve_stmts resolution scopes stmts in
       Stack.pop_exn scopes |> ignore;
       resolution
   | _ as f ->
-      Printf.failwithf "Invalid function declaration: %s "
+      Result.failf "Invalid function declaration: %s "
         (f |> sexp_of_statement |> Sexp.to_string_hum)
-        ()
 
 and resolve_expr (resolution : resolution) (scopes : scopes) = function
   | Assign (Lex.Identifier n, expr, id) ->
-      let resolution = resolve_expr resolution scopes expr in
+      let%bind resolution = resolve_expr resolution scopes expr in
       resolve_local resolution scopes id n
   | Variable (Lex.Identifier n, id) ->
       Stack.top scopes
