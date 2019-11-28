@@ -40,7 +40,8 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
   Map.add_exn resolution ~key:expr ~data:depth
 
 let rec resolve_function (resolution : resolution) (scopes : scopes)
-    (args : Lex.token list) (stmts : statement list) =
+    (current_fn_type : unit option) (args : Lex.token list)
+    (stmts : statement list) =
   Stack.push scopes (new_scope ());
   List.iter
     ~f:(fun arg ->
@@ -53,7 +54,7 @@ let rec resolve_function (resolution : resolution) (scopes : scopes)
             (kind |> Lex.sexp_of_token_kind |> Sexp.to_string_hum)
             ())
     args;
-  let resolution = resolve_stmts resolution scopes stmts in
+  let resolution = resolve_stmts resolution scopes current_fn_type stmts in
   Stack.pop_exn scopes |> ignore;
   resolution
 
@@ -93,12 +94,14 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
         (v |> sexp_of_expr |> Sexp.to_string_hum)
         ()
 
-and resolve_stmt (resolution : resolution) (scopes : scopes) = function
+and resolve_stmt (resolution : resolution) (scopes : scopes)
+    (current_fn_type : unit option) = function
   | Block (stmts, _) ->
       Stack.push scopes (new_scope ());
       let resolution =
         Array.fold
-          ~f:(fun resolution stmt -> resolve_stmt resolution scopes stmt)
+          ~f:(fun resolution stmt ->
+            resolve_stmt resolution scopes current_fn_type stmt)
           ~init:resolution stmts
       in
       Stack.pop_exn scopes |> ignore;
@@ -113,14 +116,16 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
   | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, _) ->
       declare_var scopes name;
       define_var scopes name;
-      resolve_function resolution scopes args stmts
+      resolve_function resolution scopes current_fn_type args stmts
   | WhileStmt (e, stmt, _) | IfStmt (e, stmt, _) ->
       let resolution = resolve_expr resolution scopes e in
-      resolve_stmt resolution scopes stmt
+      resolve_stmt resolution scopes current_fn_type stmt
   | IfElseStmt (e, then_stmt, else_stmt, _) ->
       let resolution = resolve_expr resolution scopes e in
-      let resolution = resolve_stmt resolution scopes then_stmt in
-      resolve_stmt resolution scopes else_stmt
+      let resolution =
+        resolve_stmt resolution scopes current_fn_type then_stmt
+      in
+      resolve_stmt resolution scopes current_fn_type else_stmt
   | Function _ as f ->
       Printf.failwithf "Invalid function declaration: %s "
         (f |> sexp_of_statement |> Sexp.to_string_hum)
@@ -131,9 +136,10 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
         ()
 
 and resolve_stmts (resolution : resolution) (scopes : scopes)
-    (stmts : statement list) =
+    (current_fn_type : unit option) (stmts : statement list) =
   List.fold
-    ~f:(fun resolution stmt -> resolve_stmt resolution scopes stmt)
+    ~f:(fun resolution stmt ->
+      resolve_stmt resolution scopes current_fn_type stmt)
     ~init:resolution stmts
 
 let resolve stmts =
@@ -141,7 +147,7 @@ let resolve stmts =
     let resolution : resolution = Map.empty (module Int) in
     let scopes : scopes = Stack.create () in
     Stack.push scopes (new_scope ());
-    let resolution = resolve_stmts resolution scopes stmts in
+    let resolution = resolve_stmts resolution scopes None stmts in
     Stack.pop_exn scopes |> ignore;
     Ok (stmts, resolution)
   with Failure err -> Result.Error [ err ]
