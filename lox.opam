@@ -1,0 +1,15 @@
+opam-version: "1.0"
+name: "lox"
+version: "0.1"
+synopsis: "A compiler and interpreter for the lox programming language"
+description: """
+A compiler and interpreter for the lox programming language
+"""
+maintainer: "Name <email>"
+authors: "Name <email>"
+license: "MIT"
+homepage: "https://github.com/gaultier/lox-ocaml"
+bug-reports: ""
+dev-repo: "https://github.com/gaultier/lox-ocaml"
+depends: [ "ocaml" "dune" "sexplib" "ppx_compare" "ppx_sexp_conv"]
+build: ["dune" "build" "-p" name "-j" jobs]
