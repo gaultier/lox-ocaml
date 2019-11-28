@@ -22,7 +22,11 @@ $ printf 'print 4 * 3 - 1;' | ./lox run
 $ ./lox repl
 > 1+1;
 2.
->
+> ^C
+
+# The last field of an AST node is an internal unique id
+$ echo "print 1 + 2;" | ./lox dump ast
+((Print (Binary (Literal (Number 1) 1) Plus (Literal (Number 2) 2) 3) 4))
 
 ```
 
