@@ -45,9 +45,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       | Lex.Minus, Number f -> Number (-.f)
       | Lex.Bang, Nil | Lex.Bang, Bool false -> Bool true
       | Lex.Bang, _ -> Bool false
-      | _ ->
-          Printf.failwithf "Unary expression not allowed: %s %s"
-            (Lex.token_to_string t) (value_to_string v) () )
+      | _ -> assert false )
   | Literal (l, _) -> l
   | LogicalOr (l, r, _) -> (
       let e = eval_exp l var_resolution env in
@@ -65,8 +63,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       |> opt_get
            (Printf.sprintf "Assigning unbound variable `%s` to `%s`" n
               (value_to_string v))
-  | Assign (t, _, _) ->
-      Printf.failwithf "Invalid assignment: %s " (Lex.token_to_string t) ()
+  | Assign (_, _, _) -> assert false
   | Binary (l, t, r, _) -> (
       let l = eval_exp l var_resolution env in
       let r = eval_exp r var_resolution env in
