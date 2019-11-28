@@ -1,5 +1,0 @@
-(env
- (release
-  ; -static won't work on OSX
-  (flags
-   (:standard -ccopt -static))))
