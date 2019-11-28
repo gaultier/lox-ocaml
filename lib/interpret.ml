@@ -39,13 +39,16 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
     (env : environment) =
   match exp with
   | Grouping (e, _) -> eval_exp e var_resolution env
-  | Unary (t, e, _) -> (
+  | Unary (t, e, _) as u -> (
       let v = eval_exp e var_resolution env in
       match (t, v) with
       | Lex.Minus, Number f -> Number (-.f)
       | Lex.Bang, Nil | Lex.Bang, Bool false -> Bool true
       | Lex.Bang, _ -> Bool false
-      | _ -> assert false )
+      | _ ->
+          Printf.failwithf "Invalid assignment: %s "
+            (u |> sexp_of_expr |> Sexp.to_string_hum)
+            () )
   | Literal (l, _) -> l
   | LogicalOr (l, r, _) -> (
       let e = eval_exp l var_resolution env in
@@ -56,15 +59,21 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
   | Variable (Lex.Identifier n, id) ->
       find_in_environment n id var_resolution env
       |> opt_get (Printf.sprintf "Accessing unbound variable `%s`" n)
-  | Variable _ -> failwith "Badly constructed var"
+  | Variable _ as v ->
+      Printf.failwithf "Invalid variable: %s "
+        (v |> sexp_of_expr |> Sexp.to_string_hum)
+        ()
   | Assign (Lex.Identifier n, e, id) ->
       let v = eval_exp e var_resolution env in
       assign_in_environment n id v var_resolution env
       |> opt_get
            (Printf.sprintf "Assigning unbound variable `%s` to `%s`" n
               (value_to_string v))
-  | Assign (_, _, _) -> assert false
-  | Binary (l, t, r, _) -> (
+  | Assign (_, _, _) as a ->
+      Printf.failwithf "Invalid assignment: %s "
+        (a |> sexp_of_expr |> Sexp.to_string_hum)
+        ()
+  | Binary (l, t, r, _) as b -> (
       let l = eval_exp l var_resolution env in
       let r = eval_exp r var_resolution env in
       match (l, t, r) with
@@ -87,7 +96,10 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       | Nil, Lex.EqualEqual, Nil -> Bool true
       | Nil, Lex.EqualEqual, _ -> Bool false
       | _, Lex.EqualEqual, Nil -> Bool false
-      | _ -> assert false )
+      | _ ->
+          Printf.failwithf "Invalid binary expression: %s"
+            (b |> sexp_of_expr |> Sexp.to_string_hum)
+            () )
   | Call (callee, _, args, _) ->
       let e = eval_exp callee var_resolution env in
       let f =
@@ -119,7 +131,10 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
       let e = eval_exp e var_resolution env in
       create_in_current_env n e env;
       e
-  | Var (_, _, _) -> assert false
+  | Var (_, _, _) as v ->
+      Printf.failwithf "Invalid variable declaration: %s "
+        (v |> sexp_of_statement |> Sexp.to_string_hum)
+        ()
   | Block (stmts, _) ->
       let enclosing = env in
       let env = { values = empty (); enclosing = Some enclosing } in
@@ -149,7 +164,10 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
       create_in_current_env name (Callable call) env;
       call.decl_environment <- env;
       Nil
-  | Function _ -> assert false
+  | Function _ as f ->
+      Printf.failwithf "Invalid function declaration: %s "
+        (f |> sexp_of_statement |> Sexp.to_string_hum)
+        ()
   | IfElseStmt (e, then_stmt, else_stmt, _) -> (
       let e = eval_exp e var_resolution env in
       match e with
@@ -171,7 +189,10 @@ and eval_while w var_resolution env =
       | _ ->
           eval s var_resolution env |> ignore;
           eval_while w var_resolution env )
-  | _ -> assert false
+  | _ ->
+      Printf.failwithf "Invalid while loop: %s "
+        (w |> sexp_of_statement |> Sexp.to_string_hum)
+        ()
 
 let interpret (var_resolution : Var_resolver.resolution) (env : environment)
     stmts =
