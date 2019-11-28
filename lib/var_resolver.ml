@@ -177,8 +177,7 @@ and resolve_stmts (resolution : resolution) (scopes : scopes)
       resolve_stmt resolution scopes stmt)
     ~init:(Ok resolution) stmts
 
-let resolve (stmts : statement list) :
-    (statement list * resolution, string list) result =
+let resolve (stmts : statement list) =
   let resolution : resolution = Map.empty (module Int) in
   let scopes : scopes = Stack.create () in
   Stack.push scopes (new_scope ());
