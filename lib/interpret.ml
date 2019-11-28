@@ -87,9 +87,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       | Nil, Lex.EqualEqual, Nil -> Bool true
       | Nil, Lex.EqualEqual, _ -> Bool false
       | _, Lex.EqualEqual, Nil -> Bool false
-      | _ ->
-          Printf.failwithf "Binary expression not allowed: %s"
-            (Lex.token_to_string t) () )
+      | _ -> assert false )
   | Call (callee, _, args, _) ->
       let e = eval_exp callee var_resolution env in
       let f =
@@ -121,9 +119,7 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
       let e = eval_exp e var_resolution env in
       create_in_current_env n e env;
       e
-  | Var (t, _, _) ->
-      Printf.failwithf "Invalid variable declaration: %s"
-        (Lex.token_to_string t) ()
+  | Var (_, _, _) -> assert false
   | Block (stmts, _) ->
       let enclosing = env in
       let env = { values = empty (); enclosing = Some enclosing } in
