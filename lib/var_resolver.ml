@@ -107,28 +107,30 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
       Stack.push scopes (new_scope ());
       let resolution =
         Array.fold
-          ~f:(fun resolution stmt -> resolve_stmt resolution scopes stmt)
-          ~init:resolution stmts
+          ~f:(fun resolution stmt ->
+            let%bind resolution = resolution in
+            resolve_stmt resolution scopes stmt)
+          ~init:(Ok resolution) stmts
       in
       Stack.pop_exn scopes |> ignore;
       resolution
   | Var (Lex.Identifier n, expr, _) ->
-      declare_var scopes n;
-      let%map resolution = resolve_expr resolution scopes expr in
-      define_var scopes n;
-      resolution
+      let%bind _ = declare_var scopes n in
+      let%bind resolution = resolve_expr resolution scopes expr in
+      let%bind _ = define_var scopes n in
+      Ok resolution
   | Print (e, _) | Expr (e, _) | Return (_, e, _) ->
       resolve_expr resolution scopes e
   | Function ({ Lex.kind = Lex.Identifier name; _ }, _, _, _) as fn ->
-      declare_var scopes name;
-      define_var scopes name;
+      let%bind _ = declare_var scopes name in
+      let%bind _ = define_var scopes name in
       resolve_function resolution scopes fn
   | WhileStmt (e, stmt, _) | IfStmt (e, stmt, _) ->
-      let resolution = resolve_expr resolution scopes e in
+      let%bind resolution = resolve_expr resolution scopes e in
       resolve_stmt resolution scopes stmt
   | IfElseStmt (e, then_stmt, else_stmt, _) ->
-      let resolution = resolve_expr resolution scopes e in
-      let resolution = resolve_stmt resolution scopes then_stmt in
+      let%bind resolution = resolve_expr resolution scopes e in
+      let%bind resolution = resolve_stmt resolution scopes then_stmt in
       resolve_stmt resolution scopes else_stmt
   | Function _ as f ->
       Printf.failwithf "Invalid function declaration: %s "
