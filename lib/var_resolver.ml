@@ -60,8 +60,7 @@ let rec resolve_function (resolution : resolution) (scopes : scopes) = function
                   (kind |> Lex.sexp_of_token_kind |> Sexp.to_string_hum))
           args
       in
-      let%bind resolution = 
-        resolve_stmts resolution scopes stmts in
+      let%bind resolution = resolve_stmts resolution scopes stmts in
       Stack.pop_exn scopes |> ignore;
       Ok resolution
   | _ as f ->
