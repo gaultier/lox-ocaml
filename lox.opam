@@ -10,5 +10,5 @@ authors: "Philippe Gaultier <philigaultier@gmail.com>"
 license: "MIT"
 homepage: "https://github.com/gaultier/lox-ocaml"
 dev-repo: "git@github.com:gaultier/lox-ocaml.git"
-depends: [ "ocaml" "dune" "sexplib" "ppx_compare" "ppx_sexp_conv"]
+depends: [ "ocaml" "dune" "sexplib" "ppx_compare" "ppx_sexp_conv" "ppx_let"]
 build: ["dune" "build" "-p" name "-j" jobs]
