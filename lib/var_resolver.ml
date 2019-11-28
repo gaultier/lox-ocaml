@@ -43,12 +43,18 @@ let rec resolve_function (resolution : resolution) (scopes : scopes) = function
           | { kind = Identifier n; _ } ->
               declare_var scopes n;
               define_var scopes n
-          | _ -> assert false)
+          | { kind; _ } ->
+              Printf.failwithf "Invalid function argument: %s "
+                (kind |> Lex.sexp_of_token_kind |> Sexp.to_string_hum)
+                ())
         args;
       let resolution = resolve_stmts resolution scopes stmts in
       Stack.pop_exn scopes |> ignore;
       resolution
-  | _ -> assert false
+  | _ as f ->
+      Printf.failwithf "Invalid function declaration: %s "
+        (f |> sexp_of_statement |> Sexp.to_string_hum)
+        ()
 
 and resolve_expr (resolution : resolution) (scopes : scopes) = function
   | Assign (Lex.Identifier n, expr, id) ->
@@ -77,7 +83,14 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
       resolve_expr resolution scopes right
   | Unary (_, e, _) | Grouping (e, _) -> resolve_expr resolution scopes e
   | Literal _ -> resolution
-  | Assign _ | Variable _ -> assert false
+  | Assign _ as a ->
+      Printf.failwithf "Invalid assignment: %s "
+        (a |> sexp_of_expr |> Sexp.to_string_hum)
+        ()
+  | Variable _ as v ->
+      Printf.failwithf "Invalid variable: %s "
+        (v |> sexp_of_expr |> Sexp.to_string_hum)
+        ()
 
 and resolve_stmt (resolution : resolution) (scopes : scopes) = function
   | Block (stmts, _) ->
@@ -107,7 +120,14 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
       let resolution = resolve_expr resolution scopes e in
       let resolution = resolve_stmt resolution scopes then_stmt in
       resolve_stmt resolution scopes else_stmt
-  | Var _ | Function _ -> assert false
+  | Function _ as f ->
+      Printf.failwithf "Invalid function declaration: %s "
+        (f |> sexp_of_statement |> Sexp.to_string_hum)
+        ()
+  | Var _ as v ->
+      Printf.failwithf "Invalid variable declaration: %s "
+        (v |> sexp_of_statement |> Sexp.to_string_hum)
+        ()
 
 and resolve_stmts (resolution : resolution) (scopes : scopes)
     (stmts : statement list) =
