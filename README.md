@@ -32,9 +32,11 @@ $ echo "print 1 + 2;" | ./lox dump ast
 
 ## Implemented
 
-- Arithmetic, strings, booleans, nil
+- Numbers, strings, booleans, nil
+- Comments
+- Number arithmetic
 - Statements & print
-- Global variables
+- Variables (scope based)
 - Conditions (if/else)
 - Boolean logic (and, or, not)
 - Loops (while, for)
@@ -44,6 +46,18 @@ $ echo "print 1 + 2;" | ./lox dump ast
   * Return statement outside of a function body e.g `return 1;`
   * Variables assigned to themselves e.g `var a = a;`
   * Same-scope variable shadowing e.g `var a = 1; var a = 2;`
+
+Example:
+
+```
+fun fibonacci(n) {
+  if (n <= 1) return n;
+  return fibonacci(n - 2) + fibonacci(n - 1);
+}
+for (var i = 0; i < 20; i = i + 1) {
+  print fibonacci(i);
+}
+```
 
 ## Test
 
