@@ -6,10 +6,11 @@ USER opam
 WORKDIR /lox
 COPY . .
 RUN sudo chown opam -R /lox
+RUN opam switch 4.09.0+flambda
 RUN opam install .
 
 FROM alpine as runner
-COPY --from=builder /home/opam/.opam/4.09/bin/lox /usr/local/bin/lox
+COPY --from=builder /home/opam/.opam/4.09+flambda/bin/lox /usr/local/bin/lox
 
 ENV PATH=$PATH:/usr/local/bin/
 CMD ["lox", "repl"]
