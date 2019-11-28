@@ -16,7 +16,7 @@ $ dune build
 $ ./lox run test/hello_world.lox
 hello, world
 
-$ printf 'print 4 * 3 - 1;' | ./lox run  -
+$ printf 'print 4 * 3 - 1;' | ./lox run
 11
 
 $ ./lox repl

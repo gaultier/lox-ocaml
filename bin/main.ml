@@ -52,13 +52,12 @@ let rec repl env =
 let main () =
   match Sys.argv with
   | [| _; "repl" |] -> repl Lox.Parse.globals
-  | [| _; "run"; "-" |] -> read_from_stdin () |> lox_run
+  | [| _; "run" |] -> read_from_stdin () |> lox_run
   | [| _; "run"; filename |] -> filename |> read_whole_file |> lox_run
   | _ ->
       Stdlib.prerr_endline
         ( "Use: `lox run foo.lox` to execute a file.\n\
-           Use: `printf 'print 2*3;' | lox run -` to read and execute from \
-           stdin.\n\
+           Use: `printf 'print 2*3;' | lox run` to read and execute from stdin.\n\
            Use `lox repl` or `rlwrap lox repl` to launch the repl.\n\
            CLI invocation was: "
         ^ Array.fold ~f:(fun acc s -> acc ^ s) ~init:" " Sys.argv )
