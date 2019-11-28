@@ -40,8 +40,7 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
   Map.add_exn resolution ~key:expr ~data:depth
 
 let rec resolve_function (resolution : resolution) (scopes : scopes)
-    (current_fn_type : unit option) (args : Lex.token list)
-    (stmts : statement list) =
+    (args : Lex.token list) (stmts : statement list) =
   Stack.push scopes (new_scope ());
   List.iter
     ~f:(fun arg ->
@@ -54,7 +53,7 @@ let rec resolve_function (resolution : resolution) (scopes : scopes)
             (kind |> Lex.sexp_of_token_kind |> Sexp.to_string_hum)
             ())
     args;
-  let resolution = resolve_stmts resolution scopes current_fn_type stmts in
+  let resolution = resolve_stmts resolution scopes (Some ()) stmts in
   Stack.pop_exn scopes |> ignore;
   resolution
 
@@ -111,12 +110,19 @@ and resolve_stmt (resolution : resolution) (scopes : scopes)
       let resolution = resolve_expr resolution scopes expr in
       define_var scopes n;
       resolution
-  | Print (e, _) | Expr (e, _) | Return (_, e, _) ->
-      resolve_expr resolution scopes e
+  | Print (e, _) | Expr (e, _) -> resolve_expr resolution scopes e
+  | Return (_, e, _) -> (
+      match current_fn_type with
+      | None ->
+          Printf.failwithf
+            "Cannot return outside of a function body: return of: `%s`"
+            (e |> sexp_of_expr |> Sexp.to_string_hum)
+            ()
+      | Some _ -> resolve_expr resolution scopes e )
   | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, _) ->
       declare_var scopes name;
       define_var scopes name;
-      resolve_function resolution scopes current_fn_type args stmts
+      resolve_function resolution scopes args stmts
   | WhileStmt (e, stmt, _) | IfStmt (e, stmt, _) ->
       let resolution = resolve_expr resolution scopes e in
       resolve_stmt resolution scopes current_fn_type stmt
