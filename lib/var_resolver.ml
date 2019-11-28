@@ -39,27 +39,23 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
   in
   Map.add_exn resolution ~key:expr ~data:depth
 
-let rec resolve_function (resolution : resolution) (scopes : scopes) = function
-  | Function (_, args, stmts, _) ->
-      Stack.push scopes (new_scope ());
-      List.iter
-        ~f:(fun arg ->
-          match arg with
-          | { kind = Identifier n; _ } ->
-              declare_var scopes n;
-              define_var scopes n
-          | { kind; _ } ->
-              Printf.failwithf "Invalid function argument: %s "
-                (kind |> Lex.sexp_of_token_kind |> Sexp.to_string_hum)
-                ())
-        args;
-      let resolution = resolve_stmts resolution scopes stmts in
-      Stack.pop_exn scopes |> ignore;
-      resolution
-  | _ as f ->
-      Printf.failwithf "Invalid function declaration: %s "
-        (f |> sexp_of_statement |> Sexp.to_string_hum)
-        ()
+let rec resolve_function (resolution : resolution) (scopes : scopes)
+    (args : Lex.token list) (stmts : statement list) =
+  Stack.push scopes (new_scope ());
+  List.iter
+    ~f:(fun arg ->
+      match arg with
+      | { kind = Identifier n; _ } ->
+          declare_var scopes n;
+          define_var scopes n
+      | { kind; _ } ->
+          Printf.failwithf "Invalid function argument: %s "
+            (kind |> Lex.sexp_of_token_kind |> Sexp.to_string_hum)
+            ())
+    args;
+  let resolution = resolve_stmts resolution scopes stmts in
+  Stack.pop_exn scopes |> ignore;
+  resolution
 
 and resolve_expr (resolution : resolution) (scopes : scopes) = function
   | Assign (Lex.Identifier n, expr, id) ->
@@ -114,10 +110,10 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
       resolution
   | Print (e, _) | Expr (e, _) | Return (_, e, _) ->
       resolve_expr resolution scopes e
-  | Function ({ Lex.kind = Lex.Identifier name; _ }, _, _, _) as fn ->
+  | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, _) ->
       declare_var scopes name;
       define_var scopes name;
-      resolve_function resolution scopes fn
+      resolve_function resolution scopes args stmts
   | WhileStmt (e, stmt, _) | IfStmt (e, stmt, _) ->
       let resolution = resolve_expr resolution scopes e in
       resolve_stmt resolution scopes stmt
