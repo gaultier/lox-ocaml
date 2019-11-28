@@ -42,7 +42,7 @@ let resolve_local (resolution : resolution) (scopes : scopes) id n =
   match Map.add resolution ~key:id ~data:depth with
   | `Duplicate ->
       Result.failf "The AST node already exists in the resultion map: `%d`" id
-  | _ -> Result.ok_unit
+  | _ -> Ok resolution
 
 let rec resolve_function (resolution : resolution) (scopes : scopes) = function
   | Function (_, args, stmts, _) ->
@@ -81,19 +81,18 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
       resolve_local resolution scopes id n
   | Call (callee, _, args, _) ->
       let resolution = resolve_expr resolution scopes callee in
-      let resolution =
-        List.fold ~init:resolution
-          ~f:(fun resolution arg -> resolve_expr resolution scopes arg)
-          args
-      in
-      resolution
+      List.fold ~init:resolution
+        ~f:(fun resolution arg ->
+          let%bind resolution = resolution in
+          resolve_expr resolution scopes arg)
+        args
   | Binary (left, _, right, _)
   | LogicalOr (left, right, _)
   | LogicalAnd (left, right, _) ->
-      let resolution = resolve_expr resolution scopes left in
+      let%bind resolution = resolve_expr resolution scopes left in
       resolve_expr resolution scopes right
   | Unary (_, e, _) | Grouping (e, _) -> resolve_expr resolution scopes e
-  | Literal _ -> resolution
+  | Literal _ -> Ok resolution
   | Assign _ as a ->
       Printf.failwithf "Invalid assignment: %s "
         (a |> sexp_of_expr |> Sexp.to_string_hum)
