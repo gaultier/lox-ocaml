@@ -43,12 +43,12 @@ let rec resolve_function (resolution : resolution) (scopes : scopes) = function
           | { kind = Identifier n; _ } ->
               declare_var scopes n;
               define_var scopes n
-          | _ -> failwith "Malformed function argument")
+          | _ -> assert false)
         args;
       let resolution = resolve_stmts resolution scopes stmts in
       Stack.pop_exn scopes |> ignore;
       resolution
-  | _ -> failwith "Malformed function declaration"
+  | _ -> assert false
 
 and resolve_expr (resolution : resolution) (scopes : scopes) = function
   | Assign (Lex.Identifier n, expr, id) ->
@@ -77,7 +77,7 @@ and resolve_expr (resolution : resolution) (scopes : scopes) = function
       resolve_expr resolution scopes right
   | Unary (_, e, _) | Grouping (e, _) -> resolve_expr resolution scopes e
   | Literal _ -> resolution
-  | Assign _ | Variable _ -> failwith "Malformed AST node"
+  | Assign _ | Variable _ -> assert false
 
 and resolve_stmt (resolution : resolution) (scopes : scopes) = function
   | Block (stmts, _) ->
@@ -107,7 +107,7 @@ and resolve_stmt (resolution : resolution) (scopes : scopes) = function
       let resolution = resolve_expr resolution scopes e in
       let resolution = resolve_stmt resolution scopes then_stmt in
       resolve_stmt resolution scopes else_stmt
-  | Var _ | Function _ -> failwith "Malformed AST node"
+  | Var _ | Function _ -> assert false
 
 and resolve_stmts (resolution : resolution) (scopes : scopes)
     (stmts : statement list) =
