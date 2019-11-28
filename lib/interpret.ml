@@ -27,9 +27,7 @@ let find_in_environment (n : string) (id : id)
 
 let assign_in_environment (n : string) (id : id) v
     (var_resolution : Var_resolver.resolution) env =
-  let%bind depth = Map.find var_resolution id in
-  let%bind env = climb_nth_env env depth in
-  let%map _ = Hashtbl.find env.values n in
+  let%map _ = find_in_environment n id var_resolution env in
   Hashtbl.set ~key:n ~data:v env.values
 
 let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
