@@ -39,18 +39,15 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
     (env : environment) =
   match exp with
   | Grouping (e, _) -> eval_exp e var_resolution env
-  | Unary (t, e, _) ->
+  | Unary (t, e, _) -> (
       let v = eval_exp e var_resolution env in
-      let res =
-        match (t, v) with
-        | Lex.Minus, Number f -> Number (-.f)
-        | Lex.Bang, Nil | Lex.Bang, Bool false -> Bool true
-        | Lex.Bang, _ -> Bool false
-        | _ ->
-            Printf.failwithf "Unary expression not allowed: %s %s"
-              (Lex.token_to_string t) (value_to_string v) ()
-      in
-      res
+      match (t, v) with
+      | Lex.Minus, Number f -> Number (-.f)
+      | Lex.Bang, Nil | Lex.Bang, Bool false -> Bool true
+      | Lex.Bang, _ -> Bool false
+      | _ ->
+          Printf.failwithf "Unary expression not allowed: %s %s"
+            (Lex.token_to_string t) (value_to_string v) () )
   | Literal (l, _) -> l
   | LogicalOr (l, r, _) -> (
       let e = eval_exp l var_resolution env in
