@@ -77,6 +77,6 @@ $ docker run -it lox
 
 ## Better REPL experience
 
-`lox repl` works out of the box with `rlwrap` if you have it installed:
+`lox repl` works out of the box with the [GNU Readline library](https://tiswww.cwru.edu/php/chet/readline/rltop.html) if you have it installed:
 
 `rlwrap lox repl` will provide command history for free.
