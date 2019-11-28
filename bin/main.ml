@@ -21,10 +21,7 @@ let read_from_stdin () =
 let print_errors = List.iter ~f:Stdlib.prerr_endline
 
 let lox_run input =
-  input >>= Lox.Lex.lex >>= Lox.Parse.parse
-  >>| (fun stmts ->
-        let resolution = Lox.Var_resolver.resolve stmts in
-        (stmts, resolution))
+  input >>= Lox.Lex.lex >>= Lox.Parse.parse >>= Lox.Var_resolver.resolve
   >>= (fun (stmts, resolution) ->
         Lox.Interpret.interpret resolution Lox.Parse.globals stmts)
   |> Result.iter_error ~f:print_errors
@@ -33,10 +30,7 @@ let rec repl env =
   Stdlib.Printf.printf "> ";
   let env =
     (try Stdlib.read_line () with End_of_file -> Stdlib.exit 0)
-    |> Lox.Lex.lex >>= Lox.Parse.parse
-    >>| (fun stmts ->
-          let resolution = Lox.Var_resolver.resolve stmts in
-          (stmts, resolution))
+    |> Lox.Lex.lex >>= Lox.Parse.parse >>= Lox.Var_resolver.resolve
     >>= (fun (stmts, resolution) ->
           Lox.Interpret.interpret resolution Lox.Parse.globals stmts)
     >>| (fun stmts ->

@@ -16,7 +16,12 @@ let print_resolution (resolution : resolution) =
 
 let declare_var scopes name =
   Stack.top scopes
-  |> Option.iter ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:false)
+  |> Option.iter ~f:(fun scope ->
+         match Hashtbl.add scope ~key:name ~data:false with
+         | `Ok -> ()
+         | `Duplicate ->
+             Printf.failwithf
+               "Forbidden shadowing of variable `%s` in the same scope" name ())
 
 let define_var scopes name =
   Stack.top scopes
@@ -136,9 +141,11 @@ and resolve_stmts (resolution : resolution) (scopes : scopes)
     ~init:resolution stmts
 
 let resolve stmts =
-  let resolution : resolution = Map.empty (module Int) in
-  let scopes : scopes = Stack.create () in
-  Stack.push scopes (new_scope ());
-  let resolution = resolve_stmts resolution scopes stmts in
-  Stack.pop_exn scopes |> ignore;
-  resolution
+  try
+    let resolution : resolution = Map.empty (module Int) in
+    let scopes : scopes = Stack.create () in
+    Stack.push scopes (new_scope ());
+    let resolution = resolve_stmts resolution scopes stmts in
+    Stack.pop_exn scopes |> ignore;
+    Ok (stmts, resolution)
+  with Failure err -> Result.Error [ err ]
