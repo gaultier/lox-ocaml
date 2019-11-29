@@ -48,10 +48,12 @@ let resolve_local ctx id n =
       ~finish:(fun depth -> depth)
       ctx.scopes
   in
+  let u = Set.remove ctx.unused_vars id in
+  Stdlib.Printf.printf "Mark %d as used\n" id;
   {
     ctx with
     resolution = Map.add_exn ctx.resolution ~key:id ~data:depth;
-    unused_vars = Set.remove ctx.unused_vars id;
+    unused_vars = u;
   }
 
 let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) id
