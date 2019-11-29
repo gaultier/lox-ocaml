@@ -6,16 +6,15 @@ fun count(n) {
 }
 
 count(5); 
-// 5
-// 4
-// 3
-// 2
-// 1
+// expect: 5.
+// expect: 4.
+// expect: 3.
+// expect: 2.
+// expect: 1.
 
-print "";
 fun count2(n) {
     if (n <= 2) return n;
     return count2(n-1) * count2(n-1);
 }
 
-print count2(5); // 256
+print count2(5); // expect: 256.
