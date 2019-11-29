@@ -85,7 +85,7 @@ let lex_string rest lines columns =
       let lines, columns = string_count_lines_columns lines columns sl in
       ( Result.failf
           "%d:%d:Missing closing quote, no more tokens for string: `%s`" lines
-          columns s,
+          columns (String.rstrip s),
         rest,
         lines,
         columns )

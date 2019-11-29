@@ -47,4 +47,4 @@ S /Users/pgaultier/.opam/4.09.0+flambda/lib/sexplib0
 S /Users/pgaultier/.opam/4.09.0+flambda/lib/stdio
 S .
 S ../lib
-FLG -w -40
+FLG -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs
