@@ -162,5 +162,7 @@ let resolve stmts =
     Stack.push ctx.scopes (new_scope ());
     let ctx = resolve_stmts ctx stmts in
     Stack.pop_exn ctx.scopes |> ignore;
+    Set.iter ctx.unused_vars ~f:(fun v ->
+        Stdlib.Printf.printf "unused var %d\n" v);
     Ok (stmts, ctx.resolution)
   with Failure err -> Result.Error [ err ]
