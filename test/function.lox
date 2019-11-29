@@ -1,29 +1,29 @@
 // One argument
 fun simplePrint(a) { print a; }
 
-simplePrint(1); // 1
+simplePrint(1); // expect: 1.
 
 // Global
 var a = 2;
-simplePrint(a); // 2
+simplePrint(a); // expect: 2.
 
 
 // Shadowing local
 {
     var a = 3;
-    simplePrint(a); // 3
+    simplePrint(a); // expect: 3.
 }
 
 // Assigned global
 {
     a = 4;
-    simplePrint(a); // 4
+    simplePrint(a); // expect: 4.
 }
 
 // New local
 {
     var b = 5;
-    simplePrint(b); // 5
+    simplePrint(b); // expect: 5.
 }
 
 
@@ -33,14 +33,14 @@ fun printAdd(a, b) {
     print(c); 
 }
 
-printAdd(a, 2); // 6
+printAdd(a, 2); // expect: 6.
 
-printAdd(2+2, 4-1); // 7
+printAdd(2+2, 4-1); // expect: 7.
 
 // Local should not conflict with function body
 {
     var c = 99;
-    printAdd(8, 0); // 8
+    printAdd(8, 0); // expect: 8.
 }
 
 
@@ -50,7 +50,7 @@ fun setGlobal(b) {
 }
 
 setGlobal(3); 
-print a; // 9
+print a; // expect: 9.
 
 
 // Recursion
@@ -59,7 +59,7 @@ fun simpleRec(i) {
     else simpleRec(i-1);
 }
 
-simpleRec(20); // 10
+simpleRec(20); // expect: 10.
 
 // Local function
 {
@@ -68,7 +68,7 @@ simpleRec(20); // 10
         else simpleRec(i-1);
     }
 
-    simpleRec(20); // 11
+    simpleRec(20); // expect: 11.
 }
 
 

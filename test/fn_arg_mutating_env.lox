@@ -4,4 +4,4 @@ fun incA(){ a = a + 1; return a; }
 
 fun add(x, y) { return x + y; }
 
-print add(incA(), incA());
+print add(incA(), incA()); // expect: 5.
