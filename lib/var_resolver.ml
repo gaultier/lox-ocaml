@@ -68,7 +68,8 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
   Stack.pop_exn ctx.scopes |> ignore;
   ctx
 
-and resolve_expr ctx = function
+and resolve_expr ctx =
+  function
   | Assign (Lex.Identifier n, expr, id) ->
       let ctx = resolve_expr ctx expr in
       resolve_local ctx id n
@@ -81,22 +82,19 @@ and resolve_expr ctx = function
                  "Cannot read variable `%s` in its own initializer" n ());
       resolve_local ctx id n
   | Call (callee, _, args, _) ->
-      let resolution = resolve_expr unused_vars resolution scopes callee in
-      let resolution =
-        List.fold ~init:resolution
-          ~f:(fun resolution arg ->
-            resolve_expr unused_vars resolution scopes arg)
+      let ctx = resolve_expr ctx callee in
+        List.fold ~init:ctx
+          ~f:(fun ctx arg ->
+            resolve_expr ctx arg)
           args
-      in
-      resolution
   | Binary (left, _, right, _)
   | LogicalOr (left, right, _)
   | LogicalAnd (left, right, _) ->
-      let resolution = resolve_expr unused_vars resolution scopes left in
-      resolve_expr unused_vars resolution scopes right
+      let ctx = resolve_expr ctx left in
+      resolve_expr ctx right
   | Unary (_, e, _) | Grouping (e, _) ->
-      resolve_expr unused_vars resolution scopes e
-  | Literal _ -> resolution
+      resolve_expr ctx e
+  | Literal _ -> ctx
   | Assign _ as a ->
       Printf.failwithf "Invalid assignment: %s "
         (a |> sexp_of_expr |> Sexp.to_string_hum)
