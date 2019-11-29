@@ -1,1 +1,1 @@
-print ("hel" + "l" + "o!") == "hello!";
+print ("hel" + "l" + "o!") == "hello!"; // expect: true

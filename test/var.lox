@@ -1,6 +1,7 @@
 var a = 5*2; var b =20; var c= b /2;
 
-print a; print b;
-print c;
+print a; // expect: 10.
+print b; // expect: 20.
+print c; // expect: 10.
 
-print a == c;
+print a == c; // expect: true
