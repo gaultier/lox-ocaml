@@ -13,6 +13,7 @@ type resolution_context = {
   scopes : scopes;
   unused_vars : unused_vars;
   resolution : resolution;
+  current_fn_type : unit option;
 }
 
 let new_scope () : scope = Hashtbl.create (module String)
@@ -64,12 +65,12 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
               ())
       args
   in
-  let ctx = resolve_stmts ctx (Some ()) stmts in
+  let ctx = resolve_stmts { ctx with current_fn_type = Some () } stmts in
+
   Stack.pop_exn ctx.scopes |> ignore;
   ctx
 
-and resolve_expr ctx =
-  function
+and resolve_expr ctx = function
   | Assign (Lex.Identifier n, expr, id) ->
       let ctx = resolve_expr ctx expr in
       resolve_local ctx id n
@@ -83,17 +84,13 @@ and resolve_expr ctx =
       resolve_local ctx id n
   | Call (callee, _, args, _) ->
       let ctx = resolve_expr ctx callee in
-        List.fold ~init:ctx
-          ~f:(fun ctx arg ->
-            resolve_expr ctx arg)
-          args
+      List.fold ~init:ctx ~f:(fun ctx arg -> resolve_expr ctx arg) args
   | Binary (left, _, right, _)
   | LogicalOr (left, right, _)
   | LogicalAnd (left, right, _) ->
       let ctx = resolve_expr ctx left in
       resolve_expr ctx right
-  | Unary (_, e, _) | Grouping (e, _) ->
-      resolve_expr ctx e
+  | Unary (_, e, _) | Grouping (e, _) -> resolve_expr ctx e
   | Literal _ -> ctx
   | Assign _ as a ->
       Printf.failwithf "Invalid assignment: %s "
@@ -104,45 +101,38 @@ and resolve_expr ctx =
         (v |> sexp_of_expr |> Sexp.to_string_hum)
         ()
 
-and resolve_stmt unused_vars (resolution : resolution) (scopes : scopes)
-    (current_fn_type : unit option) = function
+and resolve_stmt ctx = function
   | Block (stmts, _) ->
-      Stack.push scopes (new_scope ());
-      let resolution =
-        Array.fold
-          ~f:(fun resolution stmt ->
-            resolve_stmt unused_vars resolution scopes current_fn_type stmt)
-          ~init:resolution stmts
+      Stack.push ctx.scopes (new_scope ());
+      let ctx =
+        Array.fold ~f:(fun ctx stmt -> resolve_stmt ctx stmt) ~init:ctx stmts
       in
-      Stack.pop_exn scopes |> ignore;
-      resolution
+      Stack.pop_exn ctx.scopes |> ignore;
+      ctx
   | Var (Lex.Identifier n, expr, id) ->
-      let unused_vars = declare_var unused_vars id scopes n in
-      let resolution = resolve_expr unused_vars resolution scopes expr in
-      define_var scopes n;
-      resolution
-  | Print (e, _) | Expr (e, _) -> resolve_expr unused_vars resolution scopes e
+      let ctx = declare_var ctx id n in
+      let ctx = resolve_expr ctx expr in
+      define_var ctx n
+  | Print (e, _) | Expr (e, _) -> resolve_expr ctx e
   | Return (_, e, _) -> (
-      match current_fn_type with
+      match ctx.current_fn_type with
       | None ->
           Printf.failwithf
             "Cannot return outside of a function body. Returning: `%s`"
             (e |> sexp_of_expr |> Sexp.to_string_hum)
             ()
-      | Some _ -> resolve_expr unused_vars resolution scopes e )
+      | Some _ -> resolve_expr ctx e )
   | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, id) ->
-      let unused_vars = declare_var unused_vars id scopes name in
-      define_var scopes name;
-      resolve_function unused_vars resolution scopes args stmts
+      let ctx = declare_var ctx id name in
+      let ctx = define_var ctx name in
+      resolve_function ctx args stmts
   | WhileStmt (e, stmt, _) | IfStmt (e, stmt, _) ->
-      let resolution = resolve_expr unused_vars resolution scopes e in
-      resolve_stmt unused_vars resolution scopes current_fn_type stmt
+      let ctx = resolve_expr ctx e in
+      resolve_stmt ctx stmt
   | IfElseStmt (e, then_stmt, else_stmt, _) ->
-      let resolution = resolve_expr unused_vars resolution scopes e in
-      let resolution =
-        resolve_stmt unused_vars resolution scopes current_fn_type then_stmt
-      in
-      resolve_stmt unused_vars resolution scopes current_fn_type else_stmt
+      let ctx = resolve_expr ctx e in
+      let ctx = resolve_stmt ctx then_stmt in
+      resolve_stmt ctx else_stmt
   | Function _ as f ->
       Printf.failwithf "Invalid function declaration: %s "
         (f |> sexp_of_statement |> Sexp.to_string_hum)
@@ -152,20 +142,21 @@ and resolve_stmt unused_vars (resolution : resolution) (scopes : scopes)
         (v |> sexp_of_statement |> Sexp.to_string_hum)
         ()
 
-and resolve_stmts unused_vars (resolution : resolution) (scopes : scopes)
-    (current_fn_type : unit option) (stmts : statement list) =
-  List.fold
-    ~f:(fun resolution stmt ->
-      resolve_stmt unused_vars resolution scopes current_fn_type stmt)
-    ~init:resolution stmts
+and resolve_stmts ctx (stmts : statement list) =
+  List.fold ~f:(fun ctx stmt -> resolve_stmt ctx stmt) ~init:ctx stmts
 
 let resolve stmts =
   try
-    let resolution : resolution = Map.empty (module Int) in
-    let unused_vars : unused_vars = Set.empty (module Int) in
-    let scopes : scopes = Stack.create () in
-    Stack.push scopes (new_scope ());
-    let resolution = resolve_stmts unused_vars resolution scopes None stmts in
-    Stack.pop_exn scopes |> ignore;
-    Ok (stmts, resolution)
+    let ctx =
+      {
+        resolution = Map.empty (module Int);
+        unused_vars = Set.empty (module Int);
+        scopes = Stack.create ();
+        current_fn_type = None;
+      }
+    in
+    Stack.push ctx.scopes (new_scope ());
+    let ctx = resolve_stmts ctx stmts in
+    Stack.pop_exn ctx.scopes |> ignore;
+    Ok (stmts, ctx.resolution)
   with Failure err -> Result.Error [ err ]
