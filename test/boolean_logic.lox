@@ -1,49 +1,48 @@
-print ((1 != 3) == !!-2);
+print ((1 != 3) == !!-2); // expect: true
 
 // or
-print "";
-print 1 or 2;
+print "";  // expect:  
+print 1 or 2;// expect: 1.
 
-print 1 or nil;
+print 1 or nil; // expect: 1. 
 
-print nil or 5;
+print nil or 5; // expect: 5.
+print nil or "hey"; // expect: hey
 
-print nil or "hey";
+print nil or false; // expect: false
 
-print nil or false;
+print nil or nil; // expect: nil
 
-print nil or nil;
+print "joe" or "jane"; // expect: joe
 
-print "joe" or "jane";
+print nil or true; // expect: true
 
-print nil or true;
-
-print "bill" or true;
+print "bill" or true; // expect: bill
 
 // and
-print "";
-print 1 and 2;
+print ""; // expect:  
+print 1 and 2; // expect: 2.
 
-print 1 and nil;
+print 1 and nil; // expect: nil
 
-print nil and 5;
+print nil and 5; // expect: nil
 
-print nil and "hey";
+print nil and "hey"; // expect: nil
 
-print nil and false;
+print nil and false; // expect: nil
 
-print nil and nil;
+print nil and nil; // expect: nil
 
-print "joe" and "jane";
+print "joe" and "jane"; // expect: jane
 
-print nil and true;
+print nil and true; // expect: nil
 
-print "bill" and true;
+print "bill" and true; // expect: true
 
 // mixed
-print "";
-print 1 or 2 or 3;
+print ""; // expect:  
+print 1 or 2 or 3; // expect: 1.
 
-print 1 and (3 or 2);
+print 1 and (3 or 2); // expect: 3.
 
-print !(1 < 2) or ("hello" and "world");
+print !(1 < 2) or ("hello" and "world");  // expect: world
