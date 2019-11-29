@@ -1,1 +1,1 @@
-var a = a;
+var a = a; // expect: Cannot read variable `a` in its own initializer

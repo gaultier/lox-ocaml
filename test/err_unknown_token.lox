@@ -1,1 +1,4 @@
-1 + $%.# ;
+1 + $%.# ; // expect: 1:5:Unkown token: `$`
+// expect: 1:6:Unkown token: `%`
+// expect: 1:8:Unkown token: `#`
+
