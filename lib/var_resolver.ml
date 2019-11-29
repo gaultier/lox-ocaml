@@ -54,7 +54,8 @@ let resolve_local ctx id n =
     unused_vars = Set.remove ctx.unused_vars id;
   }
 
-let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
+let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) id
+    =
   Stack.push ctx.scopes (new_scope ());
   let ctx =
     List.fold ~init:ctx
@@ -69,7 +70,15 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
               ())
       args
   in
-  let ctx = resolve_stmts { ctx with current_fn_type = Some () } stmts in
+  let ctx =
+    resolve_stmts
+      {
+        ctx with
+        current_fn_type = Some ();
+        unused_vars = Set.remove ctx.unused_vars id;
+      }
+      stmts
+  in
 
   Stack.pop_exn ctx.scopes |> ignore;
   ctx
@@ -129,7 +138,7 @@ and resolve_stmt ctx = function
   | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, id) ->
       let ctx = declare_var ctx id name in
       let ctx = define_var ctx name in
-      resolve_function ctx args stmts
+      resolve_function ctx args stmts id
   | WhileStmt (e, stmt, _) | IfStmt (e, stmt, _) ->
       let ctx = resolve_expr ctx e in
       resolve_stmt ctx stmt
