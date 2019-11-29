@@ -1,1 +1,1 @@
-return 1;
+return 1; // expect: Cannot return outside of a function body. Returning: `(Literal (Number 1) 1)`

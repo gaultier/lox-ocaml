@@ -26,5 +26,5 @@ incA();
 incA();
 noopAWithArgument(a);
 noopAWithShadowing();
-print a;
+print a; // expect: 3.
 

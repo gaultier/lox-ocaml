@@ -7,4 +7,4 @@ fun next() {
 fun incA() { a = a + 1; return next; }
 
 
-(incA())();
+(incA())(); // expect: 2.

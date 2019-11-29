@@ -10,8 +10,8 @@ fun wrapper() {
 var f = wrapper();
 
 f();
-print a;
+print a; // expect: 2.
 
 f();
-print a;
+print a; // expect: 3.
 

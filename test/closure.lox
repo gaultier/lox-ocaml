@@ -10,6 +10,6 @@ fun makeCounter() {
 
 var counter = makeCounter();
 
-counter(); // 1
-counter(); // 2
+counter(); // expect: 1.
+counter(); // expect: 2.
 

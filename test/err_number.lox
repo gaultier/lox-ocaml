@@ -1,1 +1,1 @@
-print 1.;
+print 1.; // expect: 1:8:Trailing `.` in number not allowed: `1.`
