@@ -9,6 +9,12 @@ type unused_vars = (id, Int.comparator_witness) Set.t
 
 type resolution = (id, int, Int.comparator_witness) Map.t
 
+type resolution_context = {
+  scopes : scopes;
+  unused_vars : unused_vars;
+  resolution : resolution;
+}
+
 let new_scope () : scope = Hashtbl.create (module String)
 
 let print_resolution (resolution : resolution) =
@@ -16,20 +22,22 @@ let print_resolution (resolution : resolution) =
     ~f:(fun ~key:k ~data:d -> Stdlib.Printf.printf "- %d: %d\n" k d)
     resolution
 
-let declare_var scopes name =
-  Stack.top scopes
+let declare_var ctx var_id name =
+  Stack.top ctx.scopes
   |> Option.iter ~f:(fun scope ->
          match Hashtbl.add scope ~key:name ~data:false with
          | `Ok -> ()
          | `Duplicate ->
              Printf.failwithf
-               "Forbidden shadowing of variable `%s` in the same scope" name ())
+               "Forbidden shadowing of variable `%s` in the same scope" name ());
+  { ctx with unused_vars = Set.add ctx.unused_vars var_id }
 
-let define_var scopes name =
-  Stack.top scopes
-  |> Option.iter ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:true)
+let define_var ctx name =
+  Stack.top ctx.scopes
+  |> Option.iter ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:true);
+  ctx
 
-let resolve_local (resolution : resolution) (scopes : scopes) expr n =
+let resolve_local ctx expr n =
   let depth =
     Stack.fold_until ~init:0
       ~f:(fun depth scope ->
@@ -37,43 +45,41 @@ let resolve_local (resolution : resolution) (scopes : scopes) expr n =
         | Some _ -> Stop depth
         | None -> Continue (depth + 1))
       ~finish:(fun depth -> depth)
-      scopes
+      ctx.scopes
   in
-  Map.add_exn resolution ~key:expr ~data:depth
+  { ctx with resolution = Map.add_exn ctx.resolution ~key:expr ~data:depth }
 
-let rec resolve_function unused_vars (resolution : resolution) (scopes : scopes)
-    (args : Lex.token list) (stmts : statement list) =
-  Stack.push scopes (new_scope ());
-  List.iter
-    ~f:(fun arg ->
-      match arg with
-      | { kind = Identifier n; _ } ->
-          declare_var scopes n;
-          define_var scopes n
-      | { kind; _ } ->
-          Printf.failwithf "Invalid function argument: %s "
-            (kind |> Lex.sexp_of_token_kind |> Sexp.to_string_hum)
-            ())
-    args;
-  let resolution =
-    resolve_stmts unused_vars resolution scopes (Some ()) stmts
+let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
+  Stack.push ctx.scopes (new_scope ());
+  let ctx =
+    List.fold ~init:ctx
+      ~f:(fun ctx arg ->
+        match arg with
+        | { kind = Identifier n; _ } ->
+            let ctx = declare_var ctx 0 n in
+            define_var ctx n
+        | { kind; _ } ->
+            Printf.failwithf "Invalid function argument: %s "
+              (kind |> Lex.sexp_of_token_kind |> Sexp.to_string_hum)
+              ())
+      args
   in
-  Stack.pop_exn scopes |> ignore;
-  resolution
+  let ctx = resolve_stmts ctx (Some ()) stmts in
+  Stack.pop_exn ctx.scopes |> ignore;
+  ctx
 
-and resolve_expr unused_vars (resolution : resolution) (scopes : scopes) =
-  function
+and resolve_expr ctx = function
   | Assign (Lex.Identifier n, expr, id) ->
-      let resolution = resolve_expr unused_vars resolution scopes expr in
-      resolve_local resolution scopes id n
+      let ctx = resolve_expr ctx expr in
+      resolve_local ctx id n
   | Variable (Lex.Identifier n, id) ->
-      Stack.top scopes
+      Stack.top ctx.scopes
       |> Option.bind ~f:(fun scope -> Hashtbl.find scope n)
       |> Option.iter ~f:(fun b ->
              if Bool.equal b false then
                Printf.failwithf
                  "Cannot read variable `%s` in its own initializer" n ());
-      resolve_local resolution scopes id n
+      resolve_local ctx id n
   | Call (callee, _, args, _) ->
       let resolution = resolve_expr unused_vars resolution scopes callee in
       let resolution =
@@ -112,8 +118,8 @@ and resolve_stmt unused_vars (resolution : resolution) (scopes : scopes)
       in
       Stack.pop_exn scopes |> ignore;
       resolution
-  | Var (Lex.Identifier n, expr, _) ->
-      declare_var scopes n;
+  | Var (Lex.Identifier n, expr, id) ->
+      let unused_vars = declare_var unused_vars id scopes n in
       let resolution = resolve_expr unused_vars resolution scopes expr in
       define_var scopes n;
       resolution
@@ -126,8 +132,8 @@ and resolve_stmt unused_vars (resolution : resolution) (scopes : scopes)
             (e |> sexp_of_expr |> Sexp.to_string_hum)
             ()
       | Some _ -> resolve_expr unused_vars resolution scopes e )
-  | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, _) ->
-      declare_var scopes name;
+  | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, id) ->
+      let unused_vars = declare_var unused_vars id scopes name in
       define_var scopes name;
       resolve_function unused_vars resolution scopes args stmts
   | WhileStmt (e, stmt, _) | IfStmt (e, stmt, _) ->
