@@ -38,7 +38,7 @@ let define_var ctx name =
   |> Option.iter ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:true);
   ctx
 
-let resolve_local ctx expr n =
+let resolve_local ctx id n=
   let depth =
     Stack.fold_until ~init:0
       ~f:(fun depth scope ->
@@ -48,7 +48,7 @@ let resolve_local ctx expr n =
       ~finish:(fun depth -> depth)
       ctx.scopes
   in
-  { ctx with resolution = Map.add_exn ctx.resolution ~key:expr ~data:depth }
+  { ctx with resolution = Map.add_exn ctx.resolution ~key:id ~data:depth; unused_vars=Set.remove ctx.unused_vars id }
 
 let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
   Stack.push ctx.scopes (new_scope ());
