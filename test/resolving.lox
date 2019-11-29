@@ -1,10 +1,10 @@
 var a = "global";
 {
   fun showA() {
-    print a;
+    print a; // expect: global
   }
 
   showA();
   var a = "block";
-  showA();
+  showA(); // expect: global
 }

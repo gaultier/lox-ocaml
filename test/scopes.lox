@@ -1,11 +1,11 @@
 // Simple global
 var c = 0;
-print c; // 0
+print c; // expect: 0.
 
 // One local var
 {
     var a = 1;
-    print a; // 1
+    print a; // expect: 1.
 }
 
 // Shadowing
@@ -13,7 +13,7 @@ print c; // 0
     var a = 1;
     {
         var a = 2;
-        print a; // 2
+        print a; // expect: 2.
     }
 }
 
@@ -22,7 +22,7 @@ print c; // 0
     var a = 1;
     {
         var b = 3;
-        print b; // 3
+        print b; // expect: 3.
     }
 }
 
@@ -31,7 +31,7 @@ print c; // 0
     {
         {
             var a = 4;
-            print a; // 4
+            print a; // expect: 4.
         }
     }
 }
@@ -43,7 +43,7 @@ print c; // 0
 }
 {
     var a = 5;
-    print a; // 5
+    print a; // expect: 5.
 }
 
 
@@ -52,7 +52,7 @@ print c; // 0
     var a = 1;
     {
         a = 6;
-        print a; // 6
+        print a; // expect: 6.
     }
 }
 
@@ -63,7 +63,7 @@ print c; // 0
         var b= 99;
     }
     a = 7;
-    print a; // 7
+    print a; // expect: 7.
 }
 
 // Enclosed scopes with shadowing + mutation
@@ -74,7 +74,7 @@ print c; // 0
         a = a + 1;
     }
     a = a + 7;
-    print a; // 8
+    print a; // expect: 8.
 }
 
 // Global
@@ -83,10 +83,10 @@ var a = 1;
     {
         var a = 8;
         a = a + 1;
-        print a; // 9
+        print a; // expect: 9.
     }
     a = a + 9;
-    print a; // 10
+    print a; // expect: 10.
     a = a + 1;
 }
-print a; // 11
+print a; // expect: 11.
