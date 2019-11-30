@@ -26,7 +26,6 @@ type resolution = (id, int, Int.comparator_witness) Map.t
 
 type resolution_context = {
   scopes : scopes;
-  unused_vars : unused_vars;
   resolution : resolution;
   current_fn_type : unit option;
 }
@@ -38,7 +37,7 @@ let print_resolution (resolution : resolution) =
     ~f:(fun ~key:k ~data:d -> Stdlib.Printf.printf "- %d: %d\n" k d)
     resolution
 
-let declare_var ctx scope_id name =
+let declare_var ctx name =
   Stack.top ctx.scopes
   |> Option.iter ~f:(fun scope ->
          match Hashtbl.add scope ~key:name ~data:false with
@@ -46,7 +45,7 @@ let declare_var ctx scope_id name =
          | `Duplicate ->
              Printf.failwithf
                "Forbidden shadowing of variable `%s` in the same scope" name ());
-  { ctx with unused_vars = Set.add ctx.unused_vars (scope_id, name) }
+  ctx
 
 let define_var ctx name =
   Stack.top ctx.scopes
@@ -63,23 +62,17 @@ let resolve_local ctx scope_id n =
       ~finish:(fun depth -> depth)
       ctx.scopes
   in
-  let u = Set.remove ctx.unused_vars (scope_id, n) in
   Stdlib.Printf.printf "Mark %d, %s as used\n" scope_id n;
-  {
-    ctx with
-    resolution = Map.add_exn ctx.resolution ~key:scope_id ~data:depth;
-    unused_vars = u;
-  }
+  { ctx with resolution = Map.add_exn ctx.resolution ~key:scope_id ~data:depth }
 
-let rec resolve_function ctx (args : Lex.token list) (stmts : statement list)
-    scope_id name =
+let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
   Stack.push ctx.scopes (new_scope ());
   let ctx =
     List.fold ~init:ctx
       ~f:(fun ctx arg ->
         match arg with
         | { kind = Identifier n; _ } ->
-            let ctx = declare_var ctx 0 n in
+            let ctx = declare_var ctx n in
             define_var ctx n
         | { kind; _ } ->
             Printf.failwithf "Invalid function argument: %s "
@@ -87,15 +80,7 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list)
               ())
       args
   in
-  let ctx =
-    resolve_stmts
-      {
-        ctx with
-        current_fn_type = Some ();
-        unused_vars = Set.remove ctx.unused_vars (scope_id, name);
-      }
-      stmts
-  in
+  let ctx = resolve_stmts { ctx with current_fn_type = Some () } stmts in
 
   Stack.pop_exn ctx.scopes |> ignore;
   ctx
@@ -139,8 +124,8 @@ and resolve_stmt ctx = function
       in
       Stack.pop_exn ctx.scopes |> ignore;
       ctx
-  | Var (Lex.Identifier n, expr, id) ->
-      let ctx = declare_var ctx id n in
+  | Var (Lex.Identifier n, expr, _) ->
+      let ctx = declare_var ctx n in
       let ctx = resolve_expr ctx expr in
       define_var ctx n
   | Print (e, _) | Expr (e, _) -> resolve_expr ctx e
@@ -152,10 +137,10 @@ and resolve_stmt ctx = function
             (e |> sexp_of_expr |> Sexp.to_string_hum)
             ()
       | Some _ -> resolve_expr ctx e )
-  | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, id) ->
-      let ctx = declare_var ctx id name in
+  | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, _) ->
+      let ctx = declare_var ctx name in
       let ctx = define_var ctx name in
-      resolve_function ctx args stmts id name
+      resolve_function ctx args stmts
   | WhileStmt (e, stmt, _) | IfStmt (e, stmt, _) ->
       let ctx = resolve_expr ctx e in
       resolve_stmt ctx stmt
