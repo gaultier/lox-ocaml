@@ -59,10 +59,22 @@ let resolve_local ctx id n =
       ctx.scopes
   in
 
+  let var_id =
+    Stack.fold_until ~init:None
+      ~f:(fun _ scope ->
+        match Hashtbl.find scope n with
+        | Some _ as s -> Stop s
+        | None -> Continue None)
+      ~finish:(fun x -> x)
+      ctx.scopes_var_name_to_id
+  in
   {
     ctx with
     resolution = Map.add_exn ctx.resolution ~key:id ~data:depth;
-    var_ids = Set.remove ctx.var_ids id;
+    var_ids =
+      ( match var_id with
+      | Some id -> Set.remove ctx.var_ids id
+      | None -> ctx.var_ids );
   }
 
 let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
@@ -124,6 +136,7 @@ and resolve_stmt ctx = function
         Array.fold ~f:(fun ctx stmt -> resolve_stmt ctx stmt) ~init:ctx stmts
       in
       Stack.pop_exn ctx.scopes |> ignore;
+      Stack.pop_exn ctx.scopes_var_name_to_id |> ignore;
       ctx
   | Var (Lex.Identifier n, expr, id) ->
       let ctx = declare_var ctx n id in
