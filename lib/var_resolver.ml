@@ -94,6 +94,7 @@ let resolve_local ctx id n =
 
 let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
   Stack.push ctx.scopes (new_scope ());
+  Stack.push ctx.scopes_var_name_to_id (new_scope_var_name_to_id ());
   let ctx =
     List.fold ~init:ctx
       ~f:(fun ctx arg ->
@@ -110,6 +111,7 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
   let ctx = resolve_stmts { ctx with current_fn_type = Some () } stmts in
 
   Stack.pop_exn ctx.scopes |> ignore;
+  Stack.pop_exn ctx.scopes_var_name_to_id |> ignore;
   ctx
 
 and resolve_expr ctx = function
