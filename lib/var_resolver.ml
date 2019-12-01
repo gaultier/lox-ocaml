@@ -23,6 +23,8 @@ type resolution_context = {
 
 let print_scopes = Stack.iter ~f:(Hashtbl.iter_keys ~f:Stdlib.print_endline)
 
+let print_scopes_var_name_to_id scopes_var_name_to_id = Stack.iter ~f:(fun s -> Hashtbl.iteri ~f:(fun ~key:n ~data:id -> Stdlib.Printf.printf "- %s: %d\n" n id) s) scopes_var_name_to_id
+
 let new_scope () : scope = Hashtbl.create (module String)
 
 let new_scope_var_name_to_id () : scope_var_name_to_id =
@@ -68,6 +70,7 @@ let resolve_local ctx id n =
       ~finish:(fun x -> x)
       ctx.scopes_var_name_to_id
   in
+  Stdlib.Printf.printf "resolve_local: n=%s expr id=%d original id=%d d=%d\n" n id (Option.value ~default:(-1) var_id) depth;
   {
     ctx with
     resolution = Map.add_exn ctx.resolution ~key:id ~data:depth;
