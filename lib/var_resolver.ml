@@ -204,6 +204,8 @@ let resolve stmts =
     Stack.push ctx.scopes_var_name_to_id (new_scope_var_name_to_id ());
     let ctx = resolve_stmts ctx stmts in
     Stack.pop_exn ctx.scopes |> ignore;
-    Set.iter ~f:(fun (id : id) -> Stdlib.Printf.printf "%d\n" id) ctx.var_ids;
+    Set.iter
+      ~f:(fun (id : id) -> Stdlib.Printf.printf "unused: %d\n" id)
+      ctx.var_ids;
     Ok (stmts, ctx.resolution)
   with Failure err -> Result.Error [ err ]
