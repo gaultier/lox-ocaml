@@ -23,7 +23,13 @@ type resolution_context = {
 
 let print_scopes = Stack.iter ~f:(Hashtbl.iter_keys ~f:Stdlib.print_endline)
 
-let print_scopes_var_name_to_id scopes_var_name_to_id = Stack.iter ~f:(fun s -> Hashtbl.iteri ~f:(fun ~key:n ~data:id -> Stdlib.Printf.printf "- %s: %d\n" n id) s) scopes_var_name_to_id
+let print_scopes_var_name_to_id scopes_var_name_to_id =
+  Stack.iter
+    ~f:(fun s ->
+      Hashtbl.iteri
+        ~f:(fun ~key:n ~data:id -> Stdlib.Printf.printf "- %s: %d\n" n id)
+        s)
+    scopes_var_name_to_id
 
 let new_scope () : scope = Hashtbl.create (module String)
 
@@ -43,6 +49,7 @@ let declare_var ctx name (id : id) =
          | `Duplicate ->
              Printf.failwithf
                "Forbidden shadowing of variable `%s` in the same scope" name ());
+  Stack.top_exn ctx.scopes_var_name_to_id |> Hashtbl.add_exn ~key:name ~data:id;
   { ctx with var_ids = Set.add ctx.var_ids id }
 
 let define_var ctx name =
@@ -70,7 +77,12 @@ let resolve_local ctx id n =
       ~finish:(fun x -> x)
       ctx.scopes_var_name_to_id
   in
-  Stdlib.Printf.printf "resolve_local: n=%s expr id=%d original id=%d d=%d\n" n id (Option.value ~default:(-1) var_id) depth;
+  Stdlib.Printf.printf "resolve_local: n=%s expr id=%d original id=%d d=%d\n" n
+    id
+    (Option.value ~default:(-1) var_id)
+    depth;
+
+  print_scopes_var_name_to_id ctx.scopes_var_name_to_id;
   {
     ctx with
     resolution = Map.add_exn ctx.resolution ~key:id ~data:depth;
@@ -189,6 +201,7 @@ let resolve stmts =
       }
     in
     Stack.push ctx.scopes (new_scope ());
+    Stack.push ctx.scopes_var_name_to_id (new_scope_var_name_to_id ());
     let ctx = resolve_stmts ctx stmts in
     Stack.pop_exn ctx.scopes |> ignore;
     Set.iter ~f:(fun (id : id) -> Stdlib.Printf.printf "%d\n" id) ctx.var_ids;
