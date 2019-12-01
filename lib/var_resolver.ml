@@ -5,30 +5,29 @@ type scope = (string, bool) Hashtbl.t [@@deriving sexp_of]
 
 type scopes = scope Stack.t [@@deriving sexp_of]
 
-type var_identifier = id * string [@@deriving compare, sexp_of]
-
-module Var_identifier = struct
-  module T = struct
-    type t = var_identifier
-
-    let compare = compare_var_identifier
-
-    let sexp_of_t = sexp_of_var_identifier
-  end
-
-  include T
-  include Comparator.Make (T)
-end
-
-type unused_vars = (Var_identifier.t, Var_identifier.comparator_witness) Set.t
-
 type resolution = (id, int, Int.comparator_witness) Map.t
+
+type var_id_to_name = (id, string, Int.comparator_witness) Map.t
 
 type resolution_context = {
   scopes : scopes;
   resolution : resolution;
   current_fn_type : unit option;
+  var_id_to_name : var_id_to_name;
 }
+
+let remove_used_vars ctx =
+  Stack.fold ~init:0
+    ~f:(fun depth scope ->
+      Map.filter ~f:(Int.equal depth) ctx.resolution
+      |> Map.keys
+      |> List.map ~f:(Map.find_exn ctx.var_id_to_name)
+      |> List.iter ~f:(Hashtbl.remove scope);
+      depth + 1)
+    ctx.scopes
+  |> ignore
+
+let print_scopes = Stack.iter ~f:(Hashtbl.iter_keys ~f:Stdlib.print_endline)
 
 let new_scope () : scope = Hashtbl.create (module String)
 
@@ -52,7 +51,7 @@ let define_var ctx name =
   |> Option.iter ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:true);
   ctx
 
-let resolve_local ctx scope_id n =
+let resolve_local ctx id n =
   let depth =
     Stack.fold_until ~init:0
       ~f:(fun depth scope ->
@@ -62,8 +61,11 @@ let resolve_local ctx scope_id n =
       ~finish:(fun depth -> depth)
       ctx.scopes
   in
-  Stdlib.Printf.printf "Mark %d, %s as used\n" scope_id n;
-  { ctx with resolution = Map.add_exn ctx.resolution ~key:scope_id ~data:depth }
+  {
+    ctx with
+    resolution = Map.add_exn ctx.resolution ~key:id ~data:depth;
+    var_id_to_name = Map.add_exn ~key:id ~data:n ctx.var_id_to_name;
+  }
 
 let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
   Stack.push ctx.scopes (new_scope ());
@@ -137,9 +139,15 @@ and resolve_stmt ctx = function
             (e |> sexp_of_expr |> Sexp.to_string_hum)
             ()
       | Some _ -> resolve_expr ctx e )
-  | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, _) ->
+  | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, id) ->
       let ctx = declare_var ctx name in
       let ctx = define_var ctx name in
+      let ctx =
+        {
+          ctx with
+          var_id_to_name = Map.add_exn ~key:id ~data:name ctx.var_id_to_name;
+        }
+      in
       resolve_function ctx args stmts
   | WhileStmt (e, stmt, _) | IfStmt (e, stmt, _) ->
       let ctx = resolve_expr ctx e in
@@ -165,7 +173,7 @@ let resolve stmts =
     let ctx =
       {
         resolution = Map.empty (module Int);
-        unused_vars = Set.empty (module Var_identifier);
+        var_id_to_name = Map.empty (module Int);
         scopes = Stack.create ();
         current_fn_type = None;
       }
@@ -173,7 +181,6 @@ let resolve stmts =
     Stack.push ctx.scopes (new_scope ());
     let ctx = resolve_stmts ctx stmts in
     Stack.pop_exn ctx.scopes |> ignore;
-    Set.iter ctx.unused_vars ~f:(fun (id, name) ->
-        Stdlib.Printf.printf "unused var %d, %s\n" id name);
+    print_scopes ctx.scopes;
     Ok (stmts, ctx.resolution)
   with Failure err -> Result.Error [ err ]
