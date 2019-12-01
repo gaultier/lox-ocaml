@@ -3,40 +3,37 @@ open Base
 
 type scope = (string, bool) Hashtbl.t [@@deriving sexp_of]
 
+type scope_var_name_to_id = (string, id) Hashtbl.t [@@deriving sexp_of]
+
 type scopes = scope Stack.t [@@deriving sexp_of]
+
+type scopes_var_name_to_id = scope_var_name_to_id Stack.t
 
 type resolution = (id, int, Int.comparator_witness) Map.t
 
-type var_id_to_name = (id, string, Int.comparator_witness) Map.t
+type var_ids = (id, Int.comparator_witness) Set.t
 
 type resolution_context = {
   scopes : scopes;
   resolution : resolution;
   current_fn_type : unit option;
-  var_id_to_name : var_id_to_name;
+  scopes_var_name_to_id : scopes_var_name_to_id;
+  var_ids : var_ids;
 }
-
-let remove_used_vars ctx =
-  Stack.fold ~init:0
-    ~f:(fun depth scope ->
-      Map.filter ~f:(Int.equal depth) ctx.resolution
-      |> Map.keys
-      |> List.map ~f:(Map.find_exn ctx.var_id_to_name)
-      |> List.iter ~f:(Hashtbl.remove scope);
-      depth + 1)
-    ctx.scopes
-  |> ignore
 
 let print_scopes = Stack.iter ~f:(Hashtbl.iter_keys ~f:Stdlib.print_endline)
 
 let new_scope () : scope = Hashtbl.create (module String)
+
+let new_scope_var_name_to_id () : scope_var_name_to_id =
+  Hashtbl.create (module String)
 
 let print_resolution (resolution : resolution) =
   Map.iteri
     ~f:(fun ~key:k ~data:d -> Stdlib.Printf.printf "- %d: %d\n" k d)
     resolution
 
-let declare_var ctx name =
+let declare_var ctx name (id : id) =
   Stack.top ctx.scopes
   |> Option.iter ~f:(fun scope ->
          match Hashtbl.add scope ~key:name ~data:false with
@@ -44,7 +41,7 @@ let declare_var ctx name =
          | `Duplicate ->
              Printf.failwithf
                "Forbidden shadowing of variable `%s` in the same scope" name ());
-  ctx
+  { ctx with var_ids = Set.add ctx.var_ids id }
 
 let define_var ctx name =
   Stack.top ctx.scopes
@@ -61,10 +58,11 @@ let resolve_local ctx id n =
       ~finish:(fun depth -> depth)
       ctx.scopes
   in
+
   {
     ctx with
     resolution = Map.add_exn ctx.resolution ~key:id ~data:depth;
-    var_id_to_name = Map.add_exn ~key:id ~data:n ctx.var_id_to_name;
+    var_ids = Set.remove ctx.var_ids id;
   }
 
 let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
@@ -74,7 +72,7 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
       ~f:(fun ctx arg ->
         match arg with
         | { kind = Identifier n; _ } ->
-            let ctx = declare_var ctx n in
+            let ctx = declare_var ctx n 0 in
             define_var ctx n
         | { kind; _ } ->
             Printf.failwithf "Invalid function argument: %s "
@@ -121,13 +119,14 @@ and resolve_expr ctx = function
 and resolve_stmt ctx = function
   | Block (stmts, _) ->
       Stack.push ctx.scopes (new_scope ());
+      Stack.push ctx.scopes_var_name_to_id (new_scope_var_name_to_id ());
       let ctx =
         Array.fold ~f:(fun ctx stmt -> resolve_stmt ctx stmt) ~init:ctx stmts
       in
       Stack.pop_exn ctx.scopes |> ignore;
       ctx
-  | Var (Lex.Identifier n, expr, _) ->
-      let ctx = declare_var ctx n in
+  | Var (Lex.Identifier n, expr, id) ->
+      let ctx = declare_var ctx n id in
       let ctx = resolve_expr ctx expr in
       define_var ctx n
   | Print (e, _) | Expr (e, _) -> resolve_expr ctx e
@@ -140,14 +139,8 @@ and resolve_stmt ctx = function
             ()
       | Some _ -> resolve_expr ctx e )
   | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, id) ->
-      let ctx = declare_var ctx name in
+      let ctx = declare_var ctx name id in
       let ctx = define_var ctx name in
-      let ctx =
-        {
-          ctx with
-          var_id_to_name = Map.add_exn ~key:id ~data:name ctx.var_id_to_name;
-        }
-      in
       resolve_function ctx args stmts
   | WhileStmt (e, stmt, _) | IfStmt (e, stmt, _) ->
       let ctx = resolve_expr ctx e in
@@ -173,7 +166,8 @@ let resolve stmts =
     let ctx =
       {
         resolution = Map.empty (module Int);
-        var_id_to_name = Map.empty (module Int);
+        var_ids = Set.empty (module Int);
+        scopes_var_name_to_id = Stack.create ();
         scopes = Stack.create ();
         current_fn_type = None;
       }
@@ -181,6 +175,6 @@ let resolve stmts =
     Stack.push ctx.scopes (new_scope ());
     let ctx = resolve_stmts ctx stmts in
     Stack.pop_exn ctx.scopes |> ignore;
-    print_scopes ctx.scopes;
+    Set.iter ~f:(fun (id : id) -> Stdlib.Printf.printf "%d\n" id) ctx.var_ids;
     Ok (stmts, ctx.resolution)
   with Failure err -> Result.Error [ err ]
