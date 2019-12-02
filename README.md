@@ -44,6 +44,7 @@ $ echo "print 1 + 2;" | lox dump ast
   * Return statement outside of a function body e.g `return 1;`
   * Variables assigned to themselves e.g `var a = a;`
   * Same-scope variable shadowing e.g `var a = 1; var a = 2;`
+  * Unused variables, functions, and function arguments
 
 Example:
 
