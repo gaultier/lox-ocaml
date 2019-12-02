@@ -41,6 +41,7 @@ printAdd(2+2, 4-1); // expect: 7.
 {
     var c = 99;
     printAdd(8, 0); // expect: 8.
+    c; // avoid unused variable error
 }
 
 

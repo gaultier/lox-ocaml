@@ -11,6 +11,7 @@ print c; // expect: 0.
 // Shadowing
 {
     var a = 1;
+    a; // avoid unused variable error
     {
         var a = 2;
         print a; // expect: 2.
@@ -20,6 +21,7 @@ print c; // expect: 0.
 // Separate vars in enclosed scopes
 {
     var a = 1;
+    a; // avoid unused variable error
     {
         var b = 3;
         print b; // expect: 3.
@@ -40,6 +42,7 @@ print c; // expect: 0.
 // Unused var
 {
     var a = 1;
+    a;  // avoid unused variable error
 }
 {
     var a = 5;
@@ -50,6 +53,7 @@ print c; // expect: 0.
 // Enclosed scopes with inner mutation
 {
     var a = 1;
+    a;  // avoid unused variable error
     {
         a = 6;
         print a; // expect: 6.
@@ -61,6 +65,7 @@ print c; // expect: 0.
     var a = 1;
     {
         var b= 99;
+        b;  // avoid unused variable error
     }
     a = 7;
     print a; // expect: 7.

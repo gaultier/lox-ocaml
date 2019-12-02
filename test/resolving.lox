@@ -7,4 +7,5 @@ var a = "global";
   showA();
   var a = "block";
   showA(); // expect: global
+  a;
 }
