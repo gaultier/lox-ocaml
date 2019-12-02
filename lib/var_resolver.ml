@@ -28,7 +28,7 @@ let print_resolution (resolution : resolution) =
     ~f:(fun ~key:k ~data:d -> Stdlib.Printf.printf "- %d: %d\n" k d)
     resolution
 
-let declare_var ctx name =
+let declare_var name ctx =
   Stack.top ctx.scopes
   |> Option.iter ~f:(fun scope ->
          match Hashtbl.add scope ~key:name ~data:false with
@@ -39,7 +39,7 @@ let declare_var ctx name =
   let current_block_id = Stack.top_exn ctx.block_ids in
   { ctx with vars = (name, current_block_id) :: ctx.vars }
 
-let define_var ctx name =
+let define_var name ctx =
   Stack.top ctx.scopes
   |> Option.iter ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:true);
   ctx
@@ -80,9 +80,7 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
     List.fold ~init:ctx
       ~f:(fun ctx arg ->
         match arg with
-        | { kind = Identifier n; _ } ->
-            let ctx = declare_var ctx n in
-            define_var ctx n
+        | { kind = Identifier n; _ } -> ctx |> declare_var n |> define_var n
         | { kind; _ } ->
             Printf.failwithf "Invalid function argument: %s "
               (kind |> Lex.sexp_of_token_kind |> Sexp.to_string_hum)
@@ -136,9 +134,9 @@ and resolve_stmt ctx = function
       Stack.pop_exn ctx.block_ids |> ignore;
       ctx
   | Var (Lex.Identifier n, expr, _) ->
-      let ctx = declare_var ctx n in
+      let ctx = declare_var n ctx in
       let ctx = resolve_expr ctx expr in
-      define_var ctx n
+      define_var n ctx
   | Print (e, _) | Expr (e, _) -> resolve_expr ctx e
   | Return (_, e, _) -> (
       match ctx.current_fn_type with
@@ -149,8 +147,7 @@ and resolve_stmt ctx = function
             ()
       | Some _ -> resolve_expr ctx e )
   | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, id) ->
-      let ctx = declare_var ctx name in
-      let ctx = define_var ctx name in
+      let ctx = ctx |> declare_var name |> define_var name in
       Stack.push ctx.block_ids id;
       let ctx = resolve_function ctx args stmts in
       Stack.pop_exn ctx.block_ids |> ignore;
