@@ -1,0 +1,1 @@
+fun foo(a){return 1;} foo(0); // expect: Unused variable: a
