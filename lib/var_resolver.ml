@@ -56,14 +56,15 @@ let define_var ctx name =
   |> Option.iter ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:true);
   ctx
 
-let mark_var_as_used name ctx = 
-    {ctx with 
-        vars =
-                  List.filter
-                          ~f:(fun (n, block_id) ->
-                                        not (String.equal name n && block_id = ctx.current_block_id))
-                                  ctx.vars;
-    }
+let mark_var_as_used name ctx =
+  {
+    ctx with
+    vars =
+      List.filter
+        ~f:(fun (n, block_id) ->
+          not (String.equal name n && block_id = ctx.current_block_id))
+        ctx.vars;
+  }
 
 let resolve_local ctx id n =
   let depth =
@@ -76,10 +77,8 @@ let resolve_local ctx id n =
       ctx.scopes
   in
 
-  {
-    ctx with
-    resolution = Map.add_exn ctx.resolution ~key:id ~data:depth;
-  } |> mark_var_as_used n
+  { ctx with resolution = Map.add_exn ctx.resolution ~key:id ~data:depth }
+  |> mark_var_as_used n
 
 let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
   Stack.push ctx.scopes (new_scope ());
@@ -156,10 +155,10 @@ and resolve_stmt ctx = function
             ()
       | Some _ -> resolve_expr ctx e )
   | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, id) ->
-      let previous_block_id = ctx.current_block_id in
-      let ctx = { ctx with current_block_id = id } in
       let ctx = declare_var ctx name in
       let ctx = define_var ctx name in
+      let previous_block_id = ctx.current_block_id in
+      let ctx = { ctx with current_block_id = id } in
       let ctx = resolve_function ctx args stmts in
       { ctx with current_block_id = previous_block_id }
   | WhileStmt (e, stmt, _) | IfStmt (e, stmt, _) ->
