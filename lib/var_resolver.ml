@@ -71,7 +71,7 @@ let resolve_local ctx id n =
     ctx with
     resolution = Map.add_exn ctx.resolution ~key:id ~data:depth;
     vars =
-      List.rev_filter
+      List.filter
         ~f:(fun (name, block_id) ->
           not (String.equal name n && block_id = ctx.current_block_id))
         ctx.vars;
