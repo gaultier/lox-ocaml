@@ -3,8 +3,6 @@ open Base
 
 type scope = (string, bool) Hashtbl.t [@@deriving sexp_of]
 
-type scope_var_name_to_id = (string, id) Hashtbl.t [@@deriving sexp_of]
-
 type scopes = scope Stack.t [@@deriving sexp_of]
 
 type resolution = (id, int, Int.comparator_witness) Map.t
@@ -33,9 +31,6 @@ let print_scopes_var_name_to_id scopes_var_name_to_id =
 
 let new_scope () : scope = Hashtbl.create (module String)
 
-let new_scope_var_name_to_id () : scope_var_name_to_id =
-  Hashtbl.create (module String)
-
 let print_resolution (resolution : resolution) =
   Map.iteri
     ~f:(fun ~key:k ~data:d -> Stdlib.Printf.printf "- %d: %d\n" k d)
@@ -61,8 +56,8 @@ let mark_var_as_used name ctx =
     ctx with
     vars =
       List.filter
-        ~f:(fun (n, block_id) ->
-          not (String.equal name n && block_id = ctx.current_block_id))
+        ~f:(fun (n, b_id) ->
+          not (String.equal name n && ctx.current_block_id = b_id))
         ctx.vars;
   }
 
