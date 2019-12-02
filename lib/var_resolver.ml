@@ -67,7 +67,15 @@ let resolve_local ctx id n =
       ctx.scopes
   in
 
-  { ctx with resolution = Map.add_exn ctx.resolution ~key:id ~data:depth }
+  {
+    ctx with
+    resolution = Map.add_exn ctx.resolution ~key:id ~data:depth;
+    vars =
+      List.rev_filter
+        ~f:(fun (name, block_id) ->
+          not (String.equal name n && block_id = ctx.current_block_id))
+        ctx.vars;
+  }
 
 let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
   Stack.push ctx.scopes (new_scope ());
