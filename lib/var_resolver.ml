@@ -77,10 +77,6 @@ let resolve_local ctx id n =
       ~finish:(fun x -> x)
       ctx.scopes_var_name_to_id
   in
-  Stdlib.Printf.printf "resolve_local: n=%s expr id=%d original id=%d d=%d\n" n
-    id
-    (Option.value ~default:(-1) var_id)
-    depth;
 
   print_scopes_var_name_to_id ctx.scopes_var_name_to_id;
   {
