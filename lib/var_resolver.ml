@@ -56,6 +56,15 @@ let define_var ctx name =
   |> Option.iter ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:true);
   ctx
 
+let mark_var_as_used name ctx = 
+    {ctx with 
+        vars =
+                  List.filter
+                          ~f:(fun (n, block_id) ->
+                                        not (String.equal name n && block_id = ctx.current_block_id))
+                                  ctx.vars;
+    }
+
 let resolve_local ctx id n =
   let depth =
     Stack.fold_until ~init:0
@@ -70,12 +79,7 @@ let resolve_local ctx id n =
   {
     ctx with
     resolution = Map.add_exn ctx.resolution ~key:id ~data:depth;
-    vars =
-      List.filter
-        ~f:(fun (name, block_id) ->
-          not (String.equal name n && block_id = ctx.current_block_id))
-        ctx.vars;
-  }
+  } |> mark_var_as_used n
 
 let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
   Stack.push ctx.scopes (new_scope ());
