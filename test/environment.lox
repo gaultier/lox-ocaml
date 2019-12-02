@@ -2,6 +2,7 @@
 var a = 1;
 
 var constant = 2;
+constant; // avoid errors about unused variables
 
 fun incA() {
     a = a + 1;
