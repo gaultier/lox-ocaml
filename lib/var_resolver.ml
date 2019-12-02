@@ -60,7 +60,7 @@ let mark_var_as_used name depth ctx =
 
   { ctx with vars }
 
-let resolve_local ctx id n =
+let resolve_local id n ctx =
   let depth =
     Stack.fold_until ~init:0
       ~f:(fun depth scope ->
@@ -94,8 +94,7 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
 
 and resolve_expr_ ctx = function
   | Assign (Lex.Identifier n, expr, id) ->
-      let ctx = resolve_expr expr ctx in
-      resolve_local ctx id n
+      ctx |> resolve_expr expr |> resolve_local id n
   | Variable (Lex.Identifier n, id) ->
       Stack.top ctx.scopes
       |> Option.bind ~f:(fun scope -> Hashtbl.find scope n)
@@ -103,7 +102,7 @@ and resolve_expr_ ctx = function
              if Bool.equal b false then
                Printf.failwithf
                  "Cannot read variable `%s` in its own initializer" n ());
-      resolve_local ctx id n
+      resolve_local id n ctx
   | Call (callee, _, args, _) ->
       let ctx = resolve_expr callee ctx in
       List.fold ~init:ctx ~f:resolve_expr_ args
