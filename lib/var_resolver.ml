@@ -61,25 +61,13 @@ let mark_var_as_used name depth ctx =
   done;
   let block_id = Stack.pop_exn block_ids in
 
-  Stdlib.Printf.printf "name=%s block_id=%d depth=%d length=%d\n" name block_id
-    depth
-    (Stack.length ctx.block_ids);
-  List.iter
-    ~f:(fun (n, id) -> Stdlib.Printf.printf "- (%s, %d)\n" n id)
-    ctx.vars;
-  let ctx =
-    {
-      ctx with
-      vars =
-        List.filter
-          ~f:(fun (n, b_id) -> not (String.equal name n && block_id = b_id))
-          ctx.vars;
-    }
-  in
-  List.iter
-    ~f:(fun (n, id) -> Stdlib.Printf.printf "- (%s, %d)\n" n id)
-    ctx.vars;
-  ctx
+  {
+    ctx with
+    vars =
+      List.filter
+        ~f:(fun (n, b_id) -> not (String.equal name n && block_id = b_id))
+        ctx.vars;
+  }
 
 let resolve_local ctx id n =
   let depth =
