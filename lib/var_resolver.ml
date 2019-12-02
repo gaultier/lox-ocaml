@@ -21,16 +21,6 @@ type resolution_context = {
   block_ids : block_ids;
 }
 
-let print_scopes = Stack.iter ~f:(Hashtbl.iter_keys ~f:Stdlib.print_endline)
-
-let print_scopes_var_name_to_id scopes_var_name_to_id =
-  Stack.iter
-    ~f:(fun s ->
-      Hashtbl.iteri
-        ~f:(fun ~key:n ~data:id -> Stdlib.Printf.printf "- %s: %d\n" n id)
-        s)
-    scopes_var_name_to_id
-
 let new_scope () : scope = Hashtbl.create (module String)
 
 let print_resolution (resolution : resolution) =
