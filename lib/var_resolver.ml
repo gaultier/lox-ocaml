@@ -78,7 +78,6 @@ let resolve_local ctx id n =
       ctx.scopes_var_name_to_id
   in
 
-  print_scopes_var_name_to_id ctx.scopes_var_name_to_id;
   {
     ctx with
     resolution = Map.add_exn ctx.resolution ~key:id ~data:depth;
