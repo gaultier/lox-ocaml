@@ -92,9 +92,9 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
   Stack.pop_exn ctx.scopes |> ignore;
   ctx
 
-and resolve_expr ctx = function
+and resolve_expr_ ctx = function
   | Assign (Lex.Identifier n, expr, id) ->
-      let ctx = resolve_expr ctx expr in
+      let ctx = resolve_expr expr ctx in
       resolve_local ctx id n
   | Variable (Lex.Identifier n, id) ->
       Stack.top ctx.scopes
@@ -105,14 +105,13 @@ and resolve_expr ctx = function
                  "Cannot read variable `%s` in its own initializer" n ());
       resolve_local ctx id n
   | Call (callee, _, args, _) ->
-      let ctx = resolve_expr ctx callee in
-      List.fold ~init:ctx ~f:(fun ctx arg -> resolve_expr ctx arg) args
+      let ctx = resolve_expr callee ctx in
+      List.fold ~init:ctx ~f:resolve_expr_ args
   | Binary (left, _, right, _)
   | LogicalOr (left, right, _)
   | LogicalAnd (left, right, _) ->
-      let ctx = resolve_expr ctx left in
-      resolve_expr ctx right
-  | Unary (_, e, _) | Grouping (e, _) -> resolve_expr ctx e
+      ctx |> resolve_expr left |> resolve_expr right
+  | Unary (_, e, _) | Grouping (e, _) -> resolve_expr e ctx
   | Literal _ -> ctx
   | Assign _ as a ->
       Printf.failwithf "Invalid assignment: %s "
@@ -123,21 +122,17 @@ and resolve_expr ctx = function
         (v |> sexp_of_expr |> Sexp.to_string_hum)
         ()
 
-and resolve_stmt ctx = function
+and resolve_stmt_ ctx = function
   | Block (stmts, id) ->
       Stack.push ctx.scopes (new_scope ());
       Stack.push ctx.block_ids id;
-      let ctx =
-        Array.fold ~f:(fun ctx stmt -> resolve_stmt ctx stmt) ~init:ctx stmts
-      in
+      let ctx = Array.fold ~f:resolve_stmt_ ~init:ctx stmts in
       Stack.pop_exn ctx.scopes |> ignore;
       Stack.pop_exn ctx.block_ids |> ignore;
       ctx
   | Var (Lex.Identifier n, expr, _) ->
-      let ctx = declare_var n ctx in
-      let ctx = resolve_expr ctx expr in
-      define_var n ctx
-  | Print (e, _) | Expr (e, _) -> resolve_expr ctx e
+      ctx |> declare_var n |> resolve_expr expr |> define_var n
+  | Print (e, _) | Expr (e, _) -> resolve_expr e ctx
   | Return (_, e, _) -> (
       match ctx.current_fn_type with
       | None ->
@@ -145,7 +140,7 @@ and resolve_stmt ctx = function
             "Cannot return outside of a function body. Returning: `%s`"
             (e |> sexp_of_expr |> Sexp.to_string_hum)
             ()
-      | Some _ -> resolve_expr ctx e )
+      | Some _ -> resolve_expr e ctx )
   | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, id) ->
       let ctx = ctx |> declare_var name |> define_var name in
       Stack.push ctx.block_ids id;
@@ -153,12 +148,9 @@ and resolve_stmt ctx = function
       Stack.pop_exn ctx.block_ids |> ignore;
       ctx
   | WhileStmt (e, stmt, _) | IfStmt (e, stmt, _) ->
-      let ctx = resolve_expr ctx e in
-      resolve_stmt ctx stmt
+      ctx |> resolve_expr e |> resolve_stmt stmt
   | IfElseStmt (e, then_stmt, else_stmt, _) ->
-      let ctx = resolve_expr ctx e in
-      let ctx = resolve_stmt ctx then_stmt in
-      resolve_stmt ctx else_stmt
+      ctx |> resolve_expr e |> resolve_stmt then_stmt |> resolve_stmt else_stmt
   | Function _ as f ->
       Printf.failwithf "Invalid function declaration: %s "
         (f |> sexp_of_statement |> Sexp.to_string_hum)
@@ -168,8 +160,12 @@ and resolve_stmt ctx = function
         (v |> sexp_of_statement |> Sexp.to_string_hum)
         ()
 
+and resolve_stmt stmt ctx = resolve_stmt_ ctx stmt
+
+and resolve_expr expr ctx = resolve_expr_ ctx expr
+
 and resolve_stmts ctx (stmts : statement list) =
-  List.fold ~f:(fun ctx stmt -> resolve_stmt ctx stmt) ~init:ctx stmts
+  List.fold ~f:resolve_stmt_ ~init:ctx stmts
 
 let resolve stmts =
   try
