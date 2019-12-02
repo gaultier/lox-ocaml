@@ -57,17 +57,18 @@ let define_var ctx name =
 let mark_var_as_used name depth ctx =
   let block_ids = Stack.copy ctx.block_ids in
   for _ = 0 to depth - 1 do
-    Stack.pop_exn block_ids |> ignore
+    Stack.pop block_ids |> ignore
   done;
-  let block_id = Stack.pop_exn block_ids in
+  let vars =
+    Stack.pop block_ids
+    |> Option.map ~f:(fun block_id ->
+           List.filter
+             ~f:(fun (n, b_id) -> not (String.equal name n && block_id = b_id))
+             ctx.vars)
+    |> Option.value ~default:ctx.vars
+  in
 
-  {
-    ctx with
-    vars =
-      List.filter
-        ~f:(fun (n, b_id) -> not (String.equal name n && block_id = b_id))
-        ctx.vars;
-  }
+  { ctx with vars }
 
 let resolve_local ctx id n =
   let depth =
