@@ -1,1 +1,1 @@
-a=1; // expect: Assigning unbound variable `a` to `1.`
+a=1; // expect: Assigning unbound variable a

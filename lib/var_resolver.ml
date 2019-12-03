@@ -96,7 +96,7 @@ and resolve_expr_ ctx = function
                Printf.failwithf
                  "Cannot read variable `%s` in its own initializer" n ());
       resolve_local id n ctx
-      |> error (Printf.sprintf "Reading unbound variable %s " n)
+      |> error (Printf.sprintf "Accessing unbound variable %s " n)
   | Call (callee, _, args, _) ->
       let ctx = resolve_expr callee ctx in
       List.fold ~init:ctx ~f:resolve_expr_ args
