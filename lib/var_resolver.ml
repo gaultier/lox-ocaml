@@ -8,6 +8,8 @@ type scopes = scope Stack.t
 
 type resolution = (id, int, Int.comparator_witness) Map.t
 
+let make_resolution () = Map.empty (module Int)
+
 type var = string * id
 
 type vars = var list

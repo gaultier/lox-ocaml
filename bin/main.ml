@@ -24,7 +24,7 @@ let print_errors = List.iter ~f:Stdlib.prerr_endline
 
 let lox_run input =
   input >>= Lox.Lex.lex >>= Lox.Parse.parse
-  >>= Lox.Var_resolver.resolve (Map.empty (module Int))
+  >>= Lox.Var_resolver.resolve (Lox.Var_resolver.make_resolution ())
   >>= (fun (stmts, resolution) ->
         Lox.Interpret.interpret resolution Lox.Parse.globals stmts)
   |> Result.iter_error ~f:print_errors
@@ -54,7 +54,7 @@ let dump_ast =
 
 let main () =
   match Sys.argv with
-  | [| _; "repl" |] -> repl (Map.empty (module Int))
+  | [| _; "repl" |] -> repl (Lox.Var_resolver.make_resolution ())
   | [| _; "dump"; "ast" |] ->
       read_from_stdin () >>= Lox.Lex.lex >>= Lox.Parse.parse
       |> Result.map_error ~f:print_errors
@@ -65,7 +65,7 @@ let main () =
       |> Result.iter ~f:dump_ast
   | [| _; "dump"; "resolution"; filename |] ->
       filename |> read_whole_file >>= Lox.Lex.lex >>= Lox.Parse.parse
-      >>= Lox.Var_resolver.resolve (Map.empty (module Int))
+      >>= Lox.Var_resolver.resolve (Lox.Var_resolver.make_resolution ())
       |> Result.map_error ~f:print_errors
       |> Result.iter ~f:(fun (_, resolution) ->
              Lox.Var_resolver.print_resolution resolution)
