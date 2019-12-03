@@ -55,6 +55,16 @@ let main () =
       read_from_stdin () >>= Lox.Lex.lex >>= Lox.Parse.parse
       |> Result.map_error ~f:print_errors
       |> Result.iter ~f:dump_ast
+  | [| _; "dump"; "ast"; filename |] ->
+      filename |> read_whole_file >>= Lox.Lex.lex >>= Lox.Parse.parse
+      |> Result.map_error ~f:print_errors
+      |> Result.iter ~f:dump_ast
+  | [| _; "dump"; "resolution"; filename |] ->
+      filename |> read_whole_file >>= Lox.Lex.lex >>= Lox.Parse.parse
+      >>= Lox.Var_resolver.resolve
+      |> Result.map_error ~f:print_errors
+      |> Result.iter ~f:(fun (_, resolution) ->
+             Lox.Var_resolver.print_resolution resolution)
   | [| _; "dump"; "resolution" |] ->
       read_from_stdin () >>= Lox.Lex.lex >>= Lox.Parse.parse
       >>= Lox.Var_resolver.resolve
