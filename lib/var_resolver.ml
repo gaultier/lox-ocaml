@@ -166,6 +166,10 @@ let resolve stmts =
       }
     in
     Stack.push ctx.scopes (new_scope 0);
+    let scope = new_scope 0 in
+    Hashtbl.iter_keys Parse.globals.values ~f:(fun n ->
+        Hashtbl.add_exn ~key:n ~data:true scope.vars_status);
+    Stack.push ctx.scopes scope;
     let ctx = resolve_stmts ctx stmts in
     Stack.pop_exn ctx.scopes |> ignore;
     List.iter
