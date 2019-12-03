@@ -105,13 +105,9 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       in
       let args = List.map ~f:(fun a -> eval_exp a var_resolution env) args in
       let len = List.length args in
-      let _ =
-        match len with
-        | l when l = f.arity -> l
-        | _ ->
-            Printf.failwithf "Wrong arity in function call: expected %d, got %d"
-              f.arity len ()
-      in
+      if not (Int.equal len f.arity) then
+        Printf.failwithf "Wrong arity in function call: expected %d, got %d"
+          f.arity len ();
       f.fn args f.decl_environment
 
 let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
