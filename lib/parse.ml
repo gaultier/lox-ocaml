@@ -16,7 +16,7 @@ and callable = {
   arity : int;
   name : string;
   mutable decl_environment : environment;
-  fn : (function_signature[@ignore]);
+  fn : function_signature;
 }
 
 and env_values_t = (string, value) Hashtbl.t
