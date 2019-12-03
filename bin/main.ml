@@ -63,13 +63,17 @@ let main () =
              Lox.Var_resolver.print_resolution resolution)
   | [| _; "run" |] -> read_from_stdin () |> lox_run
   | [| _; "run"; filename |] -> filename |> read_whole_file |> lox_run
-  | _ ->
-      Stdlib.prerr_endline
+  | [| _; "help" |] | _ ->
+      Stdlib.print_endline
         ( "Use: `lox run foo.lox` to execute a file.\n\
            Use: `printf 'print 2*3;' | lox run` to read and execute from stdin.\n\
-           Use `lox repl` or `rlwrap lox repl` to launch the repl.\n\
-           CLI invocation was: "
-        ^ Array.fold ~f:(fun acc s -> acc ^ s) ~init:" " Sys.argv )
+           Use: `lox repl` or `rlwrap lox repl` to launch the repl.\n\
+           Use: `lox dump ast` to print the AST without running the program.\n\
+           Use: `lox dump resolution` to print the variable resolution result \
+           without running the program.\n\
+           Use: `lox help` to see this help message.\n\
+           CLI invocation was:"
+        ^ Array.fold ~f:(fun acc s -> acc ^ " " ^ s) ~init:"" Sys.argv )
 
 ;;
 main ()
