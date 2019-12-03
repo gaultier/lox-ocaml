@@ -43,36 +43,24 @@ let define_var name ctx =
   Hashtbl.set scope.vars_status ~key:name ~data:true;
   ctx
 
-let mark_var_as_used name depth ctx =
-  let scopes = Stack.copy ctx.scopes in
-  for _ = 0 to depth - 1 do
-    Stack.pop scopes |> ignore
-  done;
-  let vars =
-    Stack.pop scopes
-    |> Option.map ~f:(fun scope ->
-           List.filter
-             ~f:(fun (n, b_id) ->
-               not (String.equal name n && scope.block_id = b_id))
-             ctx.vars)
-    |> Option.value ~default:ctx.vars
-  in
-
-  { ctx with vars }
-
-let resolve_local id n ctx =
-  let depth =
-    Stack.fold_until ~init:0
-      ~f:(fun depth scope ->
-        match Hashtbl.find scope.vars_status n with
-        | Some _ -> Stop depth
-        | None -> Continue (depth + 1))
-      ~finish:(fun depth -> depth)
+let resolve_local id name ctx =
+  let depth, block_id =
+    Stack.fold_until ~init:(0, 0)
+      ~f:(fun (depth, _) scope ->
+        match Hashtbl.find scope.vars_status name with
+        | Some _ -> Stop (depth, scope.block_id)
+        | None -> Continue (depth + 1, 0))
+      ~finish:(fun x -> x)
       ctx.scopes
   in
-
-  { ctx with resolution = Map.add_exn ctx.resolution ~key:id ~data:depth }
-  |> mark_var_as_used n depth
+  {
+    ctx with
+    resolution = Map.add_exn ctx.resolution ~key:id ~data:depth;
+    vars =
+      List.filter
+        ~f:(fun (n, b_id) -> not (String.equal name n && block_id = b_id))
+        ctx.vars;
+  }
 
 let rec resolve_function ctx (args : Lex.token list) (stmts : statement list)
     fn_id =
