@@ -12,4 +12,8 @@ then
     LOXBIN='./lox'
 fi
 
-find test -name '*.lox' -type f | parallel  --shuf --timeout 4 "awk -F '// expect: ' '/expect/{print \$2}' < {} > {.}.expected; $LOXBIN run {} > {.}.output 2>&1; $DIFFTOOL {.}.expected {.}.output && (echo {} '✓' || echo {} '✗')"
+find test -name '*.lox' -type f | parallel  --shuf --timeout 4 " \
+    awk -F '// expect: ' '/expect/{print \$2}' < {} > {.}.expected; \
+    $LOXBIN run {} > {.}.output 2>&1; \
+    $DIFFTOOL {.}.expected {.}.output && \
+    printf '\033[32m✓ {}\033[0m\n'  || printf '\033[31m✗ {}\033[0m\n'"
