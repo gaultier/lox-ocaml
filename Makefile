@@ -5,7 +5,7 @@ dev:
 	dune build @fmt --auto-promote @install -w
 
 test: clean
-	sh test.sh
+	./test.sh
 
 clean:
 	rm -f test/*.output
