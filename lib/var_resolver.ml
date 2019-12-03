@@ -52,8 +52,7 @@ let resolve_local id name ctx =
         match Hashtbl.find scope.vars_status name with
         | Some _ -> Stop (depth, Some scope.block_id)
         | None -> Continue (depth + 1, None))
-      ~finish:(fun x -> x)
-      ctx.scopes
+      ~finish:Fn.id ctx.scopes
   in
   let%map block_id = block_id in
   {
