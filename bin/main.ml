@@ -23,34 +23,38 @@ let read_from_stdin () =
 let print_errors = List.iter ~f:Stdlib.prerr_endline
 
 let lox_run input =
-  input >>= Lox.Lex.lex >>= Lox.Parse.parse >>= Lox.Var_resolver.resolve
+  input >>= Lox.Lex.lex >>= Lox.Parse.parse
+  >>= Lox.Var_resolver.resolve (Map.empty (module Int))
   >>= (fun (stmts, resolution) ->
         Lox.Interpret.interpret resolution Lox.Parse.globals stmts)
   |> Result.iter_error ~f:print_errors
 
-let rec repl env =
+let rec repl env resolution =
   Stdlib.Printf.printf "> ";
-  let env =
+  let env, resolution =
     (try Stdlib.read_line () with End_of_file -> Stdlib.exit 0)
-    |> Lox.Lex.lex >>= Lox.Parse.parse >>= Lox.Var_resolver.resolve
+    |> Lox.Lex.lex >>= Lox.Parse.parse
+    >>= Lox.Var_resolver.resolve resolution
     >>= (fun (stmts, resolution) ->
-          Lox.Interpret.interpret resolution Lox.Parse.globals stmts)
-    >>| (fun stmts ->
+          Lox.Interpret.interpret resolution Lox.Parse.globals stmts
+          >>| fun stmts -> (stmts, resolution))
+    >>| (fun (stmts, resolution) ->
           Array.iter
             ~f:(fun s -> s |> Lox.Parse.value_to_string |> Stdlib.print_endline)
             stmts;
-          env)
+          (env, resolution))
     |> Result.map_error ~f:print_errors
-    |> Result.ok |> Option.value ~default:env
+    |> Result.ok
+    |> Option.value ~default:(env, resolution)
   in
-  repl env
+  repl env resolution
 
 let dump_ast =
   Lox.Parse.sexp_of_statements >> Sexp.to_string_hum >> Stdlib.print_endline
 
 let main () =
   match Sys.argv with
-  | [| _; "repl" |] -> repl Lox.Parse.globals
+  | [| _; "repl" |] -> repl Lox.Parse.globals (Map.empty (module Int))
   | [| _; "dump"; "ast" |] ->
       read_from_stdin () >>= Lox.Lex.lex >>= Lox.Parse.parse
       |> Result.map_error ~f:print_errors
@@ -61,13 +65,13 @@ let main () =
       |> Result.iter ~f:dump_ast
   | [| _; "dump"; "resolution"; filename |] ->
       filename |> read_whole_file >>= Lox.Lex.lex >>= Lox.Parse.parse
-      >>= Lox.Var_resolver.resolve
+      >>= Lox.Var_resolver.resolve (Map.empty (module Int))
       |> Result.map_error ~f:print_errors
       |> Result.iter ~f:(fun (_, resolution) ->
              Lox.Var_resolver.print_resolution resolution)
   | [| _; "dump"; "resolution" |] ->
       read_from_stdin () >>= Lox.Lex.lex >>= Lox.Parse.parse
-      >>= Lox.Var_resolver.resolve
+      >>= Lox.Var_resolver.resolve (Map.empty (module Int))
       |> Result.map_error ~f:print_errors
       |> Result.iter ~f:(fun (_, resolution) ->
              Lox.Var_resolver.print_resolution resolution)

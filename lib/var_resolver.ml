@@ -155,21 +155,20 @@ and resolve_expr expr ctx = resolve_expr_ ctx expr
 and resolve_stmts ctx (stmts : statement list) =
   List.fold ~f:resolve_stmt_ ~init:ctx stmts
 
-let resolve stmts =
+let make_ctx resolution =
+  let ctx =
+    { resolution; vars = []; scopes = Stack.create (); current_fn_type = None }
+  in
+  Stack.push ctx.scopes (new_scope 0);
+  let scope = new_scope 0 in
+  Hashtbl.iter_keys Parse.globals.values ~f:(fun n ->
+      Hashtbl.add_exn ~key:n ~data:true scope.vars_status);
+  Stack.push ctx.scopes scope;
+  ctx
+
+let resolve resolution stmts =
   try
-    let ctx =
-      {
-        resolution = Map.empty (module Int);
-        vars = [];
-        scopes = Stack.create ();
-        current_fn_type = None;
-      }
-    in
-    Stack.push ctx.scopes (new_scope 0);
-    let scope = new_scope 0 in
-    Hashtbl.iter_keys Parse.globals.values ~f:(fun n ->
-        Hashtbl.add_exn ~key:n ~data:true scope.vars_status);
-    Stack.push ctx.scopes scope;
+    let ctx = make_ctx resolution in
     let ctx = resolve_stmts ctx stmts in
     Stack.pop_exn ctx.scopes |> ignore;
     List.iter
