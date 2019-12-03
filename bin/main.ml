@@ -71,7 +71,7 @@ let main () =
              Lox.Var_resolver.print_resolution resolution)
   | [| _; "dump"; "resolution" |] ->
       read_from_stdin () >>= Lox.Lex.lex >>= Lox.Parse.parse
-      >>= Lox.Var_resolver.resolve (Map.empty (module Int))
+      >>= Lox.Var_resolver.resolve (Lox.Var_resolver.make_resolution ())
       |> Result.map_error ~f:print_errors
       |> Result.iter ~f:(fun (_, resolution) ->
              Lox.Var_resolver.print_resolution resolution)
