@@ -10,20 +10,20 @@ let next_id () =
   id := !id + 1;
   !id
 
-type function_signature = (value list -> environment -> value[@ignore])
+type function_signature = value list -> environment -> value
 
 and callable = {
-  arity : (int[@compare.ignore]);
-  name : (string[@compare.ignore]);
-  mutable decl_environment : (environment[@ignore]);
+  arity : int;
+  name : string;
+  mutable decl_environment : environment;
   fn : (function_signature[@ignore]);
 }
 
-and env_values_t = ((string, value) Hashtbl.t[@compare.ignore])
+and env_values_t = (string, value) Hashtbl.t
 
 and environment = {
   values : (env_values_t[@ignore]);
-  enclosing : (environment option[@ignore]);
+  enclosing : environment option;
 }
 
 and value =
