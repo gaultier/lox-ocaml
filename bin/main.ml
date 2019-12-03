@@ -24,7 +24,9 @@ let print_errors = List.iter ~f:Stdlib.prerr_endline
 
 let lox_run input =
   input >>= Lox.Lex.lex >>= Lox.Parse.parse
-  >>= Lox.Var_resolver.resolve (Lox.Var_resolver.make_resolution ())
+  >>= Lox.Var_resolver.resolve
+        ~resolution:(Lox.Var_resolver.make_resolution ())
+        ~check_unused:true
   >>= (fun (stmts, resolution) ->
         Lox.Interpret.interpret resolution Lox.Parse.globals stmts)
   |> Result.iter_error ~f:print_errors
@@ -34,7 +36,7 @@ let rec repl resolution =
   let resolution =
     (try Stdlib.read_line () with End_of_file -> Stdlib.exit 0)
     |> Lox.Lex.lex >>= Lox.Parse.parse
-    >>= Lox.Var_resolver.resolve resolution
+    >>= Lox.Var_resolver.resolve ~resolution ~check_unused:false
     >>= (fun (stmts, resolution) ->
           Lox.Interpret.interpret resolution Lox.Parse.globals stmts
           >>| fun stmts -> (stmts, resolution))
@@ -65,13 +67,17 @@ let main () =
       |> Result.iter ~f:dump_ast
   | [| _; "dump"; "resolution"; filename |] ->
       filename |> read_whole_file >>= Lox.Lex.lex >>= Lox.Parse.parse
-      >>= Lox.Var_resolver.resolve (Lox.Var_resolver.make_resolution ())
+      >>= Lox.Var_resolver.resolve
+            ~resolution:(Lox.Var_resolver.make_resolution ())
+            ~check_unused:true
       |> Result.map_error ~f:print_errors
       |> Result.iter ~f:(fun (_, resolution) ->
              Lox.Var_resolver.print_resolution resolution)
   | [| _; "dump"; "resolution" |] ->
       read_from_stdin () >>= Lox.Lex.lex >>= Lox.Parse.parse
-      >>= Lox.Var_resolver.resolve (Lox.Var_resolver.make_resolution ())
+      >>= Lox.Var_resolver.resolve
+            ~resolution:(Lox.Var_resolver.make_resolution ())
+            ~check_unused:true
       |> Result.map_error ~f:print_errors
       |> Result.iter ~f:(fun (_, resolution) ->
              Lox.Var_resolver.print_resolution resolution)

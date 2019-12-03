@@ -168,13 +168,14 @@ let make_ctx resolution =
   Stack.push ctx.scopes scope;
   ctx
 
-let resolve resolution stmts =
+let resolve ~resolution ~check_unused stmts =
   try
     let ctx = make_ctx resolution in
     let ctx = resolve_stmts ctx stmts in
     Stack.pop_exn ctx.scopes |> ignore;
-    List.iter
-      ~f:(fun (n, _) -> Stdlib.Printf.printf "Unused variable: %s\n" n)
-      ctx.vars;
+    if check_unused then
+      List.iter
+        ~f:(fun (n, _) -> Stdlib.Printf.printf "Unused variable: %s\n" n)
+        ctx.vars;
     Ok (stmts, ctx.resolution)
   with Failure err -> Result.Error [ err ]
