@@ -53,7 +53,14 @@ let main () =
   | [| _; "repl" |] -> repl Lox.Parse.globals
   | [| _; "dump"; "ast" |] ->
       read_from_stdin () >>= Lox.Lex.lex >>= Lox.Parse.parse
+      |> Result.map_error ~f:print_errors
       |> Result.iter ~f:dump_ast
+  | [| _; "dump"; "resolution" |] ->
+      read_from_stdin () >>= Lox.Lex.lex >>= Lox.Parse.parse
+      >>= Lox.Var_resolver.resolve
+      |> Result.map_error ~f:print_errors
+      |> Result.iter ~f:(fun (_, resolution) ->
+             Lox.Var_resolver.print_resolution resolution)
   | [| _; "run" |] -> read_from_stdin () |> lox_run
   | [| _; "run"; filename |] -> filename |> read_whole_file |> lox_run
   | _ ->
