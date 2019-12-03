@@ -10,8 +10,6 @@ let print_env_values values =
       Stdlib.Printf.printf "- %s = %s\n" k (value_to_string d))
     values
 
-let opt_get s o = Option.value_exn ~error:(Error.of_exn (Failure s)) o
-
 let rec climb_nth_env env depth =
   match (env, depth) with
   | env, 0 -> Some env
@@ -57,18 +55,14 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       let e = eval_exp l var_resolution env in
       match e with Bool false | Nil -> e | _ -> eval_exp r var_resolution env )
   | Variable (Lex.Identifier n, id) ->
-      find_in_environment n id var_resolution env
-      |> opt_get (Printf.sprintf "Accessing unbound variable `%s`" n)
+      Option.value_exn (find_in_environment n id var_resolution env)
   | Variable _ as v ->
       Printf.failwithf "Invalid variable: %s "
         (v |> sexp_of_expr |> Sexp.to_string_hum)
         ()
   | Assign (Lex.Identifier n, e, id) ->
       let v = eval_exp e var_resolution env in
-      assign_in_environment n id v var_resolution env
-      |> opt_get
-           (Printf.sprintf "Assigning unbound variable `%s` to `%s`" n
-              (value_to_string v))
+      Option.value_exn (assign_in_environment n id v var_resolution env)
   | Assign (_, _, _) as a ->
       Printf.failwithf "Invalid assignment: %s "
         (a |> sexp_of_expr |> Sexp.to_string_hum)
