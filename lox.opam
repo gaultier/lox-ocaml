@@ -7,8 +7,10 @@ A compiler and interpreter for the lox programming language
 """
 maintainer: "Philippe Gaultier <philigaultier@gmail.com>"
 authors: "Philippe Gaultier <philigaultier@gmail.com>"
+bug-reports: "Philippe Gaultier <philigaultier@gmail.com>"
 license: "MIT"
 homepage: "https://github.com/gaultier/lox-ocaml"
 dev-repo: "git@github.com:gaultier/lox-ocaml.git"
 depends: [ "ocaml" "dune" "sexplib" "ppx_compare" "ppx_sexp_conv" "ppx_let"]
-build: ["dune" "build" "-p" name "-j" jobs]
+build: [["dune" "build" "-p" name "-j" jobs] 
+        [make "test"] {with-test}]
