@@ -3,13 +3,12 @@ open Base
 open Base.Option.Let_syntax
 
 type scope = { vars_status : (string, bool) Hashtbl.t; block_id : id }
-[@@deriving sexp_of]
 
-type scopes = scope Stack.t [@@deriving sexp_of]
+type scopes = scope Stack.t
 
 type resolution = (id, int, Int.comparator_witness) Map.t
 
-type var = string * id [@@deriving sexp_of]
+type var = string * id
 
 type vars = var list
 
