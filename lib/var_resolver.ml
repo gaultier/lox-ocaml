@@ -1,11 +1,10 @@
 open Parse
 open Base
 
-type scope = (string, bool) Hashtbl.t [@@deriving sexp_of]
+type scope = { vars_status : (string, bool) Hashtbl.t; block_id : id }
+[@@deriving sexp_of]
 
 type scopes = scope Stack.t [@@deriving sexp_of]
-
-type block_ids = id Stack.t
 
 type resolution = (id, int, Int.comparator_witness) Map.t
 
@@ -18,10 +17,10 @@ type resolution_context = {
   resolution : resolution;
   current_fn_type : unit option;
   vars : vars;
-  block_ids : block_ids;
 }
 
-let new_scope () : scope = Hashtbl.create (module String)
+let new_scope block_id : scope =
+  { vars_status = Hashtbl.create (module String); block_id }
 
 let print_resolution (resolution : resolution) =
   Map.iteri
@@ -29,31 +28,32 @@ let print_resolution (resolution : resolution) =
     resolution
 
 let declare_var name ctx =
-  Stack.top ctx.scopes
-  |> Option.iter ~f:(fun scope ->
-         match Hashtbl.add scope ~key:name ~data:false with
-         | `Ok -> ()
-         | `Duplicate ->
-             Printf.failwithf
-               "Forbidden shadowing of variable `%s` in the same scope" name ());
-  let current_block_id = Stack.top_exn ctx.block_ids in
-  { ctx with vars = (name, current_block_id) :: ctx.vars }
+  let scope = Stack.top_exn ctx.scopes in
+  let _ =
+    match Hashtbl.add scope.vars_status ~key:name ~data:false with
+    | `Ok -> ()
+    | `Duplicate ->
+        Printf.failwithf
+          "Forbidden shadowing of variable `%s` in the same scope" name ()
+  in
+  { ctx with vars = (name, scope.block_id) :: ctx.vars }
 
 let define_var name ctx =
-  Stack.top ctx.scopes
-  |> Option.iter ~f:(fun scope -> Hashtbl.set scope ~key:name ~data:true);
+  let scope = Stack.top_exn ctx.scopes in
+  Hashtbl.set scope.vars_status ~key:name ~data:true;
   ctx
 
 let mark_var_as_used name depth ctx =
-  let block_ids = Stack.copy ctx.block_ids in
+  let scopes = Stack.copy ctx.scopes in
   for _ = 0 to depth - 1 do
-    Stack.pop block_ids |> ignore
+    Stack.pop scopes |> ignore
   done;
   let vars =
-    Stack.pop block_ids
-    |> Option.map ~f:(fun block_id ->
+    Stack.pop scopes
+    |> Option.map ~f:(fun scope ->
            List.filter
-             ~f:(fun (n, b_id) -> not (String.equal name n && block_id = b_id))
+             ~f:(fun (n, b_id) ->
+               not (String.equal name n && scope.block_id = b_id))
              ctx.vars)
     |> Option.value ~default:ctx.vars
   in
@@ -64,7 +64,7 @@ let resolve_local id n ctx =
   let depth =
     Stack.fold_until ~init:0
       ~f:(fun depth scope ->
-        match Hashtbl.find scope n with
+        match Hashtbl.find scope.vars_status n with
         | Some _ -> Stop depth
         | None -> Continue (depth + 1))
       ~finish:(fun depth -> depth)
@@ -74,8 +74,9 @@ let resolve_local id n ctx =
   { ctx with resolution = Map.add_exn ctx.resolution ~key:id ~data:depth }
   |> mark_var_as_used n depth
 
-let rec resolve_function ctx (args : Lex.token list) (stmts : statement list) =
-  Stack.push ctx.scopes (new_scope ());
+let rec resolve_function ctx (args : Lex.token list) (stmts : statement list)
+    fn_id =
+  Stack.push ctx.scopes (new_scope fn_id);
   let ctx =
     List.fold ~init:ctx
       ~f:(fun ctx arg ->
@@ -97,7 +98,7 @@ and resolve_expr_ ctx = function
       ctx |> resolve_expr expr |> resolve_local id n
   | Variable (Lex.Identifier n, id) ->
       Stack.top ctx.scopes
-      |> Option.bind ~f:(fun scope -> Hashtbl.find scope n)
+      |> Option.bind ~f:(fun scope -> Hashtbl.find scope.vars_status n)
       |> Option.iter ~f:(fun b ->
              if Bool.equal b false then
                Printf.failwithf
@@ -123,11 +124,9 @@ and resolve_expr_ ctx = function
 
 and resolve_stmt_ ctx = function
   | Block (stmts, id) ->
-      Stack.push ctx.scopes (new_scope ());
-      Stack.push ctx.block_ids id;
+      Stack.push ctx.scopes (new_scope id);
       let ctx = Array.fold ~f:resolve_stmt_ ~init:ctx stmts in
       Stack.pop_exn ctx.scopes |> ignore;
-      Stack.pop_exn ctx.block_ids |> ignore;
       ctx
   | Var (Lex.Identifier n, expr, _) ->
       ctx |> declare_var n |> resolve_expr expr |> define_var n
@@ -142,9 +141,7 @@ and resolve_stmt_ ctx = function
       | Some _ -> resolve_expr e ctx )
   | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, id) ->
       let ctx = ctx |> declare_var name |> define_var name in
-      Stack.push ctx.block_ids id;
-      let ctx = resolve_function ctx args stmts in
-      Stack.pop_exn ctx.block_ids |> ignore;
+      let ctx = resolve_function ctx args stmts id in
       ctx
   | WhileStmt (e, stmt, _) | IfStmt (e, stmt, _) ->
       ctx |> resolve_expr e |> resolve_stmt stmt
@@ -174,11 +171,9 @@ let resolve stmts =
         vars = [];
         scopes = Stack.create ();
         current_fn_type = None;
-        block_ids = Stack.create ();
       }
     in
-    Stack.push ctx.scopes (new_scope ());
-    Stack.push ctx.block_ids 0;
+    Stack.push ctx.scopes (new_scope 0);
     let ctx = resolve_stmts ctx stmts in
     Stack.pop_exn ctx.scopes |> ignore;
     List.iter
