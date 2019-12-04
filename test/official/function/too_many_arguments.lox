@@ -257,5 +257,7 @@ fun foo() {}
      a, // 253
      a, // 254
      a, // 255
-     a); // Error at 'a': Cannot have more than 255 arguments.
+     a); 
+// expect: Function call: Too many arguments: limit is 255, got: 256
+// expect: Wrong arity in function call: expected 0, got 256
 }
