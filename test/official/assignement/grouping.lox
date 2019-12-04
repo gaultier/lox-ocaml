@@ -1,0 +1,2 @@
+var a = "a";
+(a) = "value"; // expect: 2:1:Context: Assignement. Expected valid assignment target. Got: ` ( a ) = "value" ;`.
