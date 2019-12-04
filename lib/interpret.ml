@@ -84,9 +84,25 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       | Number a, Lex.Greater, Number b -> Bool (Float.( > ) a b)
       | Number a, Lex.GreaterEqual, Number b -> Bool (Float.( >= ) a b)
       | Number a, Lex.BangEqual, Number b -> Bool (not (Float.equal a b))
+      | String a, Lex.BangEqual, String b -> Bool (not (String.equal a b))
+      | Bool a, Lex.BangEqual, Bool b -> Bool (not (Bool.equal a b))
       | Number a, Lex.EqualEqual, Number b -> Bool (Float.equal a b)
       | String a, Lex.EqualEqual, String b -> Bool (String.equal a b)
       | Bool a, Lex.EqualEqual, Bool b -> Bool (Bool.equal a b)
+      | Bool _, Lex.EqualEqual, String _ 
+      | String _, Lex.EqualEqual, Bool _ 
+      | Bool _, Lex.EqualEqual, Number _ 
+      | Number _, Lex.EqualEqual, Bool _ 
+      | Number _, Lex.EqualEqual, String _ 
+      | String _, Lex.EqualEqual, Number _ 
+       -> Bool (false)
+      | Bool _, Lex.BangEqual, String _ 
+      | String _, Lex.BangEqual, Bool _ 
+      | Bool _, Lex.BangEqual, Number _ 
+      | Number _, Lex.BangEqual, Bool _ 
+      | Number _, Lex.BangEqual, String _ 
+      | String _, Lex.BangEqual, Number _ 
+       -> Bool (true)
       | Nil, Lex.EqualEqual, Nil -> Bool true
       | Nil, Lex.EqualEqual, _ -> Bool false
       | _, Lex.EqualEqual, Nil -> Bool false
