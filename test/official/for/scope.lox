@@ -8,7 +8,7 @@
 
     // Loop body is in second inner scope.
     var i = -1;
-    print i; // expect: 1.
+    print i; // expect: -1.
   }
 }
 
