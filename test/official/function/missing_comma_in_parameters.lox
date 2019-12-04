@@ -1,3 +1,2 @@
-// [line 3] Error at 'c': Expect ')' after parameters.
-// [c line 4] Error at end: Expect '}' after block.
+// expect: 1:14:Context: Function declaration. Expected `,` before argument. Got: ` c , d , e , f ) { }`.
 fun foo(a, b c, d, e, f) {}
