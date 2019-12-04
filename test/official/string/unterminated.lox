@@ -1,0 +1,2 @@
+// expect: Missing closing quote, no more tokens for string: `this string has no close quote`
+"this string has no close quote
