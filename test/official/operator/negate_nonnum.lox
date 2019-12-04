@@ -1,1 +1,2 @@
--"s"; // expect runtime error: Operand must be a number.
+// expect: Invalid assignment: (Unary Minus (Literal (String s) 1) 2)
+-"s"; 
