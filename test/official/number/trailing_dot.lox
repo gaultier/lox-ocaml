@@ -1,0 +1,2 @@
+// expect: 2:4:Trailing `.` in number not allowed: `123.`
+123.;
