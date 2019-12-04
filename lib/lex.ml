@@ -183,7 +183,7 @@ let lex_num ctx =
       }
 
 let lex_identifier ctx =
-  let identifier, rest = List.split_while ctx.rest ~f:Char.is_alphanum in
+  let identifier, rest = List.split_while ctx.rest ~f:(fun c -> Char.is_alphanum c || Char.equal c '_') in
   let len = List.length identifier in
   let s = String.sub ctx.source ~pos:ctx.current_pos ~len in
   let k = match Map.find keywords s with Some k -> k | _ -> Identifier s in
