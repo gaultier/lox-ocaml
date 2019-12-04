@@ -1,1 +1,2 @@
-true + "s"; // expect runtime error: Operands must be two numbers or two strings.
+// expect: Invalid binary expression: (Binary (Literal (Bool true) 1) Plus (Literal (String s) 2) 3)
+true + "s";
