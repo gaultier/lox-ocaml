@@ -1,0 +1,2 @@
+// expect: 2:14:Context: Primary. Expected primary (e.g `1` or `(true)` or "hello"). Got: ` fun foo ( ) { }`.
+while (true) fun foo() {}
