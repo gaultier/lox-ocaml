@@ -1,2 +1,2 @@
-// expect: 3:1:Missing closing quote, no more tokens for string: `abc;`
+// expect: Missing closing quote, no more tokens for string: `abc;`
 "hello" + "abc;

@@ -44,6 +44,17 @@ type token_kind =
 type token = { kind : token_kind; lines : int; columns : int }
 [@@deriving sexp_of]
 
+type tokens = token list[@@deriving sexp_of]
+
+type ctx = {
+  source : string;
+  current_line : int;
+  current_column : int;
+  current_pos : int;
+  rest : char list;
+  tokens : (token, string) Base.Result.t list;
+}
+
 let keywords =
   Map.of_alist_exn
     (module String)
@@ -66,158 +77,490 @@ let keywords =
       ("while", While);
     ]
 
-let rec string_count_lines_columns lines columns = function
-  | [] -> (lines, columns)
-  | '\n' :: rest -> (string_count_lines_columns [@tailcall]) (lines + 1) 1 rest
-  | _ :: rest ->
-      (string_count_lines_columns [@tailcall]) lines (columns + 1) rest
-
-let lex_string rest lines columns =
-  let sl, rest = List.split_while rest ~f:(fun c -> not (Char.equal c '"')) in
-  let s = String.of_char_list sl in
-  match rest with
-  | '"' :: rest ->
-      let t = { kind = String s; lines; columns } in
-      let lines, columns = string_count_lines_columns lines columns sl in
-      (Ok t, rest, lines, columns + 1)
-  | _ ->
-      (* TODO: we should sync at newlines probably here *)
-      let lines, columns = string_count_lines_columns lines columns sl in
-      ( Result.failf
-          "%d:%d:Missing closing quote, no more tokens for string: `%s`" lines
-          columns (String.rstrip s),
-        rest,
-        lines,
-        columns )
-
-let lex_num rest lines columns =
-  (* trailing dot is allowed for now *)
-  let digits, rest =
-    List.split_while rest ~f:(fun c -> Char.is_digit c || Char.equal c '.')
+let lex_string ctx =
+  let ctx =
+    match ctx.rest with
+    | '"' :: rest ->
+        {
+          ctx with
+          rest;
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+        }
+    | _ -> failwith "Wrong call to lex_string"
   in
-  let s = digits |> String.of_char_list in
-  let new_columns = columns + String.length s in
-  if String.is_suffix s ~suffix:"." then
-    ( Result.failf "%d:%d:Trailing `.` in number not allowed: `%s`" lines
-        (new_columns - 1) s,
-      rest,
-      lines,
-      new_columns )
-  else
-    ( Ok { kind = Number (Float.of_string s); lines; columns },
-      rest,
-      lines,
-      new_columns )
+  let rec lex_string_rec len ctx =
+    match ctx.rest with
+    | [] ->
+        {
+          ctx with
+          current_column = ctx.current_column + len;
+          current_pos = ctx.current_pos + len;
+          rest = [];
+          tokens =
+            Result.failf
+              "Missing closing quote, no more tokens for string: `%s`"
+              (String.sub ~pos:ctx.current_pos ~len ctx.source |> String.rstrip)
+            :: ctx.tokens;
+        }
+    | '\n' :: rest ->
+        lex_string_rec (len + 1)
+          { ctx with current_line = ctx.current_line + 1; rest }
+    | '"' :: rest ->
+        {
+          ctx with
+          current_column = ctx.current_column + len + 1;
+          current_pos = ctx.current_pos + len + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = String (String.sub ~pos:ctx.current_pos ~len ctx.source);
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+    | _ :: rest -> lex_string_rec (len + 1) { ctx with rest }
+  in
 
-let lex_identifier rest lines columns =
-  let identifier, rest = List.split_while rest ~f:Char.is_alphanum in
-  let s = String.of_char_list identifier in
-  let new_columns = columns + String.length s in
-  match Map.find keywords s with
-  | Some k -> (Ok { kind = k; lines; columns }, rest, lines, new_columns)
-  | _ -> (Ok { kind = Identifier s; lines; columns }, rest, lines, new_columns)
+  lex_string_rec 0 ctx
 
-let rec lex_r acc rest lines columns =
+let lex_num ctx =
+  let digits, rest = List.split_while ctx.rest ~f:Char.is_digit in
+  let len = List.length digits in
   match rest with
-  | [] | '\000' :: _ -> acc
-  | '{' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = CurlyBraceLeft; lines; columns } :: acc)
-        rest lines (columns + 1)
-  | '}' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = CurlyBraceRight; lines; columns } :: acc)
-        rest lines (columns + 1)
-  | '(' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = ParenLeft; lines; columns } :: acc)
-        rest lines (columns + 1)
-  | ')' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = ParenRight; lines; columns } :: acc)
-        rest lines (columns + 1)
-  | ',' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = Comma; lines; columns } :: acc)
-        rest lines (columns + 1)
-  | '.' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = Dot; lines; columns } :: acc)
-        rest lines (columns + 1)
-  | '-' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = Minus; lines; columns } :: acc)
-        rest lines (columns + 1)
-  | '+' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = Plus; lines; columns } :: acc)
-        rest lines (columns + 1)
-  | ';' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = SemiColon; lines; columns } :: acc)
-        rest lines (columns + 1)
-  | '*' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = Star; lines; columns } :: acc)
-        rest lines (columns + 1)
-  | '/' :: '/' :: rest ->
-      (lex_r [@tailcall]) acc
-        (List.drop_while rest ~f:(fun c -> not (Char.equal c '\n')))
-        lines (columns + 1)
-  | '/' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = Slash; lines; columns } :: acc)
-        rest lines (columns + 1)
-  | '!' :: '=' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = BangEqual; lines; columns } :: acc)
-        rest lines (columns + 2)
-  | '!' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = Bang; lines; columns } :: acc)
-        rest lines (columns + 1)
-  | '=' :: '=' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = EqualEqual; lines; columns } :: acc)
-        rest lines (columns + 2)
-  | '=' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = Equal; lines; columns } :: acc)
-        rest lines (columns + 1)
-  | '<' :: '=' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = LessEqual; lines; columns } :: acc)
-        rest lines (columns + 2)
-  | '<' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = Less; lines; columns } :: acc)
-        rest lines (columns + 1)
-  | '>' :: '=' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = GreaterEqual; lines; columns } :: acc)
-        rest lines (columns + 2)
-  | '>' :: rest ->
-      (lex_r [@tailcall])
-        (Ok { kind = Greater; lines; columns } :: acc)
-        rest lines (columns + 1)
-  | ' ' :: rest | '\t' :: rest | '\r' :: rest ->
-      (lex_r [@tailcall]) acc rest lines (columns + 1)
-  | '\n' :: rest -> (lex_r [@tailcall]) acc rest (lines + 1) 1
-  | '"' :: rest ->
-      let columns = columns + 1 in
-      let t, rest, lines, columns = lex_string rest lines columns in
-      (lex_r [@tailcall]) (t :: acc) rest lines columns
-  | '0' .. '9' :: _ ->
-      let t, rest, lines, columns = lex_num rest lines columns in
-      (lex_r [@tailcall]) (t :: acc) rest lines columns
-  | x :: _ when Char.is_alpha x ->
-      let t, rest, lines, columns = lex_identifier rest lines columns in
-      (lex_r [@tailcall]) (t :: acc) rest lines columns
-  | x :: rest ->
-      let err = Result.failf "%d:%d:Unkown token: `%c`" lines columns x in
-      (lex_r [@tailcall]) (err :: acc) rest lines (columns + 1)
+  | '.' :: ('0' .. '9' :: _ as rest) ->
+      let digits_after_dot, rest = List.split_while rest ~f:Char.is_digit in
+      let len = len + 1 + List.length digits_after_dot in
+      let t =
+        Ok
+          {
+            kind =
+              Number
+                ( String.sub ctx.source ~pos:ctx.current_pos ~len
+                |> Float.of_string );
+            lines = ctx.current_line;
+            columns = ctx.current_column;
+          }
+      in
+      {
+        ctx with
+        current_column = ctx.current_column + len;
+        current_pos = ctx.current_pos + len;
+        tokens = t :: ctx.tokens;
+        rest;
+      }
+  | '.' :: (_ as rest) ->
+      let t =
+        Error
+          (Printf.sprintf "%d:%d:Trailing `.` in number not allowed: `%s`"
+             ctx.current_line (ctx.current_column + len)
+             (String.sub ctx.source ~pos:ctx.current_pos ~len:(len+1)))
+      in
+      {
+        ctx with
+        current_column = ctx.current_column + len + 1;
+        current_pos = ctx.current_pos + len + 1;
+        tokens = t :: ctx.tokens;
+        rest;
+      }
+  | _ ->
+      let t =
+        Ok
+          {
+            kind = Number ( String.sub ctx.source ~pos:ctx.current_pos ~len|> Float.of_string);
+            lines = ctx.current_line;
+            columns = ctx.current_column;
+          }
+      in
+      {
+        ctx with
+        current_column = ctx.current_column + len;
+        current_pos = ctx.current_pos + len;
+        tokens = t :: ctx.tokens;
+        rest;
+      }
 
-let lex s = lex_r [] (String.to_list s) 1 1 |> List.rev |> Result.combine_errors
+let lex_identifier ctx =
+  let identifier, rest = List.split_while ctx.rest ~f:Char.is_alphanum in
+  let len = List.length identifier in
+  let s = String.sub ctx.source ~pos:ctx.current_pos ~len in
+  let k = match Map.find keywords s with Some k -> k | _ -> Identifier s in
+  {
+    ctx with
+    current_column = ctx.current_column + len;
+    current_pos = ctx.current_pos + len;
+    tokens =
+      Ok { kind = k; lines = ctx.current_line; columns = ctx.current_column }
+      :: ctx.tokens;
+    rest;
+  }
+
+let rec lex_r ctx =
+  match ctx.rest with
+  | [] | '\000' :: _ ->  List.rev ctx.tokens
+  | '{' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = CurlyBraceLeft;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | '}' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = CurlyBraceRight;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | '(' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = ParenLeft;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | ')' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = ParenRight;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | ',' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = Comma;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | '.' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = Dot;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | '-' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = Minus;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | '+' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = Plus;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | ';' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = SemiColon;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | '*' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = Star;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | '/' :: '/' :: rest ->
+      let dropped, rest =
+        List.split_while rest ~f:(fun c -> not (Char.equal c '\n'))
+      in
+      let len = List.length dropped + 2 in
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + len;
+          current_pos = ctx.current_pos + len;
+          rest;
+        }
+  | '/' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = Slash;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | '!' :: '=' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 2;
+          current_pos = ctx.current_pos + 2;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = BangEqual;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | '!' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 2;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = Bang;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | '=' :: '=' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 2;
+          current_pos = ctx.current_pos + 2;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = EqualEqual;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | '=' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = Equal;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | '<' :: '=' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 2;
+          current_pos = ctx.current_pos + 2;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = LessEqual;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | '<' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = Less;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | '>' :: '=' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 2;
+          current_pos = ctx.current_pos + 2;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = GreaterEqual;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | '>' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens =
+            Ok
+              {
+                kind = Greater;
+                lines = ctx.current_line;
+                columns = ctx.current_column;
+              }
+            :: ctx.tokens;
+        }
+  | ' ' :: rest | '\t' :: rest | '\r' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+        }
+  | '\n' :: rest ->
+      lex_r
+        {
+          ctx with
+          current_line = ctx.current_line + 1;
+          current_column = 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+        }
+  | '"' :: _ -> ctx |> lex_string |> lex_r
+  | '0' .. '9' :: _ -> ctx |> lex_num |> lex_r
+  | x :: _ when Char.is_alpha x -> ctx |> lex_identifier |> lex_r
+  | x :: rest ->
+      let err =
+        Result.failf "%d:%d:Unkown token: `%c`" ctx.current_line
+          ctx.current_column x
+      in
+      lex_r
+        {
+          ctx with
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
+          rest;
+          tokens = err :: ctx.tokens;
+        }
+
+let lex s =
+  lex_r
+    {
+      source = s;
+      current_line = 1;
+      current_column = 1;
+      current_pos = 0;
+      rest = String.to_list s;
+      tokens = [];
+    }
+  |>  Result.combine_errors
 
 let token_to_string = function
   | CurlyBraceLeft -> "{"

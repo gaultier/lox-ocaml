@@ -1,1 +1,4 @@
-print 1.; // expect: 1:8:Trailing `.` in number not allowed: `1.`
+print 123.; print 45.; 
+// expect: 1:10:Trailing `.` in number not allowed: `123.`
+// expect: 1:21:Trailing `.` in number not allowed: `45.`
+print 6789.; // expect: 4:11:Trailing `.` in number not allowed: `6789.`

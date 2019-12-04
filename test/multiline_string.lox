@@ -1,0 +1,6 @@
+print "hello
+world
+ !";
+// expect: hello
+// expect: world
+// expect:  !

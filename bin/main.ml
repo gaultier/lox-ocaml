@@ -54,9 +54,19 @@ let rec repl resolution =
 let dump_ast =
   Lox.Parse.sexp_of_statements >> Sexp.to_string_hum >> Stdlib.print_endline
 
+let dump_lex = Lox.Lex.sexp_of_tokens >> Sexp.to_string_hum >> Stdlib.print_endline
+
 let main () =
   match Sys.argv with
   | [| _; "repl" |] -> repl (Lox.Var_resolver.make_resolution ())
+ | [| _; "dump"; "lex" |] ->
+      read_from_stdin () >>= Lox.Lex.lex
+      |> Result.map_error ~f:print_errors
+      |> Result.iter ~f:dump_lex
+  | [| _; "dump"; "lex"; filename |] ->
+      filename |> read_whole_file >>= Lox.Lex.lex 
+      |> Result.map_error ~f:print_errors
+      |> Result.iter ~f:dump_lex
   | [| _; "dump"; "ast" |] ->
       read_from_stdin () >>= Lox.Lex.lex >>= Lox.Parse.parse
       |> Result.map_error ~f:print_errors
@@ -88,6 +98,7 @@ let main () =
         ( "Use: `lox run foo.lox` to execute a file.\n\
            Use: `printf 'print 2*3;' | lox run` to read and execute from stdin.\n\
            Use: `lox repl` or `rlwrap lox repl` to launch the repl.\n\
+           Use: `lox dump lex` to print the lexing result without running the program.\n\
            Use: `lox dump ast` to print the AST without running the program.\n\
            Use: `lox dump resolution` to print the variable resolution result \
            without running the program.\n\
