@@ -106,6 +106,9 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       | Nil, Lex.EqualEqual, Nil -> Bool true
       | Nil, Lex.EqualEqual, _ -> Bool false
       | _, Lex.EqualEqual, Nil -> Bool false
+      | Nil, Lex.BangEqual, Nil -> Bool false
+      | Nil, Lex.BangEqual, _ -> Bool true
+      | _, Lex.BangEqual, Nil -> Bool true
       | _ ->
           Printf.failwithf "Invalid binary expression: %s"
             (b |> sexp_of_expr |> Sexp.to_string_hum)
