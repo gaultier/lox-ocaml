@@ -1,0 +1,2 @@
+print;
+// expect: 1:6:Context: Primary. Expected primary (e.g `1` or `(true)` or "hello"). Got: ` ;`.
