@@ -1,0 +1,2 @@
+1 - "1"; // expect: Invalid binary expression: (Binary (Literal (Number 1) 1) Minus (Literal (String 1) 2) 3)
+
