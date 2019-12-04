@@ -12,5 +12,6 @@
     // that f still closes over a.
     var b = "b";
     f(); // expect: a
+    b; // Unused
   }
 }
