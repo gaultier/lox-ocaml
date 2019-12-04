@@ -1,2 +1,2 @@
 // expect: Invalid binary expression: (Binary (Literal (String 1) 1) LessEqual (Literal (Number 1) 2) 3)
-"1" <= 1; // expect runtime error: Operands must be numbers.
+"1" <= 1;
