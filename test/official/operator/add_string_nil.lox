@@ -1,1 +1,2 @@
-"s" + nil; // expect runtime error: Operands must be two numbers or two strings.
+// expect: Invalid binary expression: (Binary (Literal (String s) 1) Plus (Literal Nil 2) 3)
+"s" + nil;
