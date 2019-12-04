@@ -1,3 +1,2 @@
-// [line 3] Error at '123': Expect '{' before function body.
-// [c line 4] Error at end: Expect '}' after block.
+// expect: 2:9:Context: Block statement. Expected block statement with opening `{`. Got: ` 123. ;`.
 fun f() 123;
