@@ -1,0 +1,2 @@
+// 2:10:Context: Primary. Expected primary (e.g `1` or `(true)` or "hello"). Got: ` var foo ;`.
+for (;;) var foo;

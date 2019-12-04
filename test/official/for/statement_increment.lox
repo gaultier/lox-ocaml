@@ -1,0 +1,2 @@
+// expect: 2:24:Context: Primary. Expected primary (e.g `1` or `(true)` or "hello"). Got: ` { } ) { }`.
+for (var a = 1; a < 2; {}) {}
