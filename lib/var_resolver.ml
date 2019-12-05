@@ -17,6 +17,7 @@ type vars = var list
 type resolution_context = {
   scopes : scopes;
   resolution : resolution;
+  global_scope: scope;
   current_fn_type : unit option;
   vars : vars;
 }
@@ -159,13 +160,11 @@ and resolve_stmts ctx (stmts : statement list) =
 
 let make_ctx resolution =
   let ctx =
-    { resolution; vars = []; scopes = Stack.create (); current_fn_type = None }
+      { resolution; vars = []; scopes = Stack.create (); global_scope=(new_scope 0); current_fn_type = None }
   in
-  Stack.push ctx.scopes (new_scope 0);
-  let scope = new_scope 0 in
   Hashtbl.iter_keys Parse.globals.values ~f:(fun n ->
-      Hashtbl.add_exn ~key:n ~data:true scope.vars_status);
-  Stack.push ctx.scopes scope;
+      Hashtbl.add_exn ~key:n ~data:true ctx.global_scope.vars_status);
+  Stack.push ctx.scopes ctx.global_scope;
   ctx
 
 let resolve ~resolution ~check_unused stmts =
