@@ -21,7 +21,7 @@ type resolution_context = {
   vars : vars;
 }
 
-let error msg x = Option.value_exn ~error:(Error.of_exn (Failure msg)) x
+let opt_value ~error x = Option.value_exn ~error:(Error.of_exn (Failure error)) x
 
 let new_scope block_id : scope =
   { vars_status = Hashtbl.create (module String); block_id }
@@ -88,7 +88,7 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list)
 and resolve_expr_ ctx = function
   | Assign (Lex.Identifier n, expr, id) ->
       ctx |> resolve_expr expr |> resolve_local id n
-      |> error (Printf.sprintf "Assigning unbound variable %s" n)
+      |> opt_value ~error:(Printf.sprintf "Assigning unbound variable %s" n)
   | Variable (Lex.Identifier n, id) ->
       Stack.top ctx.scopes
       |> Option.bind ~f:(fun scope -> Hashtbl.find scope.vars_status n)
@@ -97,7 +97,7 @@ and resolve_expr_ ctx = function
                Printf.failwithf
                  "Cannot read variable `%s` in its own initializer" n ());
       resolve_local id n ctx
-      |> error (Printf.sprintf "Accessing unbound variable %s " n)
+      |> opt_value ~error:(Printf.sprintf "Accessing unbound variable %s " n)
   | Call (callee, _, args, _) ->
       let ctx = resolve_expr callee ctx in
       List.fold ~init:ctx ~f:resolve_expr_ args
