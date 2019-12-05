@@ -1,1 +1,1 @@
-return "wat"; // Cannot return outside of a function body. Returning: `(Literal (String wat) 1)`
+return "wat"; // expect: Cannot return outside of a function body. Returning: `(Literal (String wat) 1)`
