@@ -89,20 +89,20 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       | Number a, Lex.EqualEqual, Number b -> Bool (Float.equal a b)
       | String a, Lex.EqualEqual, String b -> Bool (String.equal a b)
       | Bool a, Lex.EqualEqual, Bool b -> Bool (Bool.equal a b)
-      | Bool _, Lex.EqualEqual, String _ 
-      | String _, Lex.EqualEqual, Bool _ 
-      | Bool _, Lex.EqualEqual, Number _ 
-      | Number _, Lex.EqualEqual, Bool _ 
-      | Number _, Lex.EqualEqual, String _ 
-      | String _, Lex.EqualEqual, Number _ 
-       -> Bool (false)
-      | Bool _, Lex.BangEqual, String _ 
-      | String _, Lex.BangEqual, Bool _ 
-      | Bool _, Lex.BangEqual, Number _ 
-      | Number _, Lex.BangEqual, Bool _ 
-      | Number _, Lex.BangEqual, String _ 
-      | String _, Lex.BangEqual, Number _ 
-       -> Bool (true)
+      | Bool _, Lex.EqualEqual, String _
+      | String _, Lex.EqualEqual, Bool _
+      | Bool _, Lex.EqualEqual, Number _
+      | Number _, Lex.EqualEqual, Bool _
+      | Number _, Lex.EqualEqual, String _
+      | String _, Lex.EqualEqual, Number _ ->
+          Bool false
+      | Bool _, Lex.BangEqual, String _
+      | String _, Lex.BangEqual, Bool _
+      | Bool _, Lex.BangEqual, Number _
+      | Number _, Lex.BangEqual, Bool _
+      | Number _, Lex.BangEqual, String _
+      | String _, Lex.BangEqual, Number _ ->
+          Bool true
       | Nil, Lex.EqualEqual, Nil -> Bool true
       | Nil, Lex.EqualEqual, _ -> Bool false
       | _, Lex.EqualEqual, Nil -> Bool false
