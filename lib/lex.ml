@@ -178,9 +178,9 @@ let rec many_digits ctx =
       }
 
 let lex_identifier ctx =
-let rec many_alphanum ctx = 
+let rec zero_or_many_alphanum ctx = 
         match String.get ctx.source ctx.current_pos with
-        | 'a'..'z' | 'A' .. 'Z' | '_' -> many_alphanum {ctx with current_pos = ctx.current_pos+1}
+        | 'a'..'z' | 'A' .. 'Z' | '_' -> zero_or_many_alphanum {ctx with current_pos = ctx.current_pos+1}
         | _ -> ctx
 in
 let  one_alpha ctx = 
@@ -189,8 +189,10 @@ let  one_alpha ctx =
         | _ -> ctx
     
 in 
-  let ctx = one_alpha ctx |> many_alphanum
+let start =ctx.current_pos in
+  let ctx = one_alpha ctx |> zero_or_many_alphanum
   in 
+  let len = (ctx.current_pos - start) in 
   let s = String.sub ctx.source ~pos:ctx.current_pos ~len in
   let k = match Map.find keywords s with Some k -> k | _ -> Identifier s in
   {
@@ -366,7 +368,8 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | '/' :: '/' ->
+  | '/' -> (match String.get ctx.source (ctx.current_pos +1) with 
+  | '/' ->
       let dropped, rest =
         List.split_while rest ~f:(fun c -> not (Char.equal c '\n'))
       in
@@ -378,7 +381,7 @@ let rec lex_r ctx =
           current_pos = ctx.current_pos + len;
           
         }
-  | '/' ->
+    | _ ->
       lex_r
         {
           ctx with
@@ -394,7 +397,10 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | '!' :: '=' ->
+  )
+  | '!' ->
+    (match String.get ctx.source ctx.current_pos with
+    | '=' ->
       lex_r
         {
           ctx with
@@ -410,7 +416,7 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | '!' ->
+       |  _ -> 
       lex_r
         {
           ctx with
@@ -426,6 +432,7 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
+    )
   | '=' :: '=' ->
       lex_r
         {
