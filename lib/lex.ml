@@ -370,10 +370,15 @@ let rec lex_r ctx =
         }
   | '/' -> (match String.get ctx.source (ctx.current_pos +1) with 
   | '/' ->
-      let dropped, rest =
-        List.split_while rest ~f:(fun c -> not (Char.equal c '\n'))
+          let rec until_newline ctx =
+              match String.get ctx.source ctx.current_pos with
+  | '\n' -> ctx
+  | _ -> until_newline {ctx with current_pos = ctx.current_pos+1}
+          in 
+      let start = ctx.current_pos in
+      let ctx = until_newline ctx 
       in
-      let len = List.length dropped + 2 in
+      let len = ctx.current_pos - start + 2 in
       lex_r
         {
           ctx with
