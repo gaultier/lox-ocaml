@@ -223,7 +223,12 @@ let lex_identifier ctx =
   {
     ctx with
     tokens =
-      Ok { kind = k; lines = ctx.current_line; columns = ctx.current_column }
+      Ok
+        {
+          kind = k;
+          lines = start_ctx.current_line;
+          columns = start_ctx.current_column;
+        }
       :: ctx.tokens;
   }
 
