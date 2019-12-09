@@ -102,7 +102,12 @@ let lex_string ctx =
         }
     | '\n' ->
         lex_string_rec (len + 1)
-          { ctx with current_line = ctx.current_line + 1 }
+          {
+            ctx with
+            current_line = ctx.current_line + 1;
+            current_pos = ctx.current_pos + 1;
+            current_column = 0;
+          }
     | '"' ->
         {
           ctx with
@@ -125,7 +130,13 @@ let lex_string ctx =
 let lex_num ctx =
   let rec many_digits ctx =
     match ctx.source.[ctx.current_pos] with
-    | '0' .. '9' -> many_digits { ctx with current_pos = ctx.current_pos + 1 }
+    | '0' .. '9' ->
+        many_digits
+          {
+            ctx with
+            current_pos = ctx.current_pos + 1;
+            current_column = ctx.current_column + 1;
+          }
     | _ -> ctx
   in
 
@@ -133,7 +144,13 @@ let lex_num ctx =
   let ctx = many_digits ctx in
   match ctx.source.[ctx.current_pos] with
   | '.' ->
-      let ctx = { ctx with current_pos = ctx.current_pos + 1 } in
+      let ctx =
+        {
+          ctx with
+          current_pos = ctx.current_pos + 1;
+          current_column = ctx.current_column;
+        }
+      in
       let ctx = many_digits ctx in
       let len = ctx.current_pos - start in
       let t =
