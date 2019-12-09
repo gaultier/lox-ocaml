@@ -44,7 +44,7 @@ type token_kind =
 type token = { kind : token_kind; lines : int; columns : int }
 [@@deriving sexp_of]
 
-type tokens = token list[@@deriving sexp_of]
+type tokens = token list [@@deriving sexp_of]
 
 type ctx = {
   source : string;
@@ -156,7 +156,7 @@ let lex_num ctx =
         Error
           (Printf.sprintf "%d:%d:Trailing `.` in number not allowed: `%s`"
              ctx.current_line (ctx.current_column + len)
-             (String.sub ctx.source ~pos:ctx.current_pos ~len:(len+1)))
+             (String.sub ctx.source ~pos:ctx.current_pos ~len:(len + 1)))
       in
       {
         ctx with
@@ -169,7 +169,10 @@ let lex_num ctx =
       let t =
         Ok
           {
-            kind = Number ( String.sub ctx.source ~pos:ctx.current_pos ~len|> Float.of_string);
+            kind =
+              Number
+                ( String.sub ctx.source ~pos:ctx.current_pos ~len
+                |> Float.of_string );
             lines = ctx.current_line;
             columns = ctx.current_column;
           }
@@ -183,7 +186,10 @@ let lex_num ctx =
       }
 
 let lex_identifier ctx =
-  let identifier, rest = List.split_while ctx.rest ~f:(fun c -> Char.is_alphanum c || Char.equal c '_') in
+  let identifier, rest =
+    List.split_while ctx.rest ~f:(fun c ->
+        Char.is_alphanum c || Char.equal c '_')
+  in
   let len = List.length identifier in
   let s = String.sub ctx.source ~pos:ctx.current_pos ~len in
   let k = match Map.find keywords s with Some k -> k | _ -> Identifier s in
@@ -199,7 +205,7 @@ let lex_identifier ctx =
 
 let rec lex_r ctx =
   match ctx.rest with
-  | [] | '\000' :: _ ->  List.rev ctx.tokens
+  | [] | '\000' :: _ -> List.rev ctx.tokens
   | '{' :: rest ->
       lex_r
         {
@@ -560,7 +566,7 @@ let lex s =
       rest = String.to_list s;
       tokens = [];
     }
-  |>  Result.combine_errors
+  |> Result.combine_errors
 
 let token_to_string = function
   | CurlyBraceLeft -> "{"

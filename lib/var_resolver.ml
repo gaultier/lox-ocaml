@@ -21,7 +21,8 @@ type resolution_context = {
   vars : vars;
 }
 
-let opt_value ~error x = Option.value_exn ~error:(Error.of_exn (Failure error)) x
+let opt_value ~error x =
+  Option.value_exn ~error:(Error.of_exn (Failure error)) x
 
 let new_scope block_id : scope =
   { vars_status = Hashtbl.create (module String); block_id }
