@@ -388,20 +388,24 @@ let rec lex_r ctx =
   | '/' -> (
       match ctx.source.[ctx.current_pos + 1] with
       | '/' ->
-          let rec until_newline ctx =
-            match ctx.source.[ctx.current_pos] with
-            | '\n' -> ctx
-            | _ -> until_newline { ctx with current_pos = ctx.current_pos + 1 }
-          in
-          let start = ctx.current_pos in
-          let ctx = until_newline ctx in
-          let len = ctx.current_pos - start + 2 in
-          lex_r
+          let ctx =
             {
               ctx with
-              current_column = ctx.current_column + len;
-              current_pos = ctx.current_pos + len;
+              current_pos = ctx.current_pos + 2;
+              current_column = ctx.current_column + 1;
             }
+          in
+          let rec until_newline ctx =
+            match ctx.source.[ctx.current_pos] with
+            | '\n' ->
+                {
+                  ctx with
+                  current_line = ctx.current_line + 1;
+                  current_column = 0;
+                }
+            | _ -> until_newline { ctx with current_pos = ctx.current_pos + 1 }
+          in
+          until_newline ctx |> lex_r
       | _ ->
           lex_r
             {
