@@ -108,7 +108,7 @@ let lex_string ctx =
             ctx with
             current_line = ctx.current_line + 1;
             current_pos = ctx.current_pos + 1;
-            current_column = 0;
+            current_column = 1;
           }
     | '"' ->
         {
@@ -162,7 +162,7 @@ let lex_num ctx =
             {
               ctx with
               current_pos = ctx.current_pos + 1;
-              current_column = ctx.current_column;
+              current_column = ctx.current_column + 1;
             }
           in
           let ctx = many_digits ctx in
@@ -411,7 +411,7 @@ let rec lex_r ctx =
                 {
                   ctx with
                   current_line = ctx.current_line + 1;
-                  current_column = 0;
+                  current_column = 1;
                   current_pos = ctx.current_pos + 1;
                 }
             | _ ->
