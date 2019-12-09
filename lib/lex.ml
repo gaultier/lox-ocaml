@@ -123,8 +123,8 @@ let lex_string ctx =
                     (String.sub ~pos:start_ctx.current_pos
                        ~len:(ctx.current_pos - start_ctx.current_pos)
                        ctx.source);
-                lines = ctx.current_line;
-                columns = ctx.current_column;
+                lines = start_ctx.current_line;
+                columns = start_ctx.current_column;
               }
             :: ctx.tokens;
         }
@@ -133,7 +133,7 @@ let lex_string ctx =
           {
             ctx with
             current_pos = ctx.current_pos + 1;
-            current_column = ctx.current_column;
+            current_column = ctx.current_column + 1;
           }
   in
 
