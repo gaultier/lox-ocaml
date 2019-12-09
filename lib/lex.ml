@@ -234,7 +234,7 @@ let lex_identifier ctx =
 
 let rec lex_r ctx =
   match ctx.source.[ctx.current_pos] with
-  | exception Invalid_argument _ -> ctx.tokens
+  | exception Invalid_argument _ -> List.rev ctx.tokens
   | '{' ->
       lex_r
         {
