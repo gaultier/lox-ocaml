@@ -205,7 +205,7 @@ let lex_num ctx =
 let lex_identifier ctx =
   let rec zero_or_many_alphanum ctx =
     match ctx.source.[ctx.current_pos] with
-    | 'a' .. 'z' | 'A' .. 'Z' | '_' ->
+    | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' ->
         zero_or_many_alphanum
           {
             ctx with
@@ -216,7 +216,7 @@ let lex_identifier ctx =
   in
   let one_alpha ctx =
     match ctx.source.[ctx.current_pos] with
-    | 'a' .. 'z' ->
+    | 'a' .. 'z' | 'A' .. 'Z' ->
         {
           ctx with
           current_pos = ctx.current_pos + 1;
