@@ -445,7 +445,7 @@ let rec lex_r ctx =
                   }
                 :: ctx.tokens;
             }
-      | _ ->
+      | (exception Invalid_argument _) | _ ->
           lex_r
             {
               ctx with
@@ -477,7 +477,7 @@ let rec lex_r ctx =
                   }
                 :: ctx.tokens;
             }
-      | _ ->
+      | (exception Invalid_argument _) | _ ->
           lex_r
             {
               ctx with
@@ -509,7 +509,7 @@ let rec lex_r ctx =
                   }
                 :: ctx.tokens;
             }
-      | _ ->
+      | (exception Invalid_argument _) | _ ->
           lex_r
             {
               ctx with
@@ -541,7 +541,7 @@ let rec lex_r ctx =
                   }
                 :: ctx.tokens;
             }
-      | _ ->
+      | (exception Invalid_argument _) | _ ->
           lex_r
             {
               ctx with
