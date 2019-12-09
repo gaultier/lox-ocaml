@@ -186,8 +186,8 @@ let lex_num ctx =
               Number
                 ( String.sub ctx.source ~pos:start_ctx.current_pos ~len
                 |> Float.of_string );
-            lines = ctx.current_line;
-            columns = ctx.current_column;
+            lines = start_ctx.current_line;
+            columns = start_ctx.current_column;
           }
       in
       { ctx with tokens = t :: ctx.tokens }
