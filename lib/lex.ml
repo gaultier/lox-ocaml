@@ -152,7 +152,7 @@ let lex_num ctx =
     | _ -> ctx
   in
 
-  let start = ctx.current_pos in
+  let start_ctx = ctx in
   let ctx = many_digits ctx in
   match ctx.source.[ctx.current_pos] with
   | '.' ->
@@ -164,39 +164,33 @@ let lex_num ctx =
         }
       in
       let ctx = many_digits ctx in
-      let len = ctx.current_pos - start in
+      let len = ctx.current_pos - start_ctx.current_pos in
       let t =
         Ok
           {
             kind =
-              Number (String.sub ctx.source ~pos:start ~len |> Float.of_string);
-            lines = ctx.current_line;
-            columns = ctx.current_column;
+              Number
+                ( String.sub ctx.source ~pos:start_ctx.current_pos ~len
+                |> Float.of_string );
+            lines = start_ctx.current_line;
+            columns = start_ctx.current_column;
           }
       in
-      {
-        ctx with
-        current_column = ctx.current_column + len;
-        current_pos = ctx.current_pos + len;
-        tokens = t :: ctx.tokens;
-      }
+      { ctx with tokens = t :: ctx.tokens }
   | _ ->
-      let len = ctx.current_pos - start in
+      let len = ctx.current_pos - start_ctx.current_pos in
       let t =
         Ok
           {
             kind =
-              Number (String.sub ctx.source ~pos:start ~len |> Float.of_string);
+              Number
+                ( String.sub ctx.source ~pos:start_ctx.current_pos ~len
+                |> Float.of_string );
             lines = ctx.current_line;
             columns = ctx.current_column;
           }
       in
-      {
-        ctx with
-        current_column = ctx.current_column + len;
-        current_pos = ctx.current_pos + len;
-        tokens = t :: ctx.tokens;
-      }
+      { ctx with tokens = t :: ctx.tokens }
 
 let lex_identifier ctx =
   let rec zero_or_many_alphanum ctx =
@@ -221,15 +215,13 @@ let lex_identifier ctx =
     | _ -> ctx
   in
 
-  let start = ctx.current_pos in
+  let start_ctx = ctx in
   let ctx = one_alpha ctx |> zero_or_many_alphanum in
-  let len = ctx.current_pos - start in
-  let s = String.sub ctx.source ~pos:ctx.current_pos ~len in
+  let len = ctx.current_pos - start_ctx.current_pos in
+  let s = String.sub ctx.source ~pos:start_ctx.current_pos ~len in
   let k = match Map.find keywords s with Some k -> k | _ -> Identifier s in
   {
     ctx with
-    current_column = ctx.current_column + len;
-    current_pos = ctx.current_pos + len;
     tokens =
       Ok { kind = k; lines = ctx.current_line; columns = ctx.current_column }
       :: ctx.tokens;
