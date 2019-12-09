@@ -433,8 +433,8 @@ let rec lex_r ctx =
             :: ctx.tokens;
         }
     )
-  | '=' :: '=' ->
-      lex_r
+  | '=' -> (match String.get ctx.source (ctx.current_pos +1) with 
+    | '=' ->  lex_r
         {
           ctx with
           current_column = ctx.current_column + 2;
@@ -449,7 +449,7 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | '=' ->
+  | _ ->
       lex_r
         {
           ctx with
@@ -464,9 +464,9 @@ let rec lex_r ctx =
                 columns = ctx.current_column;
               }
             :: ctx.tokens;
-        }
-  | '<' :: '=' ->
-      lex_r
+        })
+  | '<' -> (match String.get ctx.source (ctx.current_pos +1) with 
+     | '=' -> lex_r
         {
           ctx with
           current_column = ctx.current_column + 2;
@@ -481,7 +481,7 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | '<' ->
+  | _ ->
       lex_r
         {
           ctx with
@@ -496,9 +496,9 @@ let rec lex_r ctx =
                 columns = ctx.current_column;
               }
             :: ctx.tokens;
-        }
-  | '>' :: '=' ->
-      lex_r
+        })
+  | '>'  -> (match String.get ctx.source (ctx.current_pos +1) with 
+    | '='->  lex_r
         {
           ctx with
           current_column = ctx.current_column + 2;
@@ -513,7 +513,7 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | '>' ->
+  | _ ->
       lex_r
         {
           ctx with
@@ -528,7 +528,7 @@ let rec lex_r ctx =
                 columns = ctx.current_column;
               }
             :: ctx.tokens;
-        }
+        })
   | ' ' | '\t' | '\r' ->
       lex_r
         {
@@ -546,9 +546,9 @@ let rec lex_r ctx =
           current_pos = ctx.current_pos + 1;
           
         }
-  | '"' :: _ -> ctx |> lex_string |> lex_r
-  | '0' .. '9' :: _ -> ctx |> lex_num |> lex_r
-  | x :: _ when Char.is_alpha x -> ctx |> lex_identifier |> lex_r
+  | '"' -> ctx |> lex_string |> lex_r
+  | '0' .. '9' -> ctx |> lex_num |> lex_r
+  | x  when Char.is_alpha x -> ctx |> lex_identifier |> lex_r
   | x ->
       let err =
         Result.failf "%d:%d:Unkown token: `%c`" ctx.current_line
