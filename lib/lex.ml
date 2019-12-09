@@ -429,7 +429,7 @@ let rec lex_r ctx =
                 :: ctx.tokens;
             } )
   | '!' -> (
-      match ctx.source.[ctx.current_pos] with
+      match ctx.source.[ctx.current_pos + 1] with
       | '=' ->
           lex_r
             {
