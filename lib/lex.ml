@@ -155,28 +155,38 @@ let lex_num ctx =
   let start_ctx = ctx in
   let ctx = many_digits ctx in
   match ctx.source.[ctx.current_pos] with
-  | '.' ->
-      let ctx =
-        {
-          ctx with
-          current_pos = ctx.current_pos + 1;
-          current_column = ctx.current_column;
-        }
-      in
-      let ctx = many_digits ctx in
-      let len = ctx.current_pos - start_ctx.current_pos in
-      let t =
-        Ok
-          {
-            kind =
-              Number
-                ( String.sub ctx.source ~pos:start_ctx.current_pos ~len
-                |> Float.of_string );
-            lines = start_ctx.current_line;
-            columns = start_ctx.current_column;
-          }
-      in
-      { ctx with tokens = t :: ctx.tokens }
+  | '.' -> (
+      match ctx.source.[ctx.current_pos + 1] with
+      | '0' .. '9' ->
+          let ctx =
+            {
+              ctx with
+              current_pos = ctx.current_pos + 1;
+              current_column = ctx.current_column;
+            }
+          in
+          let ctx = many_digits ctx in
+          let len = ctx.current_pos - start_ctx.current_pos in
+          let t =
+            Ok
+              {
+                kind =
+                  Number
+                    ( String.sub ctx.source ~pos:start_ctx.current_pos ~len
+                    |> Float.of_string );
+                lines = start_ctx.current_line;
+                columns = start_ctx.current_column;
+              }
+          in
+          { ctx with tokens = t :: ctx.tokens }
+      | (exception Invalid_argument _) | _ ->
+          let t =
+            Result.failf "%d:%d:Trailing `.` in number not allowed: `%s`"
+              ctx.current_line ctx.current_column
+              (String.sub ctx.source ~pos:start_ctx.current_pos
+                 ~len:(ctx.current_pos + 1 - start_ctx.current_pos))
+          in
+          { ctx with tokens = t :: ctx.tokens } )
   | _ ->
       let len = ctx.current_pos - start_ctx.current_pos in
       let t =
