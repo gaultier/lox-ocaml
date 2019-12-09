@@ -392,18 +392,25 @@ let rec lex_r ctx =
             {
               ctx with
               current_pos = ctx.current_pos + 2;
-              current_column = ctx.current_column + 1;
+              current_column = ctx.current_column + 2;
             }
           in
           let rec until_newline ctx =
             match ctx.source.[ctx.current_pos] with
-            | '\n' ->
+            | '\n' | (exception Invalid_argument _) ->
                 {
                   ctx with
                   current_line = ctx.current_line + 1;
                   current_column = 0;
+                  current_pos = ctx.current_pos + 1;
                 }
-            | _ -> until_newline { ctx with current_pos = ctx.current_pos + 1 }
+            | _ ->
+                until_newline
+                  {
+                    ctx with
+                    current_pos = ctx.current_pos + 1;
+                    current_column = ctx.current_column + 1;
+                  }
           in
           until_newline ctx |> lex_r
       | _ ->
