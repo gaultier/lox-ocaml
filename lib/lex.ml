@@ -51,8 +51,12 @@ type ctx = {
   current_line : int;
   current_column : int;
   current_pos : int;
-  tokens : (token, string) Base.Result.t list;
+  tokens : (token, string) Base.Result.t Base.Array.t;
 }
+
+(* let combine_errors a = *)
+(*   let ok, errs = Array.partition_tf a ~f:Result.is_ok in *)
+(*   match errs with [||] -> Ok ok | _ -> Error errs *)
 
 let keywords =
   Map.of_alist_exn
@@ -94,13 +98,15 @@ let lex_string ctx =
         {
           ctx with
           tokens =
-            Result.failf
-              "Missing closing quote, no more tokens for string: `%s`"
-              ( String.sub ~pos:start_ctx.current_pos
-                  ~len:(ctx.current_pos - start_ctx.current_pos)
-                  ctx.source
-              |> String.rstrip )
-            :: ctx.tokens;
+            Array.append ctx.tokens
+              [|
+                Result.failf
+                  "Missing closing quote, no more tokens for string: `%s`"
+                  ( String.sub ~pos:start_ctx.current_pos
+                      ~len:(ctx.current_pos - start_ctx.current_pos)
+                      ctx.source
+                  |> String.rstrip );
+              |];
         }
     | '\n' ->
         lex_string_rec
@@ -116,17 +122,19 @@ let lex_string ctx =
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
           tokens =
-            Ok
-              {
-                kind =
-                  String
-                    (String.sub ~pos:start_ctx.current_pos
-                       ~len:(ctx.current_pos - start_ctx.current_pos)
-                       ctx.source);
-                lines = start_ctx.current_line;
-                columns = start_ctx.current_column;
-              }
-            :: ctx.tokens;
+            Array.append ctx.tokens
+              [|
+                Ok
+                  {
+                    kind =
+                      String
+                        (String.sub ~pos:start_ctx.current_pos
+                           ~len:(ctx.current_pos - start_ctx.current_pos)
+                           ctx.source);
+                    lines = start_ctx.current_line;
+                    columns = start_ctx.current_column;
+                  };
+              |];
         }
     | _ ->
         lex_string_rec
@@ -178,7 +186,7 @@ let lex_num ctx =
                 columns = start_ctx.current_column;
               }
           in
-          { ctx with tokens = t :: ctx.tokens }
+          { ctx with tokens = Array.append ctx.tokens [| t |] }
       | (exception Invalid_argument _) | _ ->
           let t =
             Result.failf "%d:%d:Trailing `.` in number not allowed: `%s`"
@@ -186,7 +194,7 @@ let lex_num ctx =
               (String.sub ctx.source ~pos:start_ctx.current_pos
                  ~len:(ctx.current_pos + 1 - start_ctx.current_pos))
           in
-          { ctx with tokens = t :: ctx.tokens } )
+          { ctx with tokens = Array.append ctx.tokens [| t |] } )
   | _ ->
       let len = ctx.current_pos - start_ctx.current_pos in
       let t =
@@ -200,7 +208,7 @@ let lex_num ctx =
             columns = start_ctx.current_column;
           }
       in
-      { ctx with tokens = t :: ctx.tokens }
+      { ctx with tokens = Array.append ctx.tokens [| t |] }
 
 let lex_identifier ctx =
   let rec zero_or_many_alphanum ctx =
@@ -233,18 +241,20 @@ let lex_identifier ctx =
   {
     ctx with
     tokens =
-      Ok
-        {
-          kind = k;
-          lines = start_ctx.current_line;
-          columns = start_ctx.current_column;
-        }
-      :: ctx.tokens;
+      Array.append ctx.tokens
+        [|
+          Ok
+            {
+              kind = k;
+              lines = start_ctx.current_line;
+              columns = start_ctx.current_column;
+            };
+        |];
   }
 
 let rec lex_r ctx =
   match ctx.source.[ctx.current_pos] with
-  | exception Invalid_argument _ -> List.rev ctx.tokens
+  | exception Invalid_argument _ -> ctx.tokens
   | '{' ->
       lex_r
         {
@@ -252,13 +262,15 @@ let rec lex_r ctx =
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
           tokens =
-            Ok
-              {
-                kind = CurlyBraceLeft;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
+            Array.append ctx.tokens
+              [|
+                Ok
+                  {
+                    kind = CurlyBraceLeft;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  };
+              |];
         }
   | '}' ->
       lex_r
@@ -267,13 +279,15 @@ let rec lex_r ctx =
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
           tokens =
-            Ok
-              {
-                kind = CurlyBraceRight;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
+            Array.append ctx.tokens
+              [|
+                Ok
+                  {
+                    kind = CurlyBraceRight;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  };
+              |];
         }
   | '(' ->
       lex_r
@@ -282,13 +296,15 @@ let rec lex_r ctx =
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
           tokens =
-            Ok
-              {
-                kind = ParenLeft;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
+            Array.append ctx.tokens
+              [|
+                Ok
+                  {
+                    kind = ParenLeft;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  };
+              |];
         }
   | ')' ->
       lex_r
@@ -297,13 +313,15 @@ let rec lex_r ctx =
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
           tokens =
-            Ok
-              {
-                kind = ParenRight;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
+            Array.append ctx.tokens
+              [|
+                Ok
+                  {
+                    kind = ParenRight;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  };
+              |];
         }
   | ',' ->
       lex_r
@@ -312,13 +330,15 @@ let rec lex_r ctx =
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
           tokens =
-            Ok
-              {
-                kind = Comma;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
+            Array.append ctx.tokens
+              [|
+                Ok
+                  {
+                    kind = Comma;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  };
+              |];
         }
   | '.' ->
       lex_r
@@ -327,13 +347,15 @@ let rec lex_r ctx =
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
           tokens =
-            Ok
-              {
-                kind = Dot;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
+            Array.append ctx.tokens
+              [|
+                Ok
+                  {
+                    kind = Dot;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  };
+              |];
         }
   | '-' ->
       lex_r
@@ -342,13 +364,15 @@ let rec lex_r ctx =
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
           tokens =
-            Ok
-              {
-                kind = Minus;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
+            Array.append ctx.tokens
+              [|
+                Ok
+                  {
+                    kind = Minus;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  };
+              |];
         }
   | '+' ->
       lex_r
@@ -357,13 +381,15 @@ let rec lex_r ctx =
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
           tokens =
-            Ok
-              {
-                kind = Plus;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
+            Array.append ctx.tokens
+              [|
+                Ok
+                  {
+                    kind = Plus;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  };
+              |];
         }
   | ';' ->
       lex_r
@@ -372,13 +398,15 @@ let rec lex_r ctx =
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
           tokens =
-            Ok
-              {
-                kind = SemiColon;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
+            Array.append ctx.tokens
+              [|
+                Ok
+                  {
+                    kind = SemiColon;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  };
+              |];
         }
   | '*' ->
       lex_r
@@ -387,13 +415,15 @@ let rec lex_r ctx =
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
           tokens =
-            Ok
-              {
-                kind = Star;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
+            Array.append ctx.tokens
+              [|
+                Ok
+                  {
+                    kind = Star;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  };
+              |];
         }
   | '/' -> (
       match ctx.source.[ctx.current_pos + 1] with
@@ -430,13 +460,15 @@ let rec lex_r ctx =
               current_column = ctx.current_column + 1;
               current_pos = ctx.current_pos + 1;
               tokens =
-                Ok
-                  {
-                    kind = Slash;
-                    lines = ctx.current_line;
-                    columns = ctx.current_column;
-                  }
-                :: ctx.tokens;
+                Array.append ctx.tokens
+                  [|
+                    Ok
+                      {
+                        kind = Slash;
+                        lines = ctx.current_line;
+                        columns = ctx.current_column;
+                      };
+                  |];
             } )
   | '!' -> (
       match ctx.source.[ctx.current_pos + 1] with
@@ -447,13 +479,15 @@ let rec lex_r ctx =
               current_column = ctx.current_column + 2;
               current_pos = ctx.current_pos + 2;
               tokens =
-                Ok
-                  {
-                    kind = BangEqual;
-                    lines = ctx.current_line;
-                    columns = ctx.current_column;
-                  }
-                :: ctx.tokens;
+                Array.append ctx.tokens
+                  [|
+                    Ok
+                      {
+                        kind = BangEqual;
+                        lines = ctx.current_line;
+                        columns = ctx.current_column;
+                      };
+                  |];
             }
       | (exception Invalid_argument _) | _ ->
           lex_r
@@ -462,13 +496,15 @@ let rec lex_r ctx =
               current_column = ctx.current_column + 2;
               current_pos = ctx.current_pos + 1;
               tokens =
-                Ok
-                  {
-                    kind = Bang;
-                    lines = ctx.current_line;
-                    columns = ctx.current_column;
-                  }
-                :: ctx.tokens;
+                Array.append ctx.tokens
+                  [|
+                    Ok
+                      {
+                        kind = Bang;
+                        lines = ctx.current_line;
+                        columns = ctx.current_column;
+                      };
+                  |];
             } )
   | '=' -> (
       match ctx.source.[ctx.current_pos + 1] with
@@ -479,13 +515,15 @@ let rec lex_r ctx =
               current_column = ctx.current_column + 2;
               current_pos = ctx.current_pos + 2;
               tokens =
-                Ok
-                  {
-                    kind = EqualEqual;
-                    lines = ctx.current_line;
-                    columns = ctx.current_column;
-                  }
-                :: ctx.tokens;
+                Array.append ctx.tokens
+                  [|
+                    Ok
+                      {
+                        kind = EqualEqual;
+                        lines = ctx.current_line;
+                        columns = ctx.current_column;
+                      };
+                  |];
             }
       | (exception Invalid_argument _) | _ ->
           lex_r
@@ -494,13 +532,15 @@ let rec lex_r ctx =
               current_column = ctx.current_column + 1;
               current_pos = ctx.current_pos + 1;
               tokens =
-                Ok
-                  {
-                    kind = Equal;
-                    lines = ctx.current_line;
-                    columns = ctx.current_column;
-                  }
-                :: ctx.tokens;
+                Array.append ctx.tokens
+                  [|
+                    Ok
+                      {
+                        kind = Equal;
+                        lines = ctx.current_line;
+                        columns = ctx.current_column;
+                      };
+                  |];
             } )
   | '<' -> (
       match ctx.source.[ctx.current_pos + 1] with
@@ -511,13 +551,15 @@ let rec lex_r ctx =
               current_column = ctx.current_column + 2;
               current_pos = ctx.current_pos + 2;
               tokens =
-                Ok
-                  {
-                    kind = LessEqual;
-                    lines = ctx.current_line;
-                    columns = ctx.current_column;
-                  }
-                :: ctx.tokens;
+                Array.append ctx.tokens
+                  [|
+                    Ok
+                      {
+                        kind = LessEqual;
+                        lines = ctx.current_line;
+                        columns = ctx.current_column;
+                      };
+                  |];
             }
       | (exception Invalid_argument _) | _ ->
           lex_r
@@ -526,13 +568,15 @@ let rec lex_r ctx =
               current_column = ctx.current_column + 1;
               current_pos = ctx.current_pos + 1;
               tokens =
-                Ok
-                  {
-                    kind = Less;
-                    lines = ctx.current_line;
-                    columns = ctx.current_column;
-                  }
-                :: ctx.tokens;
+                Array.append ctx.tokens
+                  [|
+                    Ok
+                      {
+                        kind = Less;
+                        lines = ctx.current_line;
+                        columns = ctx.current_column;
+                      };
+                  |];
             } )
   | '>' -> (
       match ctx.source.[ctx.current_pos + 1] with
@@ -543,13 +587,15 @@ let rec lex_r ctx =
               current_column = ctx.current_column + 2;
               current_pos = ctx.current_pos + 2;
               tokens =
-                Ok
-                  {
-                    kind = GreaterEqual;
-                    lines = ctx.current_line;
-                    columns = ctx.current_column;
-                  }
-                :: ctx.tokens;
+                Array.append ctx.tokens
+                  [|
+                    Ok
+                      {
+                        kind = GreaterEqual;
+                        lines = ctx.current_line;
+                        columns = ctx.current_column;
+                      };
+                  |];
             }
       | (exception Invalid_argument _) | _ ->
           lex_r
@@ -558,13 +604,15 @@ let rec lex_r ctx =
               current_column = ctx.current_column + 1;
               current_pos = ctx.current_pos + 1;
               tokens =
-                Ok
-                  {
-                    kind = Greater;
-                    lines = ctx.current_line;
-                    columns = ctx.current_column;
-                  }
-                :: ctx.tokens;
+                Array.append ctx.tokens
+                  [|
+                    Ok
+                      {
+                        kind = Greater;
+                        lines = ctx.current_line;
+                        columns = ctx.current_column;
+                      };
+                  |];
             } )
   | ' ' | '\t' | '\r' ->
       lex_r
@@ -594,7 +642,7 @@ let rec lex_r ctx =
           ctx with
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
-          tokens = err :: ctx.tokens;
+          tokens = Array.append ctx.tokens [| err |];
         }
 
 let lex s =
@@ -604,9 +652,9 @@ let lex s =
       current_line = 1;
       current_column = 1;
       current_pos = 0;
-      tokens = [];
+      tokens = [||];
     }
-  |> Result.combine_errors
+  |> Array.to_list |> Result.combine_errors
 
 let token_to_string = function
   | CurlyBraceLeft -> "{"
