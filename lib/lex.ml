@@ -87,21 +87,23 @@ let lex_string ctx =
         }
     | _ -> failwith "Wrong call to lex_string"
   in
-  let rec lex_string_rec len ctx =
+  let start_ctx = ctx in
+  let rec lex_string_rec ctx =
     match ctx.source.[ctx.current_pos] with
     | exception Invalid_argument _ ->
         {
           ctx with
-          current_column = ctx.current_column + len;
-          current_pos = ctx.current_pos + len;
           tokens =
             Result.failf
               "Missing closing quote, no more tokens for string: `%s`"
-              (String.sub ~pos:ctx.current_pos ~len ctx.source |> String.rstrip)
+              ( String.sub ~pos:start_ctx.current_pos
+                  ~len:(ctx.current_pos - start_ctx.current_pos)
+                  ctx.source
+              |> String.rstrip )
             :: ctx.tokens;
         }
     | '\n' ->
-        lex_string_rec (len + 1)
+        lex_string_rec
           {
             ctx with
             current_line = ctx.current_line + 1;
@@ -111,21 +113,31 @@ let lex_string ctx =
     | '"' ->
         {
           ctx with
-          current_column = ctx.current_column + len + 1;
-          current_pos = ctx.current_pos + len + 1;
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
           tokens =
             Ok
               {
-                kind = String (String.sub ~pos:ctx.current_pos ~len ctx.source);
+                kind =
+                  String
+                    (String.sub ~pos:start_ctx.current_pos
+                       ~len:(ctx.current_pos - start_ctx.current_pos)
+                       ctx.source);
                 lines = ctx.current_line;
                 columns = ctx.current_column;
               }
             :: ctx.tokens;
         }
-    | _ -> lex_string_rec (len + 1) ctx
+    | _ ->
+        lex_string_rec
+          {
+            ctx with
+            current_pos = ctx.current_pos + 1;
+            current_column = ctx.current_column;
+          }
   in
 
-  lex_string_rec 0 ctx
+  lex_string_rec ctx
 
 let lex_num ctx =
   let rec many_digits ctx =
@@ -157,9 +169,7 @@ let lex_num ctx =
         Ok
           {
             kind =
-              Number
-                ( String.sub ctx.source ~pos:ctx.current_pos ~len
-                |> Float.of_string );
+              Number (String.sub ctx.source ~pos:start ~len |> Float.of_string);
             lines = ctx.current_line;
             columns = ctx.current_column;
           }
@@ -176,9 +186,7 @@ let lex_num ctx =
         Ok
           {
             kind =
-              Number
-                ( String.sub ctx.source ~pos:ctx.current_pos ~len
-                |> Float.of_string );
+              Number (String.sub ctx.source ~pos:start ~len |> Float.of_string);
             lines = ctx.current_line;
             columns = ctx.current_column;
           }
@@ -194,12 +202,22 @@ let lex_identifier ctx =
   let rec zero_or_many_alphanum ctx =
     match ctx.source.[ctx.current_pos] with
     | 'a' .. 'z' | 'A' .. 'Z' | '_' ->
-        zero_or_many_alphanum { ctx with current_pos = ctx.current_pos + 1 }
+        zero_or_many_alphanum
+          {
+            ctx with
+            current_pos = ctx.current_pos + 1;
+            current_column = ctx.current_column + 1;
+          }
     | _ -> ctx
   in
   let one_alpha ctx =
     match ctx.source.[ctx.current_pos] with
-    | 'a' .. 'z' -> { ctx with current_pos = ctx.current_pos + 1 }
+    | 'a' .. 'z' ->
+        {
+          ctx with
+          current_pos = ctx.current_pos + 1;
+          current_column = ctx.current_column + 1;
+        }
     | _ -> ctx
   in
 
