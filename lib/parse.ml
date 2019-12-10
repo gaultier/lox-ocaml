@@ -440,7 +440,15 @@ and fn_decl_arguments args = function
   | _ as rest ->
       error "Function definition" "Expected argument list (e.g `(a, b)`)" rest
 
-and class_decl _ = assert false
+and class_decl = function
+  | { kind = Class; _ }
+    :: { kind = Identifier n; _ }
+       :: { kind = CurlyBraceLeft; _ } :: { kind = CurlyBraceRight; _ } :: rest
+    ->
+      Ok (Class (n, []), rest)
+  | rest ->
+      error "Class declaration"
+        "Expected valid class declaration, e.g (`class foo {}`)" rest
 
 and declaration d =
   match d with
