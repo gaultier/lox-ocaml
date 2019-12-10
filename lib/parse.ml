@@ -440,10 +440,13 @@ and fn_decl_arguments args = function
   | _ as rest ->
       error "Function definition" "Expected argument list (e.g `(a, b)`)" rest
 
+and class_decl _ = assert false
+
 and declaration d =
   match d with
   | { kind = Var; _ } :: _ -> (var_decl [@tailcall]) d
   | { kind = Fun; _ } :: _ -> (function_decl [@tailcall]) d
+  | { kind = Class; _ } :: _ -> class_decl d
   | _ -> (statement [@tailcall]) d
 
 and program decls = function
