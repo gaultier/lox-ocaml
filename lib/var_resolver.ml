@@ -67,6 +67,11 @@ let resolve_local id name ctx =
         ctx.vars;
   }
 
+let resolve_class id ctx =
+  (* Stack.push ctx.scopes (new_scope id); *)
+  (* Stack.pop_exn ctx.scopes |> ignore; *)
+  { ctx with resolution = Map.add_exn ctx.resolution ~key:id ~data:0 }
+
 let rec resolve_function ctx (args : Lex.token list) (stmts : statement list)
     fn_id =
   Stack.push ctx.scopes (new_scope fn_id);
@@ -118,7 +123,7 @@ and resolve_expr_ ctx = function
         ()
 
 and resolve_stmt_ ctx = function
-  | Class (n, _) -> ctx |> declare_var n |> define_var n
+  | Class (n, _, id) -> ctx |> declare_var n |> define_var n |> resolve_class id
   | Block (stmts, id) ->
       Stack.push ctx.scopes (new_scope id);
       let ctx = Array.fold ~f:resolve_stmt_ ~init:ctx stmts in

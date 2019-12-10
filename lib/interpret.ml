@@ -131,9 +131,10 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
 
 let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
   match s with
-  | Class (n, _) ->
-      create_in_current_env n (Class n) env;
-      Nil
+  | Class (n, _, id) ->
+      create_in_current_env n Nil env;
+      let c = VClass n in
+      Option.value_exn (assign_in_environment n id c var_resolution env)
   | Expr (e, _) -> eval_exp e var_resolution env
   | Print (e, _) ->
       let v = eval_exp e var_resolution env in

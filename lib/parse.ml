@@ -32,7 +32,7 @@ and value =
   | Nil
   | String of string
   | Callable of callable
-  | Class of string
+  | VClass of string
 [@@deriving sexp_of]
 
 let empty () : env_values_t = Hashtbl.create (module String)
@@ -73,7 +73,7 @@ type statement =
   | Var of token_kind * expr * id
   | Block of statement array * id
   | Function of token * token list * statement list * id
-  | Class of string * statement list
+  | Class of string * statement list * id
   | Return of token * expr * id
   | IfStmt of expr * statement * id
   | IfElseStmt of expr * statement * statement * id
@@ -449,7 +449,7 @@ and class_decl = function
   | { kind = Class; _ }
     :: { kind = Identifier n; _ } :: { kind = CurlyBraceLeft; _ } :: rest ->
       let%map methods, rest = methods_decl [] rest in
-      (Class (n, methods), rest)
+      (Class (n, methods, next_id ()), rest)
   | rest ->
       error "Class declaration"
         "Expected valid class declaration, e.g (`class foo {}`)" rest
@@ -481,4 +481,4 @@ let value_to_string = function
   | Bool false -> "false"
   | Nil -> "nil"
   | Callable { name = n; _ } -> "function@" ^ n
-  | Class n -> n
+  | VClass n -> n
