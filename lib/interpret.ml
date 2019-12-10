@@ -118,6 +118,13 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       let f =
         match e with
         | Callable f -> f
+        | VClass n ->
+            {
+              arity = 0;
+              name = n;
+              decl_environment = env;
+              fn = (fun _ _ -> Instance n);
+            }
         | _ ->
             Printf.failwithf "Value `%s` cannot be called as a function"
               (value_to_string e) ()

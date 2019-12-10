@@ -33,6 +33,7 @@ and value =
   | String of string
   | Callable of callable
   | VClass of string
+  | Instance of string
 [@@deriving sexp_of]
 
 let empty () : env_values_t = Hashtbl.create (module String)
@@ -482,3 +483,4 @@ let value_to_string = function
   | Nil -> "nil"
   | Callable { name = n; _ } -> "function@" ^ n
   | VClass n -> n
+  | Instance n -> "instance@" ^ n
