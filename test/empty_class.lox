@@ -1,1 +1,2 @@
-class foo {} // expect: 
+class foo {} 
+print foo;// expect: foo

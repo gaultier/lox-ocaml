@@ -32,6 +32,7 @@ and value =
   | Nil
   | String of string
   | Callable of callable
+  | Class of string
 [@@deriving sexp_of]
 
 let empty () : env_values_t = Hashtbl.create (module String)
@@ -480,3 +481,4 @@ let value_to_string = function
   | Bool false -> "false"
   | Nil -> "nil"
   | Callable { name = n; _ } -> "function@" ^ n
+  | Class n -> n
