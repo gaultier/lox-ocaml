@@ -212,7 +212,7 @@ let lex_identifier ctx =
             current_pos = ctx.current_pos + 1;
             current_column = ctx.current_column + 1;
           }
-    | _ -> ctx
+    | (exception Invalid_argument _) | _ -> ctx
   in
   let one_alpha ctx =
     match ctx.source.[ctx.current_pos] with
@@ -222,7 +222,7 @@ let lex_identifier ctx =
           current_pos = ctx.current_pos + 1;
           current_column = ctx.current_column + 1;
         }
-    | _ -> ctx
+    | (exception Invalid_argument _) | _ -> ctx
   in
 
   let start_ctx = ctx in
