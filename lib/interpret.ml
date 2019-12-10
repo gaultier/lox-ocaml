@@ -123,7 +123,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
               arity = 0;
               name = n;
               decl_environment = env;
-              fn = (fun _ _ -> Instance c);
+              fn = (fun _ _ -> Instance (c, empty ()));
             }
         | _ ->
             Printf.failwithf "Value `%s` cannot be called as a function"
