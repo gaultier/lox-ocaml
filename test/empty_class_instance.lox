@@ -1,0 +1,1 @@
+class foo { } print foo(); // expect: instance@foo
