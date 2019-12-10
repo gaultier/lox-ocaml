@@ -86,7 +86,7 @@ let rec sync acc = function
   (*     (acc, r) *)
   | ({ kind = SemiColon; _ } as t) :: (_ as r) -> (t :: acc, r)
   | [] -> (acc, [])
-  | x :: r -> (sync [@tailcall]) (x :: acc) r
+  | x :: r -> sync (x :: acc) r
 
 let error ctx expected rest =
   let lines, columns =
@@ -140,7 +140,7 @@ and fn_call_comma_arguments args = function
   | ({ kind = ParenRight; _ } as t) :: rest -> Ok (args, t, rest)
   | _ as rest ->
       let%bind arg, rest = fn_call_comma_argument rest in
-      (fn_call_comma_arguments [@tailcall]) (arg :: args) rest
+      fn_call_comma_arguments (arg :: args) rest
 
 and fn_call_arguments callee args = function
   | ({ kind = ParenRight; _ } as t) :: rest ->
@@ -161,7 +161,7 @@ and unary = function
   | { kind = Bang as t; _ } :: rest | { kind = Minus as t; _ } :: rest ->
       let%map right, rest = unary rest in
       (Unary (t, right, next_id ()), rest)
-  | _ as t -> (fn_call [@tailcall]) t
+  | _ as t -> fn_call t
 
 and multiplication tokens =
   let%bind left, rest = unary tokens in
@@ -199,7 +199,7 @@ and equality tokens =
       (Binary (left, t, right, next_id ()), rest)
   | _ -> Ok (left, rest)
 
-and expression tokens = (assignment [@tailcall]) tokens
+and expression tokens = assignment tokens
 
 and assignment = function
   | [] as rest -> error "Assignement" "Expected assignement (e.g `a = 1;`)" rest
@@ -424,7 +424,7 @@ and fn_decl_comma_arguments args = function
   | { kind = ParenRight; _ } :: rest -> Ok (args, rest)
   | _ as rest ->
       let%bind arg, rest = fn_decl_comma_argument rest in
-      (fn_decl_comma_arguments [@tailcall]) (arg :: args) rest
+      fn_decl_comma_arguments (arg :: args) rest
 
 and fn_decl_arguments args = function
   | { kind = ParenRight; _ } :: rest -> Ok (List.rev args, rest)
@@ -444,10 +444,10 @@ and class_decl _ = assert false
 
 and declaration d =
   match d with
-  | { kind = Var; _ } :: _ -> (var_decl [@tailcall]) d
-  | { kind = Fun; _ } :: _ -> (function_decl [@tailcall]) d
+  | { kind = Var; _ } :: _ -> var_decl d
+  | { kind = Fun; _ } :: _ -> function_decl d
   | { kind = Class; _ } :: _ -> class_decl d
-  | _ -> (statement [@tailcall]) d
+  | _ -> statement d
 
 and program decls = function
   | [] -> decls
@@ -458,7 +458,7 @@ and program decls = function
       in
       let ok_or_err = Result.map ~f:fst d |> Result.map_error ~f:fst in
       let decls = ok_or_err :: decls in
-      (program [@tailcall]) decls rest
+      program decls rest
 
 let parse tokens = program [] tokens |> List.rev |> Result.combine_errors
 
