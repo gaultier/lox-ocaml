@@ -72,6 +72,7 @@ type statement =
   | Var of token_kind * expr * id
   | Block of statement array * id
   | Function of token * token list * statement list * id
+  | Class of string * statement list
   | Return of token * expr * id
   | IfStmt of expr * statement * id
   | IfElseStmt of expr * statement * statement * id

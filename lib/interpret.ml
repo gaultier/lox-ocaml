@@ -131,6 +131,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
 
 let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
   match s with
+  | Class _ -> assert false
   | Expr (e, _) -> eval_exp e var_resolution env
   | Print (e, _) ->
       let v = eval_exp e var_resolution env in
