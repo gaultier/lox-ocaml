@@ -396,9 +396,7 @@ and var_decl = function
         "Expected variable declaration (e.g `var x = 1;`)" rest
 
 and function_decl = function
-  | { kind = Fun; _ }
-    :: ({ kind = Identifier _; _ } as name) :: { kind = ParenLeft; _ } :: rest
-    -> (
+  | ({ kind = Identifier _; _ } as name) :: { kind = ParenLeft; _ } :: rest -> (
       let%bind args, rest = fn_decl_arguments [] rest in
       let%bind block, rest = block_stmt rest in
       match block with
@@ -440,12 +438,17 @@ and fn_decl_arguments args = function
   | _ as rest ->
       error "Function definition" "Expected argument list (e.g `(a, b)`)" rest
 
+and methods_decl acc = function
+  | { kind = CurlyBraceRight; _ } :: rest -> Ok (List.rev acc, rest)
+  | rest ->
+      let%bind fn, rest = function_decl rest in
+      methods_decl (fn :: acc) rest
+
 and class_decl = function
   | { kind = Class; _ }
-    :: { kind = Identifier n; _ }
-       :: { kind = CurlyBraceLeft; _ } :: { kind = CurlyBraceRight; _ } :: rest
-    ->
-      Ok (Class (n, []), rest)
+    :: { kind = Identifier n; _ } :: { kind = CurlyBraceLeft; _ } :: rest ->
+      let%map methods, rest = methods_decl [] rest in
+      (Class (n, methods), rest)
   | rest ->
       error "Class declaration"
         "Expected valid class declaration, e.g (`class foo {}`)" rest
@@ -453,7 +456,7 @@ and class_decl = function
 and declaration d =
   match d with
   | { kind = Var; _ } :: _ -> var_decl d
-  | { kind = Fun; _ } :: _ -> function_decl d
+  | { kind = Fun; _ } :: rest -> function_decl rest
   | { kind = Class; _ } :: _ -> class_decl d
   | _ -> statement d
 
