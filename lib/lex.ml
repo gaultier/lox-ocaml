@@ -51,7 +51,6 @@ type ctx = {
   current_line : int;
   current_column : int;
   current_pos : int;
-  rest : char list;
   tokens : (token, string) Base.Result.t list;
 }
 
@@ -79,140 +78,179 @@ let keywords =
 
 let lex_string ctx =
   let ctx =
-    match ctx.rest with
-    | '"' :: rest ->
+    match ctx.source.[ctx.current_pos] with
+    | '"' ->
         {
           ctx with
-          rest;
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
         }
     | _ -> failwith "Wrong call to lex_string"
   in
-  let rec lex_string_rec len ctx =
-    match ctx.rest with
-    | [] ->
+  let start_ctx = ctx in
+  let rec lex_string_rec ctx =
+    match ctx.source.[ctx.current_pos] with
+    | exception Invalid_argument _ ->
         {
           ctx with
-          current_column = ctx.current_column + len;
-          current_pos = ctx.current_pos + len;
-          rest = [];
           tokens =
             Result.failf
               "Missing closing quote, no more tokens for string: `%s`"
-              (String.sub ~pos:ctx.current_pos ~len ctx.source |> String.rstrip)
+              ( String.sub ~pos:start_ctx.current_pos
+                  ~len:(ctx.current_pos - start_ctx.current_pos)
+                  ctx.source
+              |> String.rstrip )
             :: ctx.tokens;
         }
-    | '\n' :: rest ->
-        lex_string_rec (len + 1)
-          { ctx with current_line = ctx.current_line + 1; rest }
-    | '"' :: rest ->
+    | '\n' ->
+        lex_string_rec
+          {
+            ctx with
+            current_line = ctx.current_line + 1;
+            current_pos = ctx.current_pos + 1;
+            current_column = 1;
+          }
+    | '"' ->
         {
           ctx with
-          current_column = ctx.current_column + len + 1;
-          current_pos = ctx.current_pos + len + 1;
-          rest;
+          current_column = ctx.current_column + 1;
+          current_pos = ctx.current_pos + 1;
           tokens =
             Ok
               {
-                kind = String (String.sub ~pos:ctx.current_pos ~len ctx.source);
-                lines = ctx.current_line;
-                columns = ctx.current_column;
+                kind =
+                  String
+                    (String.sub ~pos:start_ctx.current_pos
+                       ~len:(ctx.current_pos - start_ctx.current_pos)
+                       ctx.source);
+                lines = start_ctx.current_line;
+                columns = start_ctx.current_column;
               }
             :: ctx.tokens;
         }
-    | _ :: rest -> lex_string_rec (len + 1) { ctx with rest }
+    | _ ->
+        lex_string_rec
+          {
+            ctx with
+            current_pos = ctx.current_pos + 1;
+            current_column = ctx.current_column + 1;
+          }
   in
 
-  lex_string_rec 0 ctx
+  lex_string_rec ctx
 
 let lex_num ctx =
-  let digits, rest = List.split_while ctx.rest ~f:Char.is_digit in
-  let len = List.length digits in
-  match rest with
-  | '.' :: ('0' .. '9' :: _ as rest) ->
-      let digits_after_dot, rest = List.split_while rest ~f:Char.is_digit in
-      let len = len + 1 + List.length digits_after_dot in
-      let t =
-        Ok
+  let rec many_digits ctx =
+    match ctx.source.[ctx.current_pos] with
+    | '0' .. '9' ->
+        many_digits
           {
-            kind =
-              Number
-                ( String.sub ctx.source ~pos:ctx.current_pos ~len
-                |> Float.of_string );
-            lines = ctx.current_line;
-            columns = ctx.current_column;
+            ctx with
+            current_pos = ctx.current_pos + 1;
+            current_column = ctx.current_column + 1;
           }
-      in
-      {
-        ctx with
-        current_column = ctx.current_column + len;
-        current_pos = ctx.current_pos + len;
-        tokens = t :: ctx.tokens;
-        rest;
-      }
-  | '.' :: (_ as rest) ->
-      let t =
-        Error
-          (Printf.sprintf "%d:%d:Trailing `.` in number not allowed: `%s`"
-             ctx.current_line (ctx.current_column + len)
-             (String.sub ctx.source ~pos:ctx.current_pos ~len:(len + 1)))
-      in
-      {
-        ctx with
-        current_column = ctx.current_column + len + 1;
-        current_pos = ctx.current_pos + len + 1;
-        tokens = t :: ctx.tokens;
-        rest;
-      }
+    | _ -> ctx
+  in
+
+  let start_ctx = ctx in
+  let ctx = many_digits ctx in
+  match ctx.source.[ctx.current_pos] with
+  | '.' -> (
+      match ctx.source.[ctx.current_pos + 1] with
+      | '0' .. '9' ->
+          let ctx =
+            {
+              ctx with
+              current_pos = ctx.current_pos + 1;
+              current_column = ctx.current_column + 1;
+            }
+          in
+          let ctx = many_digits ctx in
+          let len = ctx.current_pos - start_ctx.current_pos in
+          let t =
+            Ok
+              {
+                kind =
+                  Number
+                    ( String.sub ctx.source ~pos:start_ctx.current_pos ~len
+                    |> Float.of_string );
+                lines = start_ctx.current_line;
+                columns = start_ctx.current_column;
+              }
+          in
+          { ctx with tokens = t :: ctx.tokens }
+      | (exception Invalid_argument _) | _ ->
+          let t =
+            Result.failf "%d:%d:Trailing `.` in number not allowed: `%s`"
+              ctx.current_line ctx.current_column
+              (String.sub ctx.source ~pos:start_ctx.current_pos
+                 ~len:(ctx.current_pos + 1 - start_ctx.current_pos))
+          in
+          { ctx with tokens = t :: ctx.tokens } )
   | _ ->
+      let len = ctx.current_pos - start_ctx.current_pos in
       let t =
         Ok
           {
             kind =
               Number
-                ( String.sub ctx.source ~pos:ctx.current_pos ~len
+                ( String.sub ctx.source ~pos:start_ctx.current_pos ~len
                 |> Float.of_string );
-            lines = ctx.current_line;
-            columns = ctx.current_column;
+            lines = start_ctx.current_line;
+            columns = start_ctx.current_column;
           }
       in
-      {
-        ctx with
-        current_column = ctx.current_column + len;
-        current_pos = ctx.current_pos + len;
-        tokens = t :: ctx.tokens;
-        rest;
-      }
+      { ctx with tokens = t :: ctx.tokens }
 
 let lex_identifier ctx =
-  let identifier, rest =
-    List.split_while ctx.rest ~f:(fun c ->
-        Char.is_alphanum c || Char.equal c '_')
+  let rec zero_or_many_alphanum ctx =
+    match ctx.source.[ctx.current_pos] with
+    | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' ->
+        zero_or_many_alphanum
+          {
+            ctx with
+            current_pos = ctx.current_pos + 1;
+            current_column = ctx.current_column + 1;
+          }
+    | _ -> ctx
   in
-  let len = List.length identifier in
-  let s = String.sub ctx.source ~pos:ctx.current_pos ~len in
+  let one_alpha ctx =
+    match ctx.source.[ctx.current_pos] with
+    | 'a' .. 'z' | 'A' .. 'Z' ->
+        {
+          ctx with
+          current_pos = ctx.current_pos + 1;
+          current_column = ctx.current_column + 1;
+        }
+    | _ -> ctx
+  in
+
+  let start_ctx = ctx in
+  let ctx = one_alpha ctx |> zero_or_many_alphanum in
+  let len = ctx.current_pos - start_ctx.current_pos in
+  let s = String.sub ctx.source ~pos:start_ctx.current_pos ~len in
   let k = match Map.find keywords s with Some k -> k | _ -> Identifier s in
   {
     ctx with
-    current_column = ctx.current_column + len;
-    current_pos = ctx.current_pos + len;
     tokens =
-      Ok { kind = k; lines = ctx.current_line; columns = ctx.current_column }
+      Ok
+        {
+          kind = k;
+          lines = start_ctx.current_line;
+          columns = start_ctx.current_column;
+        }
       :: ctx.tokens;
-    rest;
   }
 
 let rec lex_r ctx =
-  match ctx.rest with
-  | [] | '\000' :: _ -> List.rev ctx.tokens
-  | '{' :: rest ->
+  match ctx.source.[ctx.current_pos] with
+  | exception Invalid_argument _ -> List.rev ctx.tokens
+  | '{' ->
       lex_r
         {
           ctx with
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
-          rest;
           tokens =
             Ok
               {
@@ -222,13 +260,12 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | '}' :: rest ->
+  | '}' ->
       lex_r
         {
           ctx with
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
-          rest;
           tokens =
             Ok
               {
@@ -238,13 +275,12 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | '(' :: rest ->
+  | '(' ->
       lex_r
         {
           ctx with
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
-          rest;
           tokens =
             Ok
               {
@@ -254,13 +290,12 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | ')' :: rest ->
+  | ')' ->
       lex_r
         {
           ctx with
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
-          rest;
           tokens =
             Ok
               {
@@ -270,13 +305,12 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | ',' :: rest ->
+  | ',' ->
       lex_r
         {
           ctx with
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
-          rest;
           tokens =
             Ok
               {
@@ -286,13 +320,12 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | '.' :: rest ->
+  | '.' ->
       lex_r
         {
           ctx with
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
-          rest;
           tokens =
             Ok
               {
@@ -302,13 +335,12 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | '-' :: rest ->
+  | '-' ->
       lex_r
         {
           ctx with
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
-          rest;
           tokens =
             Ok
               {
@@ -318,13 +350,12 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | '+' :: rest ->
+  | '+' ->
       lex_r
         {
           ctx with
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
-          rest;
           tokens =
             Ok
               {
@@ -334,13 +365,12 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | ';' :: rest ->
+  | ';' ->
       lex_r
         {
           ctx with
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
-          rest;
           tokens =
             Ok
               {
@@ -350,13 +380,12 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | '*' :: rest ->
+  | '*' ->
       lex_r
         {
           ctx with
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
-          rest;
           tokens =
             Ok
               {
@@ -366,183 +395,196 @@ let rec lex_r ctx =
               }
             :: ctx.tokens;
         }
-  | '/' :: '/' :: rest ->
-      let dropped, rest =
-        List.split_while rest ~f:(fun c -> not (Char.equal c '\n'))
-      in
-      let len = List.length dropped + 2 in
-      lex_r
-        {
-          ctx with
-          current_column = ctx.current_column + len;
-          current_pos = ctx.current_pos + len;
-          rest;
-        }
-  | '/' :: rest ->
+  | '/' -> (
+      match ctx.source.[ctx.current_pos + 1] with
+      | '/' ->
+          let ctx =
+            {
+              ctx with
+              current_pos = ctx.current_pos + 2;
+              current_column = ctx.current_column + 2;
+            }
+          in
+          let rec until_newline ctx =
+            match ctx.source.[ctx.current_pos] with
+            | '\n' | (exception Invalid_argument _) ->
+                {
+                  ctx with
+                  current_line = ctx.current_line + 1;
+                  current_column = 1;
+                  current_pos = ctx.current_pos + 1;
+                }
+            | _ ->
+                until_newline
+                  {
+                    ctx with
+                    current_pos = ctx.current_pos + 1;
+                    current_column = ctx.current_column + 1;
+                  }
+          in
+          until_newline ctx |> lex_r
+      | _ ->
+          lex_r
+            {
+              ctx with
+              current_column = ctx.current_column + 1;
+              current_pos = ctx.current_pos + 1;
+              tokens =
+                Ok
+                  {
+                    kind = Slash;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  }
+                :: ctx.tokens;
+            } )
+  | '!' -> (
+      match ctx.source.[ctx.current_pos + 1] with
+      | '=' ->
+          lex_r
+            {
+              ctx with
+              current_column = ctx.current_column + 2;
+              current_pos = ctx.current_pos + 2;
+              tokens =
+                Ok
+                  {
+                    kind = BangEqual;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  }
+                :: ctx.tokens;
+            }
+      | (exception Invalid_argument _) | _ ->
+          lex_r
+            {
+              ctx with
+              current_column = ctx.current_column + 2;
+              current_pos = ctx.current_pos + 1;
+              tokens =
+                Ok
+                  {
+                    kind = Bang;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  }
+                :: ctx.tokens;
+            } )
+  | '=' -> (
+      match ctx.source.[ctx.current_pos + 1] with
+      | '=' ->
+          lex_r
+            {
+              ctx with
+              current_column = ctx.current_column + 2;
+              current_pos = ctx.current_pos + 2;
+              tokens =
+                Ok
+                  {
+                    kind = EqualEqual;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  }
+                :: ctx.tokens;
+            }
+      | (exception Invalid_argument _) | _ ->
+          lex_r
+            {
+              ctx with
+              current_column = ctx.current_column + 1;
+              current_pos = ctx.current_pos + 1;
+              tokens =
+                Ok
+                  {
+                    kind = Equal;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  }
+                :: ctx.tokens;
+            } )
+  | '<' -> (
+      match ctx.source.[ctx.current_pos + 1] with
+      | '=' ->
+          lex_r
+            {
+              ctx with
+              current_column = ctx.current_column + 2;
+              current_pos = ctx.current_pos + 2;
+              tokens =
+                Ok
+                  {
+                    kind = LessEqual;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  }
+                :: ctx.tokens;
+            }
+      | (exception Invalid_argument _) | _ ->
+          lex_r
+            {
+              ctx with
+              current_column = ctx.current_column + 1;
+              current_pos = ctx.current_pos + 1;
+              tokens =
+                Ok
+                  {
+                    kind = Less;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  }
+                :: ctx.tokens;
+            } )
+  | '>' -> (
+      match ctx.source.[ctx.current_pos + 1] with
+      | '=' ->
+          lex_r
+            {
+              ctx with
+              current_column = ctx.current_column + 2;
+              current_pos = ctx.current_pos + 2;
+              tokens =
+                Ok
+                  {
+                    kind = GreaterEqual;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  }
+                :: ctx.tokens;
+            }
+      | (exception Invalid_argument _) | _ ->
+          lex_r
+            {
+              ctx with
+              current_column = ctx.current_column + 1;
+              current_pos = ctx.current_pos + 1;
+              tokens =
+                Ok
+                  {
+                    kind = Greater;
+                    lines = ctx.current_line;
+                    columns = ctx.current_column;
+                  }
+                :: ctx.tokens;
+            } )
+  | ' ' | '\t' | '\r' ->
       lex_r
         {
           ctx with
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
-          rest;
-          tokens =
-            Ok
-              {
-                kind = Slash;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
         }
-  | '!' :: '=' :: rest ->
-      lex_r
-        {
-          ctx with
-          current_column = ctx.current_column + 2;
-          current_pos = ctx.current_pos + 2;
-          rest;
-          tokens =
-            Ok
-              {
-                kind = BangEqual;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
-        }
-  | '!' :: rest ->
-      lex_r
-        {
-          ctx with
-          current_column = ctx.current_column + 2;
-          current_pos = ctx.current_pos + 1;
-          rest;
-          tokens =
-            Ok
-              {
-                kind = Bang;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
-        }
-  | '=' :: '=' :: rest ->
-      lex_r
-        {
-          ctx with
-          current_column = ctx.current_column + 2;
-          current_pos = ctx.current_pos + 2;
-          rest;
-          tokens =
-            Ok
-              {
-                kind = EqualEqual;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
-        }
-  | '=' :: rest ->
-      lex_r
-        {
-          ctx with
-          current_column = ctx.current_column + 1;
-          current_pos = ctx.current_pos + 1;
-          rest;
-          tokens =
-            Ok
-              {
-                kind = Equal;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
-        }
-  | '<' :: '=' :: rest ->
-      lex_r
-        {
-          ctx with
-          current_column = ctx.current_column + 2;
-          current_pos = ctx.current_pos + 2;
-          rest;
-          tokens =
-            Ok
-              {
-                kind = LessEqual;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
-        }
-  | '<' :: rest ->
-      lex_r
-        {
-          ctx with
-          current_column = ctx.current_column + 1;
-          current_pos = ctx.current_pos + 1;
-          rest;
-          tokens =
-            Ok
-              {
-                kind = Less;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
-        }
-  | '>' :: '=' :: rest ->
-      lex_r
-        {
-          ctx with
-          current_column = ctx.current_column + 2;
-          current_pos = ctx.current_pos + 2;
-          rest;
-          tokens =
-            Ok
-              {
-                kind = GreaterEqual;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
-        }
-  | '>' :: rest ->
-      lex_r
-        {
-          ctx with
-          current_column = ctx.current_column + 1;
-          current_pos = ctx.current_pos + 1;
-          rest;
-          tokens =
-            Ok
-              {
-                kind = Greater;
-                lines = ctx.current_line;
-                columns = ctx.current_column;
-              }
-            :: ctx.tokens;
-        }
-  | ' ' :: rest | '\t' :: rest | '\r' :: rest ->
-      lex_r
-        {
-          ctx with
-          current_column = ctx.current_column + 1;
-          current_pos = ctx.current_pos + 1;
-          rest;
-        }
-  | '\n' :: rest ->
+  | '\n' ->
       lex_r
         {
           ctx with
           current_line = ctx.current_line + 1;
           current_column = 1;
           current_pos = ctx.current_pos + 1;
-          rest;
         }
-  | '"' :: _ -> ctx |> lex_string |> lex_r
-  | '0' .. '9' :: _ -> ctx |> lex_num |> lex_r
-  | x :: _ when Char.is_alpha x -> ctx |> lex_identifier |> lex_r
-  | x :: rest ->
+  | '"' -> ctx |> lex_string |> lex_r
+  | '0' .. '9' -> ctx |> lex_num |> lex_r
+  | x when Char.is_alpha x -> ctx |> lex_identifier |> lex_r
+  | x ->
       let err =
         Result.failf "%d:%d:Unkown token: `%c`" ctx.current_line
           ctx.current_column x
@@ -552,7 +594,6 @@ let rec lex_r ctx =
           ctx with
           current_column = ctx.current_column + 1;
           current_pos = ctx.current_pos + 1;
-          rest;
           tokens = err :: ctx.tokens;
         }
 
@@ -563,7 +604,6 @@ let lex s =
       current_line = 1;
       current_column = 1;
       current_pos = 0;
-      rest = String.to_list s;
       tokens = [];
     }
   |> Result.combine_errors
