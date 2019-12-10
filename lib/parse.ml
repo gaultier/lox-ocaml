@@ -66,6 +66,7 @@ type expr =
   | LogicalOr of expr * expr * id
   | LogicalAnd of expr * expr * id
   | Call of expr * token * expr list * id
+  | Get of expr * string
 [@@deriving sexp_of]
 
 type statement =
@@ -130,6 +131,8 @@ let rec primary = function
 and fn_call tokens =
   let%bind expr, rest = primary tokens in
   match rest with
+  | { kind = Dot; _ } :: { kind = Identifier n; _ } :: rest ->
+      Ok (Get (expr, n), rest)
   | { kind = ParenLeft; _ } :: rest -> fn_call_arguments expr [] rest
   | _ -> Ok (expr, rest)
 
