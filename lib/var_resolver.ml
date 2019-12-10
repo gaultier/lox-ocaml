@@ -118,7 +118,7 @@ and resolve_expr_ ctx = function
         ()
 
 and resolve_stmt_ ctx = function
-  | Class _ -> assert false
+  | Class (n, _) -> ctx |> declare_var n |> define_var n
   | Block (stmts, id) ->
       Stack.push ctx.scopes (new_scope id);
       let ctx = Array.fold ~f:resolve_stmt_ ~init:ctx stmts in
