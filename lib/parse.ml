@@ -236,8 +236,6 @@ and logic_and tokens =
   | { kind = And; _ } :: rest ->
       let%map r, rest = logic_and rest in
       (LogicalAnd (l, r, next_id ()), rest)
-  (* | [] -> *)
-  (*     error "Logical and expression" "Expected and (e.g `true and false`)" rest *)
   | _ -> Ok (l, rest)
 
 and logic_or tokens =
@@ -246,7 +244,6 @@ and logic_or tokens =
   | { kind = Or; _ } :: rest ->
       let%map r, rest = logic_or rest in
       (LogicalOr (l, r, next_id ()), rest)
-  (* | [] -> error "Logical or expression" "Expected or (e.g `true or false`)" rest *)
   | _ -> Ok (l, rest)
 
 and expression_stmt = function
