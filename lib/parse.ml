@@ -131,11 +131,11 @@ let rec primary = function
 and fn_call tokens =
   let%bind prim, rest = primary tokens in
 
-  let fn_call_rec acc rest =
+  let rec fn_call_rec acc rest =
     match rest with
     | { kind = Dot; _ } :: { kind = Identifier n; _ } :: rest ->
-        (* let%bind e, rest = fn_call_rec rest in *)
-        Ok (Get (acc, n), rest)
+        let acc = Get (acc, n) in
+        fn_call_rec acc rest
     | { kind = Dot; _ } :: rest ->
         error "Property access" "Expected valid property acces (e.g `foo.bar`)"
           rest
