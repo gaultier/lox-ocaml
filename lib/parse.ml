@@ -129,12 +129,20 @@ let rec primary = function
       error "Primary" "Expected primary (e.g `1` or `(true)` or \"hello\")" rest
 
 and fn_call tokens =
-  let%bind expr, rest = primary tokens in
-  match rest with
-  | { kind = Dot; _ } :: { kind = Identifier n; _ } :: rest ->
-      Ok (Get (expr, n), rest)
-  | { kind = ParenLeft; _ } :: rest -> fn_call_arguments expr [] rest
-  | _ -> Ok (expr, rest)
+  let%bind prim, rest = primary tokens in
+
+  let fn_call_rec acc rest =
+    match rest with
+    | { kind = Dot; _ } :: { kind = Identifier n; _ } :: rest ->
+        (* let%bind e, rest = fn_call_rec rest in *)
+        Ok (Get (acc, n), rest)
+    | { kind = Dot; _ } :: rest ->
+        error "Property access" "Expected valid property acces (e.g `foo.bar`)"
+          rest
+    | { kind = ParenLeft; _ } :: rest -> fn_call_arguments acc [] rest
+    | _ -> Ok (acc, rest)
+  in
+  fn_call_rec prim rest
 
 and fn_call_comma_argument = function
   | { kind = Comma; _ } :: rest -> expression rest
