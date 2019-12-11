@@ -137,9 +137,11 @@ and fn_call tokens =
         let acc = Get (acc, n) in
         fn_call_rec acc rest
     | { kind = Dot; _ } :: rest ->
-        error "Property access" "Expected valid property acces (e.g `foo.bar`)"
+        error "Property access" "Expected valid property access (e.g `foo.bar`)"
           rest
-    | { kind = ParenLeft; _ } :: rest -> fn_call_arguments acc [] rest
+    | { kind = ParenLeft; _ } :: rest ->
+        let%bind acc, rest = fn_call_arguments acc [] rest in
+        fn_call_rec acc rest
     | _ -> Ok (acc, rest)
   in
   fn_call_rec prim rest
