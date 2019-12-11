@@ -224,9 +224,11 @@ and assignment = function
       match rest with
       | { kind = Equal; _ } :: rest -> (
           let%bind a, rest = assignment rest in
-          match e with
-          | Variable (v, _) -> Ok (Assign (v, a, next_id ()), rest)
-          | _ -> error "Assignement" "Expected valid assignment target" t )
+          match (e, a) with
+          | Variable (v, _), _ -> Ok (Assign (v, a, next_id ()), rest)
+          | Get (e, n), _ -> Ok (Set (e, n, a), rest)
+          | _ -> Stdlib.Printf.printf "a=%s e=%s t=%s" (a |> sexp_of_expr |> Sexp.to_string_hum)(e |> sexp_of_expr |> Sexp.to_string_hum)(t |> sexp_of_tokens |> Sexp.to_string_hum);
+          error "Assignement" "Expected valid assignment target" t )
       | _ -> Ok (e, rest) )
 
 and logic_and tokens =
@@ -235,8 +237,8 @@ and logic_and tokens =
   | { kind = And; _ } :: rest ->
       let%map r, rest = logic_and rest in
       (LogicalAnd (l, r, next_id ()), rest)
-  | [] ->
-      error "Logical and expression" "Expected and (e.g `true and false`)" rest
+  (* | [] -> *)
+  (*     error "Logical and expression" "Expected and (e.g `true and false`)" rest *)
   | _ -> Ok (l, rest)
 
 and logic_or tokens =
@@ -245,7 +247,7 @@ and logic_or tokens =
   | { kind = Or; _ } :: rest ->
       let%map r, rest = logic_or rest in
       (LogicalOr (l, r, next_id ()), rest)
-  | [] -> error "Logical or expression" "Expected or (e.g `true or false`)" rest
+  (* | [] -> error "Logical or expression" "Expected or (e.g `true or false`)" rest *)
   | _ -> Ok (l, rest)
 
 and expression_stmt = function
