@@ -227,8 +227,7 @@ and assignment = function
           match (e, a) with
           | Variable (v, _), _ -> Ok (Assign (v, a, next_id ()), rest)
           | Get (e, n), _ -> Ok (Set (e, n, a), rest)
-          | _ -> Stdlib.Printf.printf "a=%s e=%s t=%s" (a |> sexp_of_expr |> Sexp.to_string_hum)(e |> sexp_of_expr |> Sexp.to_string_hum)(t |> sexp_of_tokens |> Sexp.to_string_hum);
-          error "Assignement" "Expected valid assignment target" t )
+          | _ -> error "Assignement" "Expected valid assignment target" t )
       | _ -> Ok (e, rest) )
 
 and logic_and tokens =
