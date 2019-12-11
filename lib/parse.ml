@@ -67,6 +67,7 @@ type expr =
   | LogicalAnd of expr * expr * id
   | Call of expr * token * expr list * id
   | Get of expr * string
+  | Set of expr * string * expr
 [@@deriving sexp_of]
 
 type statement =

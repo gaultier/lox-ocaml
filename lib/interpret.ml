@@ -36,6 +36,7 @@ let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
 let rec eval_exp exp (var_resolution : Var_resolver.resolution)
     (env : environment) =
   match exp with
+  | Set _ -> assert false
   | Get (e, n) -> (
       match eval_exp e var_resolution env with
       | Instance (_, fields) -> Hashtbl.find_exn fields n
