@@ -160,9 +160,9 @@ let lex_string ctx =
 
 let lex_num ctx =
   let rec many_digits ctx =
-    match ctx.source.[ctx.current_pos] with
-    | '0' .. '9' -> many_digits (advance ctx)
-    | (exception Invalid_argument _) | _ -> ctx
+    match peek ctx.source ctx.current_pos with
+    | Some '0' .. '9' -> many_digits (advance ctx)
+    | _ -> ctx
   in
 
   let start_ctx = ctx in
@@ -171,7 +171,7 @@ let lex_num ctx =
     match
       (peek ctx.source ctx.current_pos, peek ctx.source (ctx.current_pos + 1))
     with
-    | Some '.', Some d when Char.is_digit d -> ctx |> advance |> many_digits
+    | Some '.', Some '0' .. '9' -> ctx |> advance |> many_digits
     | _ -> ctx
   in
   let len = ctx.current_pos - start_ctx.current_pos in
