@@ -87,7 +87,7 @@ let advance ctx =
 let lex_string ctx =
   let ctx =
     match ctx.source.[ctx.pos] with
-    | '"' -> { ctx with column = ctx.column + 1; pos = ctx.pos + 1 }
+    | '"' -> advance ctx
     | _ -> failwith "Wrong call to lex_string"
   in
   let start_ctx = ctx in
