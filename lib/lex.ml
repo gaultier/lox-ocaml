@@ -78,22 +78,32 @@ let keywords =
 
 let peek s i = if i < String.length s then Some s.[i] else None
 
-let advance ctx =
+let next ctx =
   match peek ctx.source ctx.pos with
-  | Some '\n' -> { ctx with pos = ctx.pos + 1; line = ctx.line + 1; column = 0 }
-  | Some _ -> { ctx with pos = ctx.pos + 1; column = ctx.column + 1 }
-  | None -> ctx
+  | Some '\n' as c ->
+      (c, { ctx with pos = ctx.pos + 1; line = ctx.line + 1; column = 0 })
+  | Some _ as c -> (c, { ctx with pos = ctx.pos + 1; column = ctx.column + 1 })
+  | None -> (None, ctx)
+
+let expect ctx expected =
+  let c, ctx = next ctx in
+  match c with
+  | Some c when Char.equal expected c -> ctx
+  | Some c ->
+      Printf.failwithf "Expected character `%c`, got: `%c`" expected c ()
+  | None ->
+      Printf.failwithf "Expected character `%c`, got: no more tokens" expected
+        ()
+
+(* let previous ctx = Option.value_exn (peek ctx.source ctx.pos) *)
 
 let lex_string ctx =
-  let ctx =
-    match ctx.source.[ctx.pos] with
-    | '"' -> advance ctx
-    | _ -> failwith "Wrong call to lex_string"
-  in
+  let ctx = expect ctx '"' in
   let start_ctx = ctx in
   let rec lex_string_rec ctx =
-    match ctx.source.[ctx.pos] with
-    | exception Invalid_argument _ ->
+    let c, ctx = next ctx in
+    match c with
+    | None ->
         {
           ctx with
           tokens =
@@ -104,28 +114,20 @@ let lex_string ctx =
               |> String.rstrip )
             :: ctx.tokens;
         }
-    | '\n' ->
-        lex_string_rec
-          { ctx with line = ctx.line + 1; pos = ctx.pos + 1; column = 1 }
-    | '"' ->
-        {
-          ctx with
-          column = ctx.column + 1;
-          pos = ctx.pos + 1;
-          tokens =
-            Ok
-              {
-                kind =
-                  String
-                    (String.sub ~pos:start_ctx.pos
-                       ~len:(ctx.pos - start_ctx.pos) ctx.source);
-                lines = start_ctx.line;
-                columns = start_ctx.column;
-              }
-            :: ctx.tokens;
-        }
-    | _ ->
-        lex_string_rec { ctx with pos = ctx.pos + 1; column = ctx.column + 1 }
+    | Some '"' ->
+        let t =
+          {
+            kind =
+              String
+                (String.sub ~pos:start_ctx.pos
+                   ~len:(ctx.pos - start_ctx.pos - 1)
+                   ctx.source);
+            lines = start_ctx.line;
+            columns = start_ctx.column;
+          }
+        in
+        { ctx with tokens = Ok t :: ctx.tokens }
+    | _ -> lex_string_rec ctx
   in
 
   lex_string_rec ctx
@@ -133,7 +135,9 @@ let lex_string ctx =
 let lex_num ctx =
   let rec many_digits ctx =
     match peek ctx.source ctx.pos with
-    | Some '0' .. '9' -> many_digits (advance ctx)
+    | Some '0' .. '9' ->
+        let _, ctx = next ctx in
+        many_digits ctx
     | _ -> ctx
   in
 
@@ -141,7 +145,9 @@ let lex_num ctx =
   let ctx = many_digits ctx in
   let ctx =
     match (peek ctx.source ctx.pos, peek ctx.source (ctx.pos + 1)) with
-    | Some '.', Some '0' .. '9' -> ctx |> advance |> many_digits
+    | Some '.', Some '0' .. '9' ->
+        let _, ctx = next ctx in
+        many_digits ctx
     | _ -> ctx
   in
   let len = ctx.pos - start_ctx.pos in
