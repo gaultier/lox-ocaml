@@ -93,7 +93,7 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list)
 
 and resolve_expr_ ctx = function
   | Get (e, _) -> resolve_expr_ ctx e
-  | Set _ -> assert false
+  | Set (lhs, _, rhs) -> ctx |> resolve_expr rhs |> resolve_expr lhs
   | Assign (Lex.Identifier n, expr, id) ->
       ctx |> resolve_expr expr |> resolve_local id n
       |> opt_value ~error:(Printf.sprintf "Assigning unbound variable %s" n)

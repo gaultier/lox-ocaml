@@ -36,7 +36,18 @@ let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
 let rec eval_exp exp (var_resolution : Var_resolver.resolution)
     (env : environment) =
   match exp with
-  | Set _ -> assert false
+  | Set (lhs, n, rhs) -> (
+      let lhs = eval_exp lhs var_resolution env in
+      let rhs = eval_exp rhs var_resolution env in
+      match lhs with
+      | Instance (_, props) ->
+          Hashtbl.set ~key:n ~data:rhs props;
+          rhs
+      | _ ->
+          Printf.failwithf
+            "Only instances have properties than can be set. Got: %s"
+            (lhs |> sexp_of_value |> Sexp.to_string_hum)
+            () )
   | Get (e, n) -> (
       match eval_exp e var_resolution env with
       | Instance (_, fields) -> Hashtbl.find_exn fields n
