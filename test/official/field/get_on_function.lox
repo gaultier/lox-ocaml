@@ -1,3 +1,3 @@
 fun foo() {}
 
-foo.bar; // expect: Only instances have properties that can be read. Got: foo
+foo.bar; // expect: Only instances have properties that can be read. Got: function@foo
