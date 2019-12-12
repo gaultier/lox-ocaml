@@ -1,1 +1,1 @@
-123.foo; // expect runtime error: Only instances have properties.
+123.foo; // expect: Only instances have properties that can be read. Got: 123.

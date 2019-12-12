@@ -1,2 +1,2 @@
-// expect: 2:4:Trailing `.` in number not allowed: `123.`
+// expect: 2:5:Context: Property access. Expected valid property access (e.g `foo.bar`). Got: ` ;`.
 123.;
