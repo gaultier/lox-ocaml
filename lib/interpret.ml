@@ -50,7 +50,12 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
             () )
   | Get (e, n) -> (
       match eval_exp e var_resolution env with
-      | Instance (_, fields) -> Hashtbl.find_exn fields n
+      | Instance (VClass c, fields) ->
+          Hashtbl.find fields n
+          |> Var_resolver.opt_value
+               ~error:
+                 (Printf.sprintf
+                    "Accessing unbound property %s on instance of class %s" n c)
       | other ->
           Printf.failwithf "Only instances have properties. Got: %s"
             (other |> sexp_of_value |> Sexp.to_string_hum)
