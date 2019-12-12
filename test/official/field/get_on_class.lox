@@ -1,2 +1,2 @@
 class Foo {}
-Foo.bar; // expect runtime error: Only instances have properties.
+Foo.bar; // expect: Only instances have properties that can be read. Got: Foo

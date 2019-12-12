@@ -56,7 +56,8 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
                  (Printf.sprintf
                     "Accessing unbound property %s on instance of class %s" n c)
       | other ->
-          Printf.failwithf "Only instances have properties. Got: %s"
+          Printf.failwithf
+            "Only instances have properties that can be read. Got: %s"
             (value_to_string other) () )
   | Grouping (e, _) -> eval_exp e var_resolution env
   | Unary (t, e, _) as u -> (
