@@ -171,9 +171,7 @@ let lex_num ctx =
     match
       (peek ctx.source ctx.current_pos, peek ctx.source (ctx.current_pos + 1))
     with
-    | Some '.', Some d when Char.is_digit d ->
-        let ctx = advance ctx in
-        many_digits ctx
+    | Some '.', Some d when Char.is_digit d -> ctx |> advance |> many_digits
     | _ -> ctx
   in
   let len = ctx.current_pos - start_ctx.current_pos in
