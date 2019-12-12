@@ -76,6 +76,25 @@ let keywords =
       ("while", While);
     ]
 
+let peek s i = if i < String.length s then Some s.[i] else None
+
+let advance ctx =
+  match peek ctx.source ctx.current_pos with
+  | Some '\n' ->
+      {
+        ctx with
+        current_pos = ctx.current_pos + 1;
+        current_line = ctx.current_line + 1;
+        current_column = 0;
+      }
+  | Some _ ->
+      {
+        ctx with
+        current_pos = ctx.current_pos + 1;
+        current_column = ctx.current_column + 1;
+      }
+  | None -> ctx
+
 let lex_string ctx =
   let ctx =
     match ctx.source.[ctx.current_pos] with
@@ -142,65 +161,34 @@ let lex_string ctx =
 let lex_num ctx =
   let rec many_digits ctx =
     match ctx.source.[ctx.current_pos] with
-    | '0' .. '9' ->
-        many_digits
-          {
-            ctx with
-            current_pos = ctx.current_pos + 1;
-            current_column = ctx.current_column + 1;
-          }
+    | '0' .. '9' -> many_digits (advance ctx)
     | (exception Invalid_argument _) | _ -> ctx
   in
 
   let start_ctx = ctx in
   let ctx = many_digits ctx in
-  match ctx.source.[ctx.current_pos] with
-  | '.' -> (
-      match ctx.source.[ctx.current_pos + 1] with
-      | '0' .. '9' ->
-          let ctx =
-            {
-              ctx with
-              current_pos = ctx.current_pos + 1;
-              current_column = ctx.current_column + 1;
-            }
-          in
-          let ctx = many_digits ctx in
-          let len = ctx.current_pos - start_ctx.current_pos in
-          let t =
-            Ok
-              {
-                kind =
-                  Number
-                    ( String.sub ctx.source ~pos:start_ctx.current_pos ~len
-                    |> Float.of_string );
-                lines = start_ctx.current_line;
-                columns = start_ctx.current_column;
-              }
-          in
-          { ctx with tokens = t :: ctx.tokens }
-      | (exception Invalid_argument _) | _ ->
-          let t =
-            Result.failf "%d:%d:Trailing `.` in number not allowed: `%s`"
-              ctx.current_line ctx.current_column
-              (String.sub ctx.source ~pos:start_ctx.current_pos
-                 ~len:(ctx.current_pos + 1 - start_ctx.current_pos))
-          in
-          { ctx with tokens = t :: ctx.tokens } )
-  | (exception Invalid_argument _) | _ ->
-      let len = ctx.current_pos - start_ctx.current_pos in
-      let t =
-        Ok
-          {
-            kind =
-              Number
-                ( String.sub ctx.source ~pos:start_ctx.current_pos ~len
-                |> Float.of_string );
-            lines = start_ctx.current_line;
-            columns = start_ctx.current_column;
-          }
-      in
-      { ctx with tokens = t :: ctx.tokens }
+  let ctx =
+    match
+      (peek ctx.source ctx.current_pos, peek ctx.source (ctx.current_pos + 1))
+    with
+    | Some '.', Some d when Char.is_digit d ->
+        let ctx = advance ctx in
+        many_digits ctx
+    | _ -> ctx
+  in
+  let len = ctx.current_pos - start_ctx.current_pos in
+  let t =
+    Ok
+      {
+        kind =
+          Number
+            ( String.sub ctx.source ~pos:start_ctx.current_pos ~len
+            |> Float.of_string );
+        lines = start_ctx.current_line;
+        columns = start_ctx.current_column;
+      }
+  in
+  { ctx with tokens = t :: ctx.tokens }
 
 let lex_identifier ctx =
   let rec zero_or_many_alphanum ctx =
