@@ -76,22 +76,18 @@ let keywords =
       ("while", While);
     ]
 
-let peek s i = if i < String.length s then Some s.[i] else None
-
 let next ctx =
-  match peek ctx.source ctx.pos with
-  | Some '\n' as c ->
+  match ctx.source.[ctx.pos] with
+  | '\n' as c ->
       (c, { ctx with pos = ctx.pos + 1; line = ctx.line + 1; column = 0 })
-  | Some _ as c -> (c, { ctx with pos = ctx.pos + 1; column = ctx.column + 1 })
-  | None -> (None, ctx)
+  | _ as c -> (c, { ctx with pos = ctx.pos + 1; column = ctx.column + 1 })
 
 let expect ctx expected =
   let c, ctx = next ctx in
   match c with
-  | Some c when Char.equal expected c -> ctx
-  | Some c ->
-      Printf.failwithf "Expected character `%c`, got: `%c`" expected c ()
-  | None ->
+  | c when Char.equal expected c -> ctx
+  | c -> Printf.failwithf "Expected character `%c`, got: `%c`" expected c ()
+  | exception Invalid_argument _ ->
       Printf.failwithf "Expected character `%c`, got: no more tokens" expected
         ()
 
@@ -101,9 +97,8 @@ let lex_string ctx =
   let ctx = expect ctx '"' in
   let start_ctx = ctx in
   let rec lex_string_rec ctx =
-    let c, ctx = next ctx in
-    match c with
-    | None ->
+    match next ctx with
+    | exception Invalid_argument _ ->
         {
           ctx with
           tokens =
@@ -114,7 +109,7 @@ let lex_string ctx =
               |> String.rstrip )
             :: ctx.tokens;
         }
-    | Some '"' ->
+    | '"', ctx ->
         let t =
           {
             kind =
@@ -127,28 +122,28 @@ let lex_string ctx =
           }
         in
         { ctx with tokens = Ok t :: ctx.tokens }
-    | _ -> lex_string_rec ctx
+    | _, ctx -> lex_string_rec ctx
   in
 
   lex_string_rec ctx
 
 let lex_num ctx =
   let rec many_digits ctx =
-    match peek ctx.source ctx.pos with
-    | Some '0' .. '9' ->
+    match ctx.source.[ctx.pos] with
+    | '0' .. '9' ->
         let _, ctx = next ctx in
         many_digits ctx
-    | _ -> ctx
+    | (exception Invalid_argument _) | _ -> ctx
   in
 
   let start_ctx = ctx in
   let ctx = many_digits ctx in
   let ctx =
-    match (peek ctx.source ctx.pos, peek ctx.source (ctx.pos + 1)) with
-    | Some '.', Some '0' .. '9' ->
+    match (ctx.source.[ctx.pos], ctx.source.[ctx.pos + 1]) with
+    | '.', '0' .. '9' ->
         let _, ctx = next ctx in
         many_digits ctx
-    | _ -> ctx
+    | (exception Invalid_argument _) | _ -> ctx
   in
   let len = ctx.pos - start_ctx.pos in
   let t =
