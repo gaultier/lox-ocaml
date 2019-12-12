@@ -83,10 +83,9 @@ let next ctx =
   | _ as c -> (c, { ctx with pos = ctx.pos + 1; column = ctx.column + 1 })
 
 let expect ctx expected =
-  let c, ctx = next ctx in
-  match c with
-  | c when Char.equal expected c -> ctx
-  | c -> Printf.failwithf "Expected character `%c`, got: `%c`" expected c ()
+  match next ctx with
+  | c, ctx when Char.equal expected c -> ctx
+  | c, _ -> Printf.failwithf "Expected character `%c`, got: `%c`" expected c ()
   | exception Invalid_argument _ ->
       Printf.failwithf "Expected character `%c`, got: no more tokens" expected
         ()
