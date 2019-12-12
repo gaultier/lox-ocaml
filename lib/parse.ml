@@ -15,14 +15,14 @@ type function_signature = value list -> environment -> value
 and callable = {
   arity : int;
   name : string;
-  mutable decl_environment : environment;
-  fn : function_signature;
+  mutable decl_environment : (environment[@sexp.ignore]);
+  fn : (function_signature[@sexp.ignore]);
 }
 
 and env_values_t = (string, value) Hashtbl.t
 
 and environment = {
-  values : (env_values_t[@ignore]);
+  values : (env_values_t[@sexp.ignore]);
   enclosing : environment option;
 }
 

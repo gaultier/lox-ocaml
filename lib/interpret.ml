@@ -46,8 +46,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       | _ ->
           Printf.failwithf
             "Only instances have properties that can be set. Got: %s"
-            (lhs |> sexp_of_value |> Sexp.to_string_hum)
-            () )
+            (value_to_string lhs) () )
   | Get (e, n) -> (
       match eval_exp e var_resolution env with
       | Instance (VClass c, fields) ->
@@ -58,8 +57,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
                     "Accessing unbound property %s on instance of class %s" n c)
       | other ->
           Printf.failwithf "Only instances have properties. Got: %s"
-            (other |> sexp_of_value |> Sexp.to_string_hum)
-            () )
+            (value_to_string other) () )
   | Grouping (e, _) -> eval_exp e var_resolution env
   | Unary (t, e, _) as u -> (
       let v = eval_exp e var_resolution env in

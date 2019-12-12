@@ -1,1 +1,1 @@
-"str".foo = "value"; // expect: Only instances have properties that can be set. Got: (String str)
+"str".foo = "value"; // expect: Only instances have properties that can be set. Got: str
