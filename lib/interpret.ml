@@ -45,7 +45,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
           rhs
       | _ ->
           Printf.failwithf
-            "Only instances have properties than can be set. Got: %s"
+            "Only instances have properties that can be set. Got: %s"
             (lhs |> sexp_of_value |> Sexp.to_string_hum)
             () )
   | Get (e, n) -> (
