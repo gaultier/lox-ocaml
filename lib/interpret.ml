@@ -51,7 +51,10 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
   | Get (e, n) -> (
       match eval_exp e var_resolution env with
       | Instance (_, fields) -> Hashtbl.find_exn fields n
-      | _ -> failwith "Only instance have properties" )
+      | other ->
+          Printf.failwithf "Only instances have properties. Got: %s"
+            (other |> sexp_of_value |> Sexp.to_string_hum)
+            () )
   | Grouping (e, _) -> eval_exp e var_resolution env
   | Unary (t, e, _) as u -> (
       let v = eval_exp e var_resolution env in
