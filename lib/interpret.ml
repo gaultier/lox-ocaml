@@ -161,8 +161,24 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
 
 let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
   match s with
-  | Class (n, _, id) ->
+  | Class (n, methods, id) ->
       create_in_current_env n Nil env;
+      let (_ : (string * value) list) =
+        List.map
+          ~f:(fun m ->
+            match m with
+            | Function ({ Lex.kind = Lex.Identifier n; _ }, args, _, _) ->
+                ( n,
+                  Callable
+                    {
+                      arity = List.length args;
+                      name = n;
+                      decl_environment = env;
+                      fn = (fun _ _ -> Nil);
+                    } )
+            | _ -> failwith "Malformed method")
+          methods
+      in
       let c = VClass n in
       Option.value_exn (assign_in_environment n id c var_resolution env)
   | Expr (e, _) -> eval_exp e var_resolution env
