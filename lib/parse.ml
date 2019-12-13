@@ -26,7 +26,7 @@ and environment = {
   enclosing : environment option;
 }
 
-and methods = (string, statement) Hashtbl.t
+and methods = (string, value) Hashtbl.t
 
 and value =
   | Bool of bool

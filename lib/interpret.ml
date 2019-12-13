@@ -49,12 +49,16 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
             (value_to_string lhs) () )
   | Get (e, n) -> (
       match eval_exp e var_resolution env with
-      | Instance (VClass (c, _), fields) ->
-          Hashtbl.find fields n
-          |> Var_resolver.opt_value
-               ~error:
-                 (Printf.sprintf
-                    "Accessing unbound property %s on instance of class %s" n c)
+      | Instance (VClass (c, methods), fields) -> (
+          match Hashtbl.find fields n with
+          | Some f -> f
+          | None -> (
+              match Hashtbl.find methods n with
+              | Some m -> m
+              | None ->
+                  Printf.failwithf
+                    "Accessing unbound property %s on instance of class %s" n c
+                    () ) )
       | other ->
           Printf.failwithf
             "Only instances have properties that can be read. Got: %s"
@@ -167,8 +171,36 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
         List.map
           ~f:(fun m ->
             match m with
-            | Function ({ Lex.kind = Lex.Identifier n; _ }, _, _, _) as f ->
-                (n, f)
+            | Function
+                ({ Lex.kind = Lex.Identifier name; _ }, decl_args, body, _) ->
+                let fn call_args (env : environment) =
+                  let enclosing = env in
+                  let env = { values = empty (); enclosing = Some enclosing } in
+                  List.iter2_exn
+                    ~f:(fun n v ->
+                      match n with
+                      | { Lex.kind = Identifier n; _ } ->
+                          create_in_current_env n v env
+                      | _ -> failwith "Invalid function argument")
+                    decl_args call_args;
+                  try
+                    List.iter
+                      ~f:(fun stmt -> eval stmt var_resolution env |> ignore)
+                      body;
+                    Nil
+                  with FunctionReturn v -> v
+                in
+                let call =
+                  {
+                    arity = List.length decl_args;
+                    name;
+                    decl_environment = env;
+                    fn;
+                  }
+                in
+                create_in_current_env name (Callable call) env;
+                call.decl_environment <- env;
+                (name, Callable call)
             | _ -> failwith "Malformed method")
           methods
         |> Hashtbl.of_alist_exn (module String)
