@@ -10,7 +10,7 @@ let next_id () =
   id := !id + 1;
   !id
 
-type function_signature = value list -> environment -> value
+type function_signature = (value list -> environment -> value[@sexp.ignore])
 
 and callable = {
   arity : int;
@@ -26,15 +26,46 @@ and environment = {
   enclosing : environment option;
 }
 
+and methods = (string, statement) Hashtbl.t
+
 and value =
   | Bool of bool
   | Number of float
   | Nil
   | String of string
   | Callable of callable
-  | VClass of string
+  | VClass of string * methods
   | Instance of value * env_values_t
 [@@deriving sexp_of]
+
+and expr =
+  | Binary of expr * token_kind * expr * id
+  | Grouping of expr * id
+  | Literal of value * id
+  | Unary of token_kind * expr * id
+  | Assign of token_kind * expr * id
+  | Variable of token_kind * id
+  | LogicalOr of expr * expr * id
+  | LogicalAnd of expr * expr * id
+  | Call of expr * token * expr list * id
+  | Get of expr * string
+  | Set of expr * string * expr
+[@@deriving sexp_of]
+
+and statement =
+  | Expr of expr * id
+  | Print of expr * id
+  | Var of token_kind * expr * id
+  | Block of statement array * id
+  | Function of token * token list * statement list * id
+  | Class of string * statement list * id
+  | Return of token * expr * id
+  | IfStmt of expr * statement * id
+  | IfElseStmt of expr * statement * statement * id
+  | WhileStmt of expr * statement * id
+[@@deriving sexp_of]
+
+and statements = statement list [@@deriving sexp_of]
 
 let empty () : env_values_t = Hashtbl.create (module String)
 
@@ -55,35 +86,6 @@ let globals : environment =
         ];
     enclosing = None;
   }
-
-type expr =
-  | Binary of expr * token_kind * expr * id
-  | Grouping of expr * id
-  | Literal of value * id
-  | Unary of token_kind * expr * id
-  | Assign of token_kind * expr * id
-  | Variable of token_kind * id
-  | LogicalOr of expr * expr * id
-  | LogicalAnd of expr * expr * id
-  | Call of expr * token * expr list * id
-  | Get of expr * string
-  | Set of expr * string * expr
-[@@deriving sexp_of]
-
-type statement =
-  | Expr of expr * id
-  | Print of expr * id
-  | Var of token_kind * expr * id
-  | Block of statement array * id
-  | Function of token * token list * statement list * id
-  | Class of string * statement list * id
-  | Return of token * expr * id
-  | IfStmt of expr * statement * id
-  | IfElseStmt of expr * statement * statement * id
-  | WhileStmt of expr * statement * id
-[@@deriving sexp_of]
-
-type statements = statement list [@@deriving sexp_of]
 
 let rec sync acc = function
   (* | For :: _ as r -> *)
@@ -494,6 +496,6 @@ let value_to_string = function
   | Bool false -> "false"
   | Nil -> "nil"
   | Callable { name = n; _ } -> "function@" ^ n
-  | VClass n -> n
-  | Instance (VClass n, _) -> "instance@" ^ n
+  | VClass (n, _) -> n
+  | Instance (VClass (n, _), _) -> "instance@" ^ n
   | Instance _ -> failwith "Malformed instance"
