@@ -33,6 +33,30 @@ let assign_in_environment (n : string) (id : id) v
 
 let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
 
+let eval_callable_of_function var_resolution env eval = function
+  | Function ({ Lex.kind = Lex.Identifier name; _ }, decl_args, body, _) ->
+      let fn call_args (env : environment) =
+        let enclosing = env in
+        let env = { values = empty (); enclosing = Some enclosing } in
+        List.iter2_exn
+          ~f:(fun n v ->
+            match n with
+            | { Lex.kind = Identifier n; _ } -> create_in_current_env n v env
+            | _ -> failwith "Invalid function argument")
+          decl_args call_args;
+        try
+          List.iter ~f:(fun stmt -> eval stmt var_resolution env |> ignore) body;
+          Nil
+        with FunctionReturn v -> v
+      in
+      let call =
+        { arity = List.length decl_args; name; decl_environment = env; fn }
+      in
+      create_in_current_env name (Callable call) env;
+      call.decl_environment <- env;
+      (name, Callable call)
+  | _ -> failwith "Malformed function"
+
 let rec eval_exp exp (var_resolution : Var_resolver.resolution)
     (env : environment) =
   match exp with
@@ -168,41 +192,7 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
   | Class (n, methods, id) ->
       create_in_current_env n Nil env;
       let methods =
-        List.map
-          ~f:(fun m ->
-            match m with
-            | Function
-                ({ Lex.kind = Lex.Identifier name; _ }, decl_args, body, _) ->
-                let fn call_args (env : environment) =
-                  let enclosing = env in
-                  let env = { values = empty (); enclosing = Some enclosing } in
-                  List.iter2_exn
-                    ~f:(fun n v ->
-                      match n with
-                      | { Lex.kind = Identifier n; _ } ->
-                          create_in_current_env n v env
-                      | _ -> failwith "Invalid function argument")
-                    decl_args call_args;
-                  try
-                    List.iter
-                      ~f:(fun stmt -> eval stmt var_resolution env |> ignore)
-                      body;
-                    Nil
-                  with FunctionReturn v -> v
-                in
-                let call =
-                  {
-                    arity = List.length decl_args;
-                    name;
-                    decl_environment = env;
-                    fn;
-                  }
-                in
-                create_in_current_env name (Callable call) env;
-                call.decl_environment <- env;
-                (name, Callable call)
-            | _ -> failwith "Malformed method")
-          methods
+        List.map ~f:(eval_callable_of_function var_resolution env eval) methods
         |> Hashtbl.of_alist_exn (module String)
       in
       let c = VClass (n, methods) in
@@ -228,31 +218,9 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
   | Return (_, expr, _) ->
       let v = eval_exp expr var_resolution env in
       raise (FunctionReturn v)
-  | Function ({ Lex.kind = Lex.Identifier name; _ }, decl_args, body, _) ->
-      let fn call_args (env : environment) =
-        let enclosing = env in
-        let env = { values = empty (); enclosing = Some enclosing } in
-        List.iter2_exn
-          ~f:(fun n v ->
-            match n with
-            | { Lex.kind = Identifier n; _ } -> create_in_current_env n v env
-            | _ -> failwith "Invalid function argument")
-          decl_args call_args;
-        try
-          List.iter ~f:(fun stmt -> eval stmt var_resolution env |> ignore) body;
-          Nil
-        with FunctionReturn v -> v
-      in
-      let call =
-        { arity = List.length decl_args; name; decl_environment = env; fn }
-      in
-      create_in_current_env name (Callable call) env;
-      call.decl_environment <- env;
-      Nil
   | Function _ as f ->
-      Printf.failwithf "Invalid function declaration: %s "
-        (f |> sexp_of_statement |> Sexp.to_string_hum)
-        ()
+      eval_callable_of_function var_resolution env eval f |> ignore;
+      Nil
   | IfElseStmt (e, then_stmt, else_stmt, _) -> (
       let e = eval_exp e var_resolution env in
       match e with
