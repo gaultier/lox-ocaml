@@ -2,6 +2,8 @@ open Parse
 open Base
 open Base.Option.Let_syntax
 
+type function_type = Function | Method
+
 type scope = { vars_status : (string, bool) Hashtbl.t; block_id : id }
 
 type scopes = scope Stack.t
@@ -17,7 +19,7 @@ type vars = var list
 type resolution_context = {
   scopes : scopes;
   resolution : resolution;
-  current_fn_type : unit option;
+  current_fn_type : function_type option;
   vars : vars;
 }
 
@@ -86,7 +88,7 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list)
               ())
       args
   in
-  let ctx = resolve_stmts { ctx with current_fn_type = Some () } stmts in
+  let ctx = resolve_stmts { ctx with current_fn_type = Some Function } stmts in
 
   Stack.pop_exn ctx.scopes |> ignore;
   ctx
@@ -125,7 +127,17 @@ and resolve_expr_ ctx = function
         ()
 
 and resolve_stmt_ ctx = function
-  | Class (n, _, id) -> ctx |> declare_var n |> define_var n |> resolve_class id
+  | Class (n, methods, id) ->
+      let ctx = ctx |> declare_var n |> define_var n |> resolve_class id in
+      List.fold ~init:ctx
+        ~f:(fun ctx m ->
+          match m with
+          | Function ({ Lex.kind = Lex.Identifier _; _ }, args, stmts, id) ->
+              resolve_function
+                { ctx with current_fn_type = Some Method }
+                args stmts id
+          | _ -> failwith "Malformed method")
+        methods
   | Block (stmts, id) ->
       Stack.push ctx.scopes (new_scope id);
       let ctx = Array.fold ~f:resolve_stmt_ ~init:ctx stmts in
