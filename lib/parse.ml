@@ -15,6 +15,7 @@ type function_signature = (value list -> environment -> value[@sexp.ignore])
 and callable = {
   arity : int;
   name : string;
+  is_ctor : bool;
   mutable decl_environment : (environment[@sexp.ignore]);
   fn : (function_signature[@sexp.ignore]);
 }
@@ -81,6 +82,7 @@ let globals : environment =
               {
                 arity = 0;
                 name = "clock";
+                is_ctor = false;
                 decl_environment = { values = empty (); enclosing = None };
                 fn = (fun _ _ -> Number (Unix.gettimeofday ()));
               } );

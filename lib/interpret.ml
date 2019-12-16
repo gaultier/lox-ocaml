@@ -54,7 +54,7 @@ let bind_fn env inst c =
 
 let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
 
-let eval_callable_of_function var_resolution env eval = function
+let eval_callable_of_function var_resolution env eval is_ctor = function
   | Function ({ Lex.kind = Lex.Identifier name; _ }, decl_args, body, _) ->
       let fn call_args (env : environment) =
         let enclosing = env in
@@ -71,7 +71,13 @@ let eval_callable_of_function var_resolution env eval = function
         with FunctionReturn v -> v
       in
       let call =
-        { arity = List.length decl_args; name; decl_environment = env; fn }
+        {
+          arity = List.length decl_args;
+          name;
+          is_ctor;
+          decl_environment = env;
+          fn;
+        }
       in
       create_in_current_env name (Callable call) env;
       call.decl_environment <- env;
@@ -205,6 +211,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
                 Option.map ~f:(fun ctor -> (fn_of_value ctor).arity) ctor
                 |> Option.value ~default:0;
               name = n;
+              is_ctor = Option.is_some ctor;
               decl_environment = env;
               fn = (fun _ _ -> Instance (c, empty ()));
             }
@@ -219,7 +226,11 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
   | Class (n, methods, id) ->
       create_in_current_env n Nil env;
       let methods =
-        List.map ~f:(eval_callable_of_function var_resolution env eval) methods
+        List.map
+          ~f:
+            (eval_callable_of_function var_resolution env eval
+               (String.equal n "this"))
+          methods
         |> Hashtbl.of_alist_exn (module String)
       in
       let c = VClass (n, methods) in
@@ -246,7 +257,7 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
       let v = eval_exp expr var_resolution env in
       raise (FunctionReturn v)
   | Function _ as f ->
-      eval_callable_of_function var_resolution env eval f |> ignore;
+      eval_callable_of_function var_resolution env eval false f |> ignore;
       Nil
   | IfElseStmt (e, then_stmt, else_stmt, _) -> (
       let e = eval_exp e var_resolution env in
