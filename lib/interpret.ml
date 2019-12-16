@@ -41,7 +41,7 @@ let call_fn var_resolution env eval_exp f args =
 
 let fn_of_value = function Callable fn -> fn | _ -> assert false
 
-let bind env inst c =
+let bind_fn env inst c =
   let enclosing = env in
   let env =
     {
@@ -102,7 +102,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
           | Some f -> f
           | None -> (
               match Hashtbl.find methods n with
-              | Some (Callable c) -> bind env inst c
+              | Some (Callable c) -> bind_fn env inst c
               | Some _ | None ->
                   Printf.failwithf
                     "Accessing unbound property %s on instance of class %s" n c
@@ -197,7 +197,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
             let ctor = Hashtbl.find methods "init" in
             ctor
             |> Option.iter ~f:(fun ctor ->
-                   let fn = fn_of_value ctor |> bind env c |> fn_of_value in
+                   let fn = fn_of_value ctor |> bind_fn env c |> fn_of_value in
                    call_fn var_resolution env eval_exp fn args |> ignore);
 
             {
