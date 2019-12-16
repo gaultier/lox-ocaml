@@ -219,7 +219,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
                      fn_of_value ctor |> bind_fn env c |> fn_of_value)
             in
             match ctor with
-            | Some f -> f
+            | Some f -> { f with is_ctor = true }
             | None ->
                 {
                   arity = 0;
