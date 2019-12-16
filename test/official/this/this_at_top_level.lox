@@ -1,0 +1,1 @@
+this; // expect: 1:1:Unbound `this` in this context
