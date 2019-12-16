@@ -37,7 +37,21 @@ let call_fn var_resolution env eval_exp f args =
   if not (Int.equal len f.arity) then
     Printf.failwithf "Wrong arity in function call: expected %d, got %d" f.arity
       len ();
-  f.fn args f.decl_environment
+  let ret = f.fn args f.decl_environment in
+  ret
+
+(* if f.is_ctor then ( *)
+(*   Stdlib.Printf.printf "n=%s decl_env=\n" f.name; *)
+(*   Stdlib.flush_all (); *)
+(*   print_env_values f.decl_environment.values |> ignore; *)
+(*   Stdlib.flush_all (); *)
+(*   Stdlib.Printf.printf "n=%s env=\n" f.name; *)
+(*   Stdlib.flush_all (); *)
+(*   print_env_values f.decl_environment.values |> ignore; *)
+(*   Stdlib.flush_all (); *)
+(*   Hashtbl.find f.decl_environment.values "this" *)
+(*   |> Var_resolver.opt_value ~error:"Unbound `this` in this context" ) *)
+(* else ret *)
 
 let fn_of_value = function Callable fn -> fn | _ -> assert false
 
@@ -74,7 +88,7 @@ let eval_callable_of_function var_resolution env eval is_ctor = function
         {
           arity = List.length decl_args;
           name;
-          is_ctor;
+          is_ctor = is_ctor name;
           decl_environment = env;
           fn;
         }
@@ -200,16 +214,14 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
         match e with
         | Callable f -> f
         | VClass (n, methods) as c ->
-            let ctor = Hashtbl.find methods "init" in
-            ctor
-            |> Option.iter ~f:(fun ctor ->
-                   let fn = fn_of_value ctor |> bind_fn env c |> fn_of_value in
-                   call_fn var_resolution env eval_exp fn args |> ignore);
-
+            let ctor =
+              Hashtbl.find methods "init"
+              |> Option.map ~f:(fun ctor ->
+                     fn_of_value ctor |> bind_fn env c |> fn_of_value)
+            in
             {
               arity =
-                Option.map ~f:(fun ctor -> (fn_of_value ctor).arity) ctor
-                |> Option.value ~default:0;
+                Option.map ~f:(fun f -> f.arity) ctor |> Option.value ~default:0;
               name = n;
               is_ctor = Option.is_some ctor;
               decl_environment = env;
@@ -229,7 +241,7 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
         List.map
           ~f:
             (eval_callable_of_function var_resolution env eval
-               (String.equal n "this"))
+               (String.equal "init"))
           methods
         |> Hashtbl.of_alist_exn (module String)
       in
@@ -257,7 +269,8 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
       let v = eval_exp expr var_resolution env in
       raise (FunctionReturn v)
   | Function _ as f ->
-      eval_callable_of_function var_resolution env eval false f |> ignore;
+      eval_callable_of_function var_resolution env eval (fun _ -> false) f
+      |> ignore;
       Nil
   | IfElseStmt (e, then_stmt, else_stmt, _) -> (
       let e = eval_exp e var_resolution env in
