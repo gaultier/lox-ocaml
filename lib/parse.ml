@@ -50,6 +50,7 @@ and expr =
   | Call of expr * token * expr list * id
   | Get of expr * string
   | Set of expr * string * expr
+  | This of token * id
 [@@deriving sexp_of]
 
 and statement =
@@ -126,6 +127,7 @@ let rec primary = function
       match rest with
       | { kind = ParenRight; _ } :: rest -> Ok (Grouping (e, next_id ()), rest)
       | _ as rest -> error "Primary" "Expected closing parenthesis `)`" rest )
+  | ({ kind = This; _ } as t) :: rest -> Ok (This (t, next_id ()), rest)
   | { kind = Identifier _ as i; _ } :: rest ->
       Ok (Variable (i, next_id ()), rest)
   | _ as rest ->

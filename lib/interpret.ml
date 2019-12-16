@@ -60,6 +60,7 @@ let eval_callable_of_function var_resolution env eval = function
 let rec eval_exp exp (var_resolution : Var_resolver.resolution)
     (env : environment) =
   match exp with
+  | This _ -> assert false
   | Set (lhs, n, rhs) -> (
       let lhs = eval_exp lhs var_resolution env in
       let rhs = eval_exp rhs var_resolution env in

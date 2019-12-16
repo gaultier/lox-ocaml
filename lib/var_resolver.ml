@@ -94,6 +94,9 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list)
   ctx
 
 and resolve_expr_ ctx = function
+  | This ({ lines; columns; _ }, id) ->
+      resolve_local id "this" ctx
+      |> opt_value ~error:(Printf.sprintf "%d:%d:Unbound `this`" lines columns)
   | Get (e, _) -> resolve_expr_ ctx e
   | Set (lhs, _, rhs) -> ctx |> resolve_expr lhs |> resolve_expr rhs
   | Assign (Lex.Identifier n, expr, id) ->
