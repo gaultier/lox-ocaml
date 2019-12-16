@@ -132,15 +132,23 @@ and resolve_expr_ ctx = function
 and resolve_stmt_ ctx = function
   | Class (n, methods, id) ->
       let ctx = ctx |> declare_var n |> define_var n |> resolve_class id in
-      List.fold ~init:ctx
-        ~f:(fun ctx m ->
-          match m with
-          | Function ({ Lex.kind = Lex.Identifier _; _ }, args, stmts, id) ->
-              resolve_function
-                { ctx with current_fn_type = Some Method }
-                args stmts id
-          | _ -> failwith "Malformed method")
-        methods
+      let scope = new_scope id in
+      Hashtbl.set ~key:"this" ~data:true scope.vars_status;
+      Stack.push ctx.scopes scope;
+
+      let ctx =
+        List.fold ~init:ctx
+          ~f:(fun ctx m ->
+            match m with
+            | Function ({ Lex.kind = Lex.Identifier _; _ }, args, stmts, id) ->
+                resolve_function
+                  { ctx with current_fn_type = Some Method }
+                  args stmts id
+            | _ -> failwith "Malformed method")
+          methods
+      in
+      Stack.pop ctx.scopes |> ignore;
+      ctx
   | Block (stmts, id) ->
       Stack.push ctx.scopes (new_scope id);
       let ctx = Array.fold ~f:resolve_stmt_ ~init:ctx stmts in
