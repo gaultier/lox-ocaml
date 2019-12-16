@@ -60,7 +60,9 @@ let eval_callable_of_function var_resolution env eval = function
 let rec eval_exp exp (var_resolution : Var_resolver.resolution)
     (env : environment) =
   match exp with
-  | This _ -> assert false
+  | This (_, id) ->
+      find_in_environment "this" id var_resolution env
+      |> Var_resolver.opt_value ~error:"Unbound this in this context"
   | Set (lhs, n, rhs) -> (
       let lhs = eval_exp lhs var_resolution env in
       let rhs = eval_exp rhs var_resolution env in
@@ -74,13 +76,23 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
             (value_to_string lhs) () )
   | Get (e, n) -> (
       match eval_exp e var_resolution env with
-      | Instance (VClass (c, methods), fields) -> (
+      | Instance (VClass (c, methods), fields) as inst -> (
           match Hashtbl.find fields n with
           | Some f -> f
           | None -> (
               match Hashtbl.find methods n with
-              | Some m -> m
-              | None ->
+              | Some (Callable c) ->
+                  let enclosing = env in
+                  let env =
+                    {
+                      values =
+                        Hashtbl.of_alist_exn (module String) [ ("this", inst) ];
+                      enclosing = Some enclosing;
+                    }
+                  in
+                  c.decl_environment <- env;
+                  Callable c
+              | Some _ | None ->
                   Printf.failwithf
                     "Accessing unbound property %s on instance of class %s" n c
                     () ) )
