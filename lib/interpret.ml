@@ -31,6 +31,16 @@ let assign_in_environment (n : string) (id : id) v
   Hashtbl.set ~key:n ~data:v env.values;
   v
 
+let call_fn var_resolution env eval_exp f args =
+  let args = List.map ~f:(fun a -> eval_exp a var_resolution env) args in
+  let len = List.length args in
+  if not (Int.equal len f.arity) then
+    Printf.failwithf "Wrong arity in function call: expected %d, got %d" f.arity
+      len ();
+  f.fn args f.decl_environment
+
+let fn_of_value = function Callable fn -> fn | _ -> assert false
+
 let bind env inst c =
   let enclosing = env in
   let env =
@@ -184,12 +194,10 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
         match e with
         | Callable f -> f
         | VClass (n, methods) as c ->
-            let _ =
-              Hashtbl.find methods "init"
-              |> Option.map ~f:(fun _ ->
-                     Stdlib.print_endline "found init method")
-              |> ignore
-            in
+            Hashtbl.find methods "init"
+            |> Option.iter ~f:(fun ctor ->
+                   let fn = fn_of_value ctor |> bind env c |> fn_of_value in
+                   call_fn var_resolution env eval_exp fn args |> ignore);
 
             {
               arity = 0;
@@ -201,12 +209,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
             Printf.failwithf "Value `%s` cannot be called as a function"
               (value_to_string e) ()
       in
-      let args = List.map ~f:(fun a -> eval_exp a var_resolution env) args in
-      let len = List.length args in
-      if not (Int.equal len f.arity) then
-        Printf.failwithf "Wrong arity in function call: expected %d, got %d"
-          f.arity len ();
-      f.fn args f.decl_environment
+      call_fn var_resolution env eval_exp f args
 
 let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
   match s with
