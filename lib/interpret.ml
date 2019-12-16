@@ -31,6 +31,17 @@ let assign_in_environment (n : string) (id : id) v
   Hashtbl.set ~key:n ~data:v env.values;
   v
 
+let bind env inst c =
+  let enclosing = env in
+  let env =
+    {
+      values = Hashtbl.of_alist_exn (module String) [ ("this", inst) ];
+      enclosing = Some enclosing;
+    }
+  in
+  c.decl_environment <- env;
+  Callable c
+
 let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
 
 let eval_callable_of_function var_resolution env eval = function
@@ -81,17 +92,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
           | Some f -> f
           | None -> (
               match Hashtbl.find methods n with
-              | Some (Callable c) ->
-                  let enclosing = env in
-                  let env =
-                    {
-                      values =
-                        Hashtbl.of_alist_exn (module String) [ ("this", inst) ];
-                      enclosing = Some enclosing;
-                    }
-                  in
-                  c.decl_environment <- env;
-                  Callable c
+              | Some (Callable c) -> bind env inst c
               | Some _ | None ->
                   Printf.failwithf
                     "Accessing unbound property %s on instance of class %s" n c
