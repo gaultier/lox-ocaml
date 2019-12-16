@@ -194,13 +194,16 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
         match e with
         | Callable f -> f
         | VClass (n, methods) as c ->
-            Hashtbl.find methods "init"
+            let ctor = Hashtbl.find methods "init" in
+            ctor
             |> Option.iter ~f:(fun ctor ->
                    let fn = fn_of_value ctor |> bind env c |> fn_of_value in
                    call_fn var_resolution env eval_exp fn args |> ignore);
 
             {
-              arity = 0;
+              arity =
+                Option.map ~f:(fun ctor -> (fn_of_value ctor).arity) ctor
+                |> Option.value ~default:0;
               name = n;
               decl_environment = env;
               fn = (fun _ _ -> Instance (c, empty ()));
