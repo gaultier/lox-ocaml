@@ -182,7 +182,14 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       let f =
         match e with
         | Callable f -> f
-        | VClass (n, _) as c ->
+        | VClass (n, methods) as c ->
+            let _ =
+              Hashtbl.find methods "init"
+              |> Option.map ~f:(fun _ ->
+                     Stdlib.print_endline "found init method")
+              |> ignore
+            in
+
             {
               arity = 0;
               name = n;
