@@ -219,8 +219,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
             let inst = Instance (c, empty ()) in
             match Hashtbl.find methods "init" with
             | Some v ->
-                let fn = fn_of_value v in
-                let fn = bind_fn env inst fn in
+                let fn = fn_of_value v |> bind_fn env inst in
                 call_fn var_resolution env eval_exp fn args |> ignore;
                 {
                   arity = fn.arity;
