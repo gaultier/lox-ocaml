@@ -2,7 +2,7 @@ open Parse
 open Base
 open Base.Option.Let_syntax
 
-type function_type = Function | Method
+type function_type = Function | Method | Constructor
 
 type scope = { vars_status : (string, bool) Hashtbl.t; block_id : id }
 
@@ -70,8 +70,6 @@ let resolve_local id name ctx =
   }
 
 let resolve_class id ctx =
-  (* Stack.push ctx.scopes (new_scope id); *)
-  (* Stack.pop_exn ctx.scopes |> ignore; *)
   { ctx with resolution = Map.add_exn ctx.resolution ~key:id ~data:0 }
 
 let rec resolve_function ctx (args : Lex.token list) (stmts : statement list)
@@ -88,7 +86,7 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list)
               ())
       args
   in
-  let ctx = resolve_stmts { ctx with current_fn_type = Some Function } stmts in
+  let ctx = resolve_stmts ctx stmts in
 
   Stack.pop_exn ctx.scopes |> ignore;
   ctx
@@ -143,9 +141,14 @@ and resolve_stmt_ ctx = function
         List.fold ~init:ctx
           ~f:(fun ctx m ->
             match m with
-            | Function ({ Lex.kind = Lex.Identifier _; _ }, args, stmts, id) ->
+            | Function ({ Lex.kind = Lex.Identifier n; _ }, args, stmts, id) ->
                 resolve_function
-                  { ctx with current_fn_type = Some Method }
+                  {
+                    ctx with
+                    current_fn_type =
+                      Some
+                        (if String.equal n "init" then Constructor else Method);
+                  }
                   args stmts id
             | _ -> failwith "Malformed method")
           methods
@@ -167,7 +170,12 @@ and resolve_stmt_ ctx = function
             "Cannot return outside of a function body. Returning: `%s`"
             (e |> sexp_of_expr |> Sexp.to_string_hum)
             ()
-      | Some _ -> resolve_expr e ctx )
+      | Some Constructor ->
+          Printf.failwithf
+            "Cannot return `%s` inside the constructor of a class"
+            (e |> sexp_of_expr |> Sexp.to_string_hum)
+            ()
+      | Some (Function | Method) -> resolve_expr e ctx )
   | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, id) ->
       let ctx = ctx |> declare_var name |> define_var name in
       let ctx = resolve_function ctx args stmts id in
