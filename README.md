@@ -49,7 +49,7 @@ $ echo "print 1 + 2;" | lox dump ast
 
 Example:
 
-```lox
+```javascript
 fun fibonacci(n) {
   if (n <= 1) return n;
   return fibonacci(n - 2) + fibonacci(n - 1);
@@ -62,7 +62,7 @@ for (var i = 0; i < 20; i = i + 1) {
 
 Example of objects:
 
-```lox
+```javascript
 class Breakfast {}
 
 class BreakfastBuilder {
