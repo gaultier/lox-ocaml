@@ -164,21 +164,26 @@ and resolve_stmt_ ctx = function
       ctx |> declare_var n |> resolve_expr expr |> define_var n
   | Print (e, _) | Expr (e, _) -> resolve_expr e ctx
   | Return (_, e, _) -> (
-      match ctx.current_fn_type with
-      | None ->
+      match (ctx.current_fn_type, e) with
+      | None, _ ->
           Printf.failwithf
             "Cannot return outside of a function body. Returning: `%s`"
             (e |> sexp_of_expr |> Sexp.to_string_hum)
             ()
-      | Some Constructor ->
+      | Some (Function | Method), _ | Some Constructor, Literal (Nil, _) ->
+          resolve_expr e ctx
+      | Some Constructor, _ ->
           Printf.failwithf
             "Cannot return `%s` inside the constructor of a class"
             (e |> sexp_of_expr |> Sexp.to_string_hum)
-            ()
-      | Some (Function | Method) -> resolve_expr e ctx )
+            () )
   | Function ({ Lex.kind = Lex.Identifier name; _ }, args, stmts, id) ->
       let ctx = ctx |> declare_var name |> define_var name in
-      let ctx = resolve_function ctx args stmts id in
+      let ctx =
+        resolve_function
+          { ctx with current_fn_type = Some Function }
+          args stmts id
+      in
       ctx
   | WhileStmt (e, stmt, _) | IfStmt (e, stmt, _) ->
       ctx |> resolve_expr e |> resolve_stmt stmt
