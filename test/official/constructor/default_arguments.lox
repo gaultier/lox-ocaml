@@ -1,3 +1,4 @@
 class Foo {}
 
-var foo = Foo(1, 2, 3); // expect: Expected 0 arguments but got 3.
+var foo = Foo(1, 2, 3); // expect: Wrong arity in function call: expected 0, got 3
+foo;
