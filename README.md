@@ -86,6 +86,8 @@ class BreakfastBuilder {
 }
 
 var breakfast = BreakfastBuilder().withEggs(2).withToasts(5).build();
+print breakfast.eggNumber;
+print breakfast.toastNumber;
 ```
 
 ## Test
