@@ -38,19 +38,20 @@ let call_fn var_resolution env eval_exp f args =
     Printf.failwithf "Wrong arity in function call: expected %d, got %d" f.arity
       len ();
   let ret = f.fn args f.decl_environment in
+  ret
 
-  if f.is_ctor then (
-    Stdlib.Printf.printf "n=%s decl_env=\n" f.name;
-    Stdlib.flush_all ();
-    print_env_values f.decl_environment.values |> ignore;
-    Stdlib.flush_all ();
-    Stdlib.Printf.printf "n=%s env=\n" f.name;
-    Stdlib.flush_all ();
-    print_env_values f.decl_environment.values |> ignore;
-    Stdlib.flush_all ();
-    Hashtbl.find f.decl_environment.values "this"
-    |> Var_resolver.opt_value ~error:"Unbound `this` in this context" )
-  else ret
+(* if f.is_ctor then ( *)
+(*   Stdlib.Printf.printf "n=%s decl_env=\n" f.name; *)
+(*   Stdlib.flush_all (); *)
+(*   print_env_values f.decl_environment.values |> ignore; *)
+(*   Stdlib.flush_all (); *)
+(*   Stdlib.Printf.printf "n=%s env=\n" f.name; *)
+(*   Stdlib.flush_all (); *)
+(*   print_env_values f.decl_environment.values |> ignore; *)
+(*   Stdlib.flush_all (); *)
+(*   Hashtbl.find f.decl_environment.values "this" *)
+(*   |> Var_resolver.opt_value ~error:"Unbound `this` in this context" ) *)
+(* else ret *)
 
 let fn_of_value = function Callable fn -> fn | _ -> assert false
 
@@ -213,13 +214,19 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
         match e with
         | Callable f -> f
         | VClass (n, methods) as c -> (
-            let ctor =
-              Hashtbl.find methods "init"
-              |> Option.map ~f:(fun ctor ->
-                     fn_of_value ctor |> bind_fn env c |> fn_of_value)
-            in
-            match ctor with
-            | Some f -> { f with is_ctor = true }
+            match Hashtbl.find methods "init" with
+            | Some v ->
+                let fn = fn_of_value v in
+                let inst = Instance (c, empty ()) in
+                let fn = bind_fn env inst fn |> fn_of_value in
+                call_fn var_resolution env eval_exp fn args |> ignore;
+                {
+                  arity = fn.arity;
+                  name = n;
+                  is_ctor = true;
+                  decl_environment = env;
+                  fn = (fun _ _ -> inst);
+                }
             | None ->
                 {
                   arity = 0;
