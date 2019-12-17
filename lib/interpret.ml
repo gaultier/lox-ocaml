@@ -216,10 +216,10 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
         match e with
         | Callable f -> f
         | VClass (n, methods) as c -> (
+            let inst = Instance (c, empty ()) in
             match Hashtbl.find methods "init" with
             | Some v ->
                 let fn = fn_of_value v in
-                let inst = Instance (c, empty ()) in
                 let fn = bind_fn env inst fn in
                 call_fn var_resolution env eval_exp fn args |> ignore;
                 {
@@ -235,7 +235,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
                   name = n;
                   is_ctor = false;
                   decl_environment = env;
-                  fn = (fun _ _ -> Instance (c, empty ()));
+                  fn = (fun _ _ -> inst);
                 } )
         | _ ->
             Printf.failwithf "Value `%s` cannot be called as a function"
