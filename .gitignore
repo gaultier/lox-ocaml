@@ -1,5 +1,1 @@
-**/*.cm*
-**/*.o
-**/_build/
-a.out
 _build/

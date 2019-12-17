@@ -22,8 +22,8 @@ class BreakfastBuilder {
 
 var breakfast = BreakfastBuilder().withEggs(2).withToasts(5).build();
 
-print "breakfast with ";
-print breakfast.eggNumber;
-print "eggs and ";
-print breakfast.toastNumber;
-print "toasts!";
+print "breakfast with "; // expect: breakfast with
+print breakfast.eggNumber; // expect: 2.
+print "eggs and "; // expect: eggs and
+print breakfast.toastNumber; // expect: 5.
+print "toasts!"; // expect: toasts!
