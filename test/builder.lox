@@ -1,0 +1,29 @@
+class Breakfast {}
+
+class BreakfastBuilder {
+    init () {
+        this.breakfast = Breakfast();
+    }
+
+    withEggs(eggNumber) {
+        this.breakfast.eggNumber = eggNumber;
+        return this;
+    }
+
+    withToasts(toastNumber) {
+        this.breakfast.toastNumber = toastNumber;
+        return this;
+    }
+
+    build() {
+        return this.breakfast;
+    }
+}
+
+var breakfast = BreakfastBuilder().withEggs(2).withToasts(5).build();
+
+print "breakfast with ";
+print breakfast.eggNumber;
+print "eggs and ";
+print breakfast.toastNumber;
+print "toasts!";

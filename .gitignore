@@ -1,7 +1,5 @@
 **/*.cm*
 **/*.o
-**/_build
+**/_build/
 a.out
-**/*.output
-_build
-test/*.expected
+_build/
