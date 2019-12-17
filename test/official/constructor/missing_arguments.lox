@@ -1,0 +1,5 @@
+class Foo {
+  init(a, b) { a; b;}
+}
+
+var foo = Foo(1); // expect: Wrong arity in function call: expected 2, got 1
