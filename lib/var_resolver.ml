@@ -92,6 +92,7 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list)
   ctx
 
 and resolve_expr_ ctx = function
+  | Super _ -> assert false
   | This ({ lines; columns; _ }, id) ->
       resolve_local id "this" ctx
       |> opt_value

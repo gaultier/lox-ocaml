@@ -106,6 +106,7 @@ let eval_callable_of_function var_resolution env eval is_ctor = function
 let rec eval_exp exp (var_resolution : Var_resolver.resolution)
     (env : environment) =
   match exp with
+  | Super _ -> assert false
   | This (_, id) ->
       find_in_environment "this" id var_resolution env
       |> Var_resolver.opt_value ~error:"Unbound this in this context"

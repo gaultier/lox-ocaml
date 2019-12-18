@@ -52,6 +52,7 @@ and expr =
   | Get of expr * string
   | Set of expr * string * expr
   | This of token * id
+  | Super of token * token
 [@@deriving sexp_of]
 
 and statement =
