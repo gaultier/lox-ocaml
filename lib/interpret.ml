@@ -2,6 +2,8 @@ open Parse
 open Base
 open Base.Option.Let_syntax
 
+let ( <|> ) a b = match a with Some _ as s -> s | None -> b
+
 exception FunctionReturn of value
 
 let print_env_values values =
@@ -59,6 +61,11 @@ let bind_fn env inst c =
   c.decl_environment <- env;
   c
 
+let find_method env inst methods n =
+  match Hashtbl.find methods n with
+  | Some (Callable c) -> Some (bind_fn env inst c |> value_of_fn)
+  | _ -> None
+
 let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
 
 let eval_callable_of_function var_resolution env eval is_ctor = function
@@ -110,16 +117,13 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
             (value_to_string lhs) () )
   | Get (e, n) -> (
       match eval_exp e var_resolution env with
-      | Instance (VClass (c, _, methods), fields) as inst -> (
-          match Hashtbl.find fields n with
-          | Some f -> f
-          | None -> (
-              match Hashtbl.find methods n with
-              | Some (Callable c) -> bind_fn env inst c |> value_of_fn
-              | Some _ | None ->
-                  Printf.failwithf
-                    "Accessing unbound property %s on instance of class %s" n c
-                    () ) )
+      | Instance (VClass (c, _, methods), fields) as inst ->
+          Hashtbl.find fields n
+          <|> find_method env inst methods n
+          |> Var_resolver.opt_value
+               ~error:
+                 (Printf.sprintf
+                    "Accessing unbound property %s on instance of class %s" n c)
       | other ->
           Printf.failwithf
             "Only instances have properties that can be read. Got: %s"
