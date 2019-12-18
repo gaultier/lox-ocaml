@@ -91,8 +91,7 @@ let globals : environment =
   }
 
 let rec sync acc = function
-  (* | For :: _ as r -> *)
-  (*     (acc, r) *)
+  (* Should we sync at other boundaries, e.g keywords here as well? *)
   | ({ kind = SemiColon; _ } as t) :: (_ as r) -> (t :: acc, r)
   | [] -> (acc, [])
   | x :: r -> sync (x :: acc) r
