@@ -1,8 +1,7 @@
 open Parse
 open Base
 open Base.Option.Let_syntax
-
-let ( <|> ) a b = match a with Some _ as s -> s | None -> b
+open Monad_utils
 
 exception FunctionReturn of value
 
@@ -70,8 +69,7 @@ let methods_of_class = function
   | VClass (_, _, methods) -> methods
   | _ -> assert false
 
-let find_method_in_class env inst n superclass =
-  find_method env inst n (methods_of_class superclass)
+let find_method_in_class env inst n = methods_of_class >> find_method env inst n
 
 let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
 
@@ -127,7 +125,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       | Instance (VClass (c, superclass, methods), fields) as inst ->
           Hashtbl.find fields n
           <|> find_method env inst n methods
-          <|> find_method_in_class env inst n
+          <|> (superclass >>= find_method_in_class env inst n)
           |> Var_resolver.opt_value
                ~error:
                  (Printf.sprintf

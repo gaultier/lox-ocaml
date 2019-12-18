@@ -1,7 +1,6 @@
 open Base
 open Base.Result.Monad_infix
-
-let ( >> ) f g x = g (f x)
+open Lox.Monad_utils
 
 let read_whole_file filename =
   try
