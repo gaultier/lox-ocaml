@@ -131,8 +131,9 @@ and resolve_expr_ ctx = function
         ()
 
 and resolve_stmt_ ctx = function
-  | Class (n, _, methods, id) ->
+  | Class (n, superclass, methods, id) ->
       let ctx = ctx |> declare_var n |> define_var n |> resolve_class id in
+      let ctx = Option.fold ~init:ctx ~f:resolve_expr_ superclass in
       let scope = new_scope id in
       Hashtbl.set ~key:"this" ~data:true scope.vars_status;
       Stack.push ctx.scopes scope;
