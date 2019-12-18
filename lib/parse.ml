@@ -363,12 +363,7 @@ and return_stmt = function
       Ok (Return (ret, Literal (Nil, next_id ()), next_id ()), rest)
   | ({ kind = Return; _ } as ret) :: rest ->
       let%bind e, rest = expression rest in
-      let%bind rest =
-        match rest with
-        | { kind = SemiColon; _ } :: rest -> Ok rest
-        | _ as rest ->
-            error "Return statement" "Expected terminating semicolon `;`" rest
-      in
+      let%bind _, rest = expect SemiColon rest in
       Ok (Return (ret, e, next_id ()), rest)
   | _ as rest ->
       error "Return statement" "Expected return statement (e.g `return 1+2;`)"
