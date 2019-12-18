@@ -100,14 +100,47 @@ let eval_callable_of_function var_resolution env eval is_ctor = function
       in
       create_in_current_env name (Callable call) env;
       call.decl_environment <- env;
+      Stdlib.Printf.printf "D030\nNew fn n=%s decl_env=\n" name;
+      print_env_values env.values;
+      Stdlib.print_endline "D031";
+      Option.iter ~f:(fun env -> print_env_values env.values) env.enclosing;
+      Stdlib.print_endline "D032";
       (name, Callable call)
   | _ -> failwith "Malformed function"
 
 let rec eval_exp exp (var_resolution : Var_resolver.resolution)
     (env : environment) =
   match exp with
+  | Super (_, { kind = Identifier m; _ }, id) ->
+      let dist = Option.value_exn (Map.find var_resolution id) - 1 in
+      Stdlib.Printf.printf "D040\nSuper method=%s dist=%d env=\n" m dist;
+      print_env_values env.values;
+      Stdlib.print_endline "D041";
+      Option.iter ~f:(fun env -> print_env_values env.values) env.enclosing;
+      Stdlib.print_endline "D042";
+      env.enclosing
+      |> Option.bind ~f:(fun env -> env.enclosing)
+      |> Option.iter ~f:(fun env -> print_env_values env.values);
+      Stdlib.print_endline "D043";
+      let superclass =
+        Option.value_exn (find_in_environment "super" id var_resolution env)
+      in
+      let this_env = Option.value_exn (climb_nth_env env dist) in
+      let this = Option.value_exn (Hashtbl.find this_env.values "this") in
+      find_method_in_class env this m superclass
+      |> Var_resolver.opt_value ~error:"Method not found in superclass"
   | Super _ -> assert false
   | This (_, id) ->
+      Stdlib.print_endline "this";
+      Stdlib.print_endline "D0011";
+      print_env_values env.values;
+      Stdlib.print_endline "D0012";
+      Option.iter ~f:(fun env -> print_env_values env.values) env.enclosing;
+      Stdlib.print_endline "D0013";
+      env.enclosing
+      |> Option.bind ~f:(fun env -> env.enclosing)
+      |> Option.iter ~f:(fun env -> print_env_values env.values);
+      Stdlib.print_endline "D0014";
       find_in_environment "this" id var_resolution env
       |> Var_resolver.opt_value ~error:"Unbound this in this context"
   | Set (lhs, n, rhs) -> (
@@ -263,6 +296,10 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
             (Some e, env)
         | None -> (None, env)
       in
+      Stdlib.print_endline "D020";
+      print_env_values env.values;
+      Stdlib.print_endline "D021";
+
       let methods =
         List.map
           ~f:
@@ -272,6 +309,12 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
         |> Hashtbl.of_alist_exn (module String)
       in
       let c = VClass (n, superclass, methods) in
+      Stdlib.print_endline n;
+      Stdlib.print_endline "D001";
+      print_env_values env.values;
+      Stdlib.print_endline "D002";
+      Option.iter ~f:(fun env -> print_env_values env.values) env.enclosing;
+      Stdlib.print_endline "D003";
       let env =
         match superclass with
         | Some _ -> Option.value_exn env.enclosing
