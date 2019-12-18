@@ -35,7 +35,7 @@ and value =
   | Nil
   | String of string
   | Callable of callable
-  | VClass of string * methods
+  | VClass of string * value option * methods
   | Instance of value * env_values_t
 [@@deriving sexp_of]
 
@@ -511,6 +511,6 @@ let value_to_string = function
   | Bool false -> "false"
   | Nil -> "nil"
   | Callable { name = n; _ } -> "function@" ^ n
-  | VClass (n, _) -> n
-  | Instance (VClass (n, _), _) -> "instance@" ^ n
+  | VClass (n, _, _) -> n
+  | Instance (VClass (n, _, _), _) -> "instance@" ^ n
   | Instance _ -> failwith "Malformed instance"

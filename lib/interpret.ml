@@ -110,7 +110,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
             (value_to_string lhs) () )
   | Get (e, n) -> (
       match eval_exp e var_resolution env with
-      | Instance (VClass (c, methods), fields) as inst -> (
+      | Instance (VClass (c, _, methods), fields) as inst -> (
           match Hashtbl.find fields n with
           | Some f -> f
           | None -> (
@@ -206,7 +206,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       let f =
         match e with
         | Callable f -> f
-        | VClass (n, methods) as c -> (
+        | VClass (n, _, methods) as c -> (
             let inst = Instance (c, empty ()) in
             match Hashtbl.find methods "init" with
             | Some v ->
@@ -229,7 +229,16 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
 
 let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
   match s with
-  | Class (n, _, methods, id) ->
+  | Class (n, superclass, methods, id) ->
+      let superclass =
+        Option.map superclass ~f:(fun superclass ->
+            let e = eval_exp superclass var_resolution env in
+            match e with
+            | VClass _ -> e
+            | other ->
+                Printf.failwithf "Superclass must be a class, got: `%s`"
+                  (value_to_string other) ())
+      in
       create_in_current_env n Nil env;
       let methods =
         List.map
@@ -239,7 +248,7 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
           methods
         |> Hashtbl.of_alist_exn (module String)
       in
-      let c = VClass (n, methods) in
+      let c = VClass (n, superclass, methods) in
       Option.value_exn (assign_in_environment n id c var_resolution env)
   | Expr (e, _) -> eval_exp e var_resolution env
   | Print (e, _) ->
