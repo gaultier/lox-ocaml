@@ -136,7 +136,7 @@ let rec primary = function
 and expect (kind : token_kind) = function
   | { kind = k; _ } :: rest when Stdlib.( = ) k kind -> Ok ((), rest)
   | rest ->
-      error "" (Printf.sprintf "Expected token %s" (token_to_string kind)) rest
+      error "" (Printf.sprintf "Expected `%s`" (token_to_string kind)) rest
 
 and fn_call tokens =
   let%bind prim, rest = primary tokens in
