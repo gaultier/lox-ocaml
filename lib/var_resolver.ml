@@ -92,12 +92,12 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list)
   ctx
 
 and resolve_expr_ ctx = function
-  | Super (_, { kind = Identifier m; lines; columns }, id) ->
-      resolve_local id m ctx
+  | Super ({ kind = Super; lines; columns }, _, id) ->
+      resolve_local id "super" ctx
       |> opt_value
            ~error:
-             (Printf.sprintf "%d:%d:Accessing unbound variable %s " lines
-                columns m)
+             (Printf.sprintf "%d:%d:Accessing unbound variable `super`" lines
+                columns)
   | This ({ lines; columns; _ }, id) ->
       resolve_local id "this" ctx
       |> opt_value
