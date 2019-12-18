@@ -284,13 +284,11 @@ and if_stmt = function
         rest
 
 and while_stmt = function
-  | { kind = While; _ } :: { kind = ParenLeft; _ } :: rest -> (
+  | { kind = While; _ } :: { kind = ParenLeft; _ } :: rest ->
       let%bind e, rest = expression rest in
-      match rest with
-      | { kind = ParenRight; _ } :: rest ->
-          let%map s, rest = statement rest in
-          (WhileStmt (e, s, next_id ()), rest)
-      | _ -> error "While statement" "Missing closing `)`" rest )
+      let%bind _, rest = expect ParenRight rest in
+      let%map s, rest = statement rest in
+      (WhileStmt (e, s, next_id ()), rest)
   | _ as rest ->
       error "While statement" "Expected while statement: (e.g `while(true) {}`)"
         rest
