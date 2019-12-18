@@ -124,18 +124,17 @@ let rec primary = function
   | { kind = Nil; _ } :: rest -> Ok (Literal (Nil, next_id ()), rest)
   | { kind = Number f; _ } :: rest -> Ok (Literal (Number f, next_id ()), rest)
   | { kind = String s; _ } :: rest -> Ok (Literal (String s, next_id ()), rest)
-  | { kind = ParenLeft; _ } :: rest -> (
+  | { kind = ParenLeft; _ } :: rest ->
       let%bind e, rest = expression rest in
-      match rest with
-      | { kind = ParenRight; _ } :: rest -> Ok (Grouping (e, next_id ()), rest)
-      | _ as rest -> error "Primary" "Expected closing parenthesis `)`" rest )
+      let%bind _, rest = expect ParenRight rest in
+      Ok (Grouping (e, next_id ()), rest)
   | ({ kind = This; _ } as t) :: rest -> Ok (This (t, next_id ()), rest)
   | { kind = Identifier _ as i; _ } :: rest ->
       Ok (Variable (i, next_id ()), rest)
   | _ as rest ->
       error "Primary" "Expected primary (e.g `1` or `(true)` or \"hello\")" rest
 
-and consume (kind : token_kind) = function
+and expect (kind : token_kind) = function
   | { kind = k; _ } :: rest when Stdlib.( = ) k kind -> Ok ((), rest)
   | rest ->
       error "" (Printf.sprintf "Expected token %s" (token_to_string kind)) rest
@@ -477,7 +476,7 @@ and class_decl = function
   | { kind = Class; _ }
     :: { kind = Identifier n; _ } :: { kind = Less; _ } :: rest ->
       let%bind superclass, rest = primary rest in
-      let%bind _, rest = consume CurlyBraceLeft rest in
+      let%bind _, rest = expect CurlyBraceLeft rest in
       let%map methods, rest = methods_decl [] rest in
       (Class (n, Some superclass, methods, next_id ()), rest)
   | rest ->
