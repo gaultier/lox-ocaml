@@ -315,6 +315,10 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
       Stdlib.print_endline "D002";
       Option.iter ~f:(fun env -> print_env_values env.values) env.enclosing;
       Stdlib.print_endline "D003";
+      env.enclosing
+      |> Option.bind ~f:(fun env -> env.enclosing)
+      |> Option.iter ~f:(fun env -> print_env_values env.values);
+      Stdlib.print_endline "D004";
       let env =
         match superclass with
         | Some _ -> Option.value_exn env.enclosing
