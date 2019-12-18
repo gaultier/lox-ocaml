@@ -61,10 +61,17 @@ let bind_fn env inst c =
   c.decl_environment <- env;
   c
 
-let find_method env inst methods n =
+let find_method env inst n methods =
   match Hashtbl.find methods n with
   | Some (Callable c) -> Some (bind_fn env inst c |> value_of_fn)
   | _ -> None
+
+let methods_of_class = function
+  | VClass (_, _, methods) -> methods
+  | _ -> assert false
+
+let find_method_in_class env inst n superclass =
+  find_method env inst n (methods_of_class superclass)
 
 let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
 
@@ -117,9 +124,10 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
             (value_to_string lhs) () )
   | Get (e, n) -> (
       match eval_exp e var_resolution env with
-      | Instance (VClass (c, _, methods), fields) as inst ->
+      | Instance (VClass (c, superclass, methods), fields) as inst ->
           Hashtbl.find fields n
-          <|> find_method env inst methods n
+          <|> find_method env inst n methods
+          <|> find_method_in_class env inst n
           |> Var_resolver.opt_value
                ~error:
                  (Printf.sprintf
