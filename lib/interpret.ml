@@ -241,16 +241,28 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
 let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
   match s with
   | Class (n, superclass, methods, id) ->
-      let superclass =
-        Option.map superclass ~f:(fun superclass ->
-            let e = eval_exp superclass var_resolution env in
-            match e with
-            | VClass _ -> e
-            | other ->
-                Printf.failwithf "Superclass must be a class, got: `%s`"
-                  (value_to_string other) ())
-      in
       create_in_current_env n Nil env;
+      let superclass, env =
+        match superclass with
+        | Some superclass ->
+            let e =
+              match eval_exp superclass var_resolution env with
+              | VClass _ as e -> e
+              | other ->
+                  Printf.failwithf "Superclass must be a class, got: `%s`"
+                    (value_to_string other) ()
+            in
+            let enclosing = env in
+            let env =
+              {
+                values = Hashtbl.of_alist_exn (module String) [ ("super", e) ];
+                enclosing = Some enclosing;
+              }
+            in
+
+            (Some e, env)
+        | None -> (None, env)
+      in
       let methods =
         List.map
           ~f:
@@ -260,6 +272,11 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
         |> Hashtbl.of_alist_exn (module String)
       in
       let c = VClass (n, superclass, methods) in
+      let env =
+        match superclass with
+        | Some _ -> Option.value_exn env.enclosing
+        | None -> env
+      in
       Option.value_exn (assign_in_environment n id c var_resolution env)
   | Expr (e, _) -> eval_exp e var_resolution env
   | Print (e, _) ->
