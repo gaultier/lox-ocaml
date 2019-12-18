@@ -134,7 +134,15 @@ and resolve_expr_ ctx = function
 and resolve_stmt_ ctx = function
   | Class (n, superclass, methods, id) ->
       let ctx = ctx |> declare_var n |> define_var n |> resolve_class id in
+
       let ctx = Option.fold ~init:ctx ~f:resolve_expr_ superclass in
+      Option.iter
+        ~f:(fun _ ->
+          let scope = next_id () |> new_scope in
+          Hashtbl.set ~key:"super" ~data:true scope.vars_status;
+          Stack.push ctx.scopes scope)
+        superclass;
+
       let scope = new_scope id in
       Hashtbl.set ~key:"this" ~data:true scope.vars_status;
       Stack.push ctx.scopes scope;
@@ -156,6 +164,9 @@ and resolve_stmt_ ctx = function
           methods
       in
       Stack.pop ctx.scopes |> ignore;
+
+      Option.iter ~f:(fun _ -> Stack.pop ctx.scopes |> ignore) superclass;
+
       ctx
   | Block (stmts, id) ->
       Stack.push ctx.scopes (new_scope id);
