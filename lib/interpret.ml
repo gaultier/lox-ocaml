@@ -229,7 +229,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
 
 let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
   match s with
-  | Class (n, methods, id) ->
+  | Class (n, _, methods, id) ->
       create_in_current_env n Nil env;
       let methods =
         List.map

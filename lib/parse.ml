@@ -60,7 +60,7 @@ and statement =
   | Var of token_kind * expr * id
   | Block of statement array * id
   | Function of token * token list * statement list * id
-  | Class of string * statement list * id
+  | Class of string * expr option * statement list * id
   | Return of token * expr * id
   | IfStmt of expr * statement * id
   | IfElseStmt of expr * statement * statement * id
@@ -468,7 +468,7 @@ and class_decl = function
   | { kind = Class; _ }
     :: { kind = Identifier n; _ } :: { kind = CurlyBraceLeft; _ } :: rest ->
       let%map methods, rest = methods_decl [] rest in
-      (Class (n, methods, next_id ()), rest)
+      (Class (n, None, methods, next_id ()), rest)
   | rest ->
       error "Class declaration"
         "Expected valid class declaration, e.g (`class foo {}`)" rest

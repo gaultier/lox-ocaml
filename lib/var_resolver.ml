@@ -131,7 +131,7 @@ and resolve_expr_ ctx = function
         ()
 
 and resolve_stmt_ ctx = function
-  | Class (n, methods, id) ->
+  | Class (n, _, methods, id) ->
       let ctx = ctx |> declare_var n |> define_var n |> resolve_class id in
       let scope = new_scope id in
       Hashtbl.set ~key:"this" ~data:true scope.vars_status;
