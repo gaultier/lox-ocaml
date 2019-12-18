@@ -383,12 +383,10 @@ and statement = function
 
 and var_decl = function
   | { kind = Var; _ }
-    :: { kind = Identifier n; _ } :: { kind = Equal; _ } :: rest -> (
+    :: { kind = Identifier n; _ } :: { kind = Equal; _ } :: rest ->
       let%bind e, rest = expression rest in
-      match rest with
-      | { kind = SemiColon; _ } :: rest ->
-          Ok (Var (Identifier n, e, next_id ()), rest)
-      | _ -> error "Variable declaration" "Expected terminating `;`" rest )
+      let%bind _, rest = expect SemiColon rest in
+      Ok (Var (Identifier n, e, next_id ()), rest)
   | { kind = Var; _ }
     :: { kind = Identifier n; _ } :: { kind = SemiColon; _ } :: rest ->
       Ok (Var (Identifier n, Literal (Nil, next_id ()), next_id ()), rest)
