@@ -129,6 +129,9 @@ let rec primary = function
       let%bind _, rest = expect ParenRight rest in
       Ok (Grouping (e, next_id ()), rest)
   | ({ kind = This; _ } as t) :: rest -> Ok (This (t, next_id ()), rest)
+  | ({ kind = Super; _ } as super)
+    :: { kind = Dot; _ } :: ({ kind = Identifier _; _ } as m) :: rest ->
+      Ok (Super (super, m), rest)
   | { kind = Identifier _ as i; _ } :: rest ->
       Ok (Variable (i, next_id ()), rest)
   | _ as rest ->
