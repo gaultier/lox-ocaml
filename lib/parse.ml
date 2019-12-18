@@ -183,7 +183,7 @@ and fn_call_arguments callee args = function
       Ok (Call (callee, closing_paren, List.rev args, next_id ()), rest)
 
 and unary = function
-  | { kind = Bang as t; _ } :: rest | { kind = Minus as t; _ } :: rest ->
+  | { kind = (Bang | Minus) as t; _ } :: rest ->
       let%map right, rest = unary rest in
       (Unary (t, right, next_id ()), rest)
   | _ as t -> fn_call t
@@ -191,7 +191,7 @@ and unary = function
 and multiplication tokens =
   let%bind left, rest = unary tokens in
   match rest with
-  | { kind = Star as t; _ } :: rest | { kind = Slash as t; _ } :: rest ->
+  | { kind = (Star | Slash) as t; _ } :: rest ->
       let%map right, rest = multiplication rest in
       (Binary (left, t, right, next_id ()), rest)
   | _ -> Ok (left, rest)
@@ -199,7 +199,7 @@ and multiplication tokens =
 and addition tokens =
   let%bind left, rest = multiplication tokens in
   match rest with
-  | { kind = Plus as t; _ } :: rest | { kind = Minus as t; _ } :: rest ->
+  | { kind = (Plus | Minus) as t; _ } :: rest ->
       let%map right, rest = addition rest in
       (Binary (left, t, right, next_id ()), rest)
   | _ -> Ok (left, rest)
@@ -207,10 +207,7 @@ and addition tokens =
 and comparison tokens =
   let%bind left, rest = addition tokens in
   match rest with
-  | { kind = Greater as t; _ } :: rest
-  | { kind = GreaterEqual as t; _ } :: rest
-  | { kind = Less as t; _ } :: rest
-  | { kind = LessEqual as t; _ } :: rest ->
+  | { kind = (Greater | GreaterEqual | Less | LessEqual) as t; _ } :: rest ->
       let%map right, rest = comparison rest in
       (Binary (left, t, right, next_id ()), rest)
   | _ -> Ok (left, rest)
@@ -218,8 +215,7 @@ and comparison tokens =
 and equality tokens =
   let%bind left, rest = comparison tokens in
   match rest with
-  | { kind = BangEqual as t; _ } :: rest | { kind = EqualEqual as t; _ } :: rest
-    ->
+  | { kind = (BangEqual | EqualEqual) as t; _ } :: rest ->
       let%map right, rest = equality rest in
       (Binary (left, t, right, next_id ()), rest)
   | _ -> Ok (left, rest)
