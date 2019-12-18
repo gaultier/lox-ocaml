@@ -135,6 +135,11 @@ let rec primary = function
   | _ as rest ->
       error "Primary" "Expected primary (e.g `1` or `(true)` or \"hello\")" rest
 
+and consume (kind : token_kind) = function
+  | { kind = k; _ } :: rest when Stdlib.( = ) k kind -> Ok ((), rest)
+  | rest ->
+      error "" (Printf.sprintf "Expected token %s" (token_to_string kind)) rest
+
 and fn_call tokens =
   let%bind prim, rest = primary tokens in
 
@@ -469,6 +474,12 @@ and class_decl = function
     :: { kind = Identifier n; _ } :: { kind = CurlyBraceLeft; _ } :: rest ->
       let%map methods, rest = methods_decl [] rest in
       (Class (n, None, methods, next_id ()), rest)
+  | { kind = Class; _ }
+    :: { kind = Identifier n; _ } :: { kind = Less; _ } :: rest ->
+      let%bind superclass, rest = primary rest in
+      let%bind _, rest = consume CurlyBraceLeft rest in
+      let%map methods, rest = methods_decl [] rest in
+      (Class (n, Some superclass, methods, next_id ()), rest)
   | rest ->
       error "Class declaration"
         "Expected valid class declaration, e.g (`class foo {}`)" rest
