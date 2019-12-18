@@ -314,13 +314,10 @@ and for_stmt = function
         match rest with
         | { kind = SemiColon; _ } :: rest ->
             Ok (Literal (Bool true, next_id ()), rest)
-        | _ -> (
+        | _ ->
             let%bind e, rest = expression rest in
-            match rest with
-            | { kind = SemiColon; _ } :: rest -> Ok (e, rest)
-            | _ ->
-                error "For-loop"
-                  "Expected terminating semicolon after stop condition" rest )
+            let%bind _, rest = expect SemiColon rest in
+            Ok (e, rest)
       in
       let%bind incr_stmt, rest =
         match rest with
@@ -328,13 +325,7 @@ and for_stmt = function
             Ok (Literal (Bool true, next_id ()), rest)
         | _ -> expression rest
       in
-      let%bind _, rest =
-        match rest with
-        | { kind = ParenRight; _ } :: rest -> Ok (Nil, rest)
-        | _ ->
-            error "For-loop"
-              "Expected closing parenthesis `)` after increment expression" rest
-      in
+      let%bind _, rest = expect ParenRight rest in
       let%bind body, rest = statement rest in
       let%bind enclosed_body =
         Ok
