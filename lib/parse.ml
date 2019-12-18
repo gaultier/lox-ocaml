@@ -255,12 +255,10 @@ and expression_stmt = function
   | [] as rest ->
       error "Expression statement" "Expected expression statement (e.g `1;`)"
         rest
-  | _ as t -> (
+  | _ as t ->
       let%bind stmt, rest = expression t in
-      match rest with
-      | { kind = SemiColon; _ } :: rest -> Ok (stmt, rest)
-      | _ as rest ->
-          error "Expression statement" "Expected closing semicolon `;`" rest )
+      let%bind _, rest = expect SemiColon rest in
+      Ok (stmt, rest)
 
 and print_stmt = function
   | { kind = Print; _ } :: rest ->
