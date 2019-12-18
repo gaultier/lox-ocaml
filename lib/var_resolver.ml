@@ -92,7 +92,12 @@ let rec resolve_function ctx (args : Lex.token list) (stmts : statement list)
   ctx
 
 and resolve_expr_ ctx = function
-  | Super _ -> assert false
+  | Super (_, { kind = Identifier m; lines; columns }, id) ->
+      resolve_local id m ctx
+      |> opt_value
+           ~error:
+             (Printf.sprintf "%d:%d:Accessing unbound variable %s " lines
+                columns m)
   | This ({ lines; columns; _ }, id) ->
       resolve_local id "this" ctx
       |> opt_value
@@ -122,6 +127,10 @@ and resolve_expr_ ctx = function
       ctx |> resolve_expr left |> resolve_expr right
   | Unary (_, e, _) | Grouping (e, _) -> resolve_expr e ctx
   | Literal _ -> ctx
+  | Super _ as s ->
+      Printf.failwithf "Invalid super: %s "
+        (s |> sexp_of_expr |> Sexp.to_string_hum)
+        ()
   | Assign _ as a ->
       Printf.failwithf "Invalid assignment: %s "
         (a |> sexp_of_expr |> Sexp.to_string_hum)

@@ -52,7 +52,7 @@ and expr =
   | Get of expr * string
   | Set of expr * string * expr
   | This of token * id
-  | Super of token * token
+  | Super of token * token * id
 [@@deriving sexp_of]
 
 and statement =
@@ -131,7 +131,7 @@ let rec primary = function
   | ({ kind = This; _ } as t) :: rest -> Ok (This (t, next_id ()), rest)
   | ({ kind = Super; _ } as super)
     :: { kind = Dot; _ } :: ({ kind = Identifier _; _ } as m) :: rest ->
-      Ok (Super (super, m), rest)
+      Ok (Super (super, m, next_id ()), rest)
   | { kind = Identifier _ as i; _ } :: rest ->
       Ok (Variable (i, next_id ()), rest)
   | _ as rest ->
