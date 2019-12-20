@@ -32,6 +32,8 @@ let assign_in_environment (n : string) (id : id) v
   Hashtbl.set ~key:n ~data:v env.values;
   v
 
+let new_env env = { values = empty (); enclosing = Some env }
+
 let call_fn var_resolution env eval_exp f args =
   let args = List.map ~f:(fun a -> eval_exp a var_resolution env) args in
   let len = List.length args in
@@ -49,14 +51,12 @@ let fn_of_value = function Callable fn -> fn | _ -> assert false
 
 let value_of_fn f = Callable f
 
+let create_in_current_env n v env =
+  Hashtbl.set ~key:n ~data:v env.values;
+  env
+
 let bind_fn env inst c =
-  let enclosing = env in
-  let env =
-    {
-      values = Hashtbl.of_alist_exn (module String) [ ("this", inst) ];
-      enclosing = Some enclosing;
-    }
-  in
+  let env = new_env env |> create_in_current_env "this" inst in
   c.decl_environment <- env;
   c
 
@@ -71,17 +71,15 @@ let methods_of_class = function
 
 let find_method_in_class env inst n = methods_of_class >> find_method env inst n
 
-let create_in_current_env n v { values; _ } = Hashtbl.set ~key:n ~data:v values
-
 let eval_callable_of_function var_resolution env eval is_ctor = function
   | Function ({ Lex.kind = Lex.Identifier name; _ }, decl_args, body, _) ->
       let fn call_args (env : environment) =
-        let enclosing = env in
-        let env = { values = empty (); enclosing = Some enclosing } in
+        let env = new_env env in
         List.iter2_exn
           ~f:(fun n v ->
             match n with
-            | { Lex.kind = Identifier n; _ } -> create_in_current_env n v env
+            | { Lex.kind = Identifier n; _ } ->
+                create_in_current_env n v env |> ignore
             | _ -> failwith "Invalid function argument")
           decl_args call_args;
         try
@@ -98,8 +96,7 @@ let eval_callable_of_function var_resolution env eval is_ctor = function
           fn;
         }
       in
-      create_in_current_env name (Callable call) env;
-      call.decl_environment <- env;
+      call.decl_environment <- create_in_current_env name (Callable call) env;
       Stdlib.Printf.printf "D030\nNew fn n=%s decl_env=\n" name;
       print_env_values env.values;
       Stdlib.print_endline "D031";
@@ -274,7 +271,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
 let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
   match s with
   | Class (n, superclass, methods, id) ->
-      create_in_current_env n Nil env;
+      create_in_current_env n Nil env |> ignore;
       let superclass, env =
         match superclass with
         | Some superclass ->
@@ -285,13 +282,7 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
                   Printf.failwithf "Superclass must be a class, got: `%s`"
                     (value_to_string other) ()
             in
-            let enclosing = env in
-            let env =
-              {
-                values = Hashtbl.of_alist_exn (module String) [ ("super", e) ];
-                enclosing = Some enclosing;
-              }
-            in
+            let env = new_env env |> create_in_current_env "super" e in
 
             (Some e, env)
         | None -> (None, env)
@@ -332,15 +323,14 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
       Nil
   | Var (Lex.Identifier n, e, _) ->
       let e = eval_exp e var_resolution env in
-      create_in_current_env n e env;
+      create_in_current_env n e env |> ignore;
       e
   | Var (_, _, _) as v ->
       Printf.failwithf "Invalid variable declaration: %s "
         (v |> sexp_of_statement |> Sexp.to_string_hum)
         ()
   | Block (stmts, _) ->
-      let enclosing = env in
-      let env = { values = empty (); enclosing = Some enclosing } in
+      let env = new_env env in
       Array.iter ~f:(fun s -> eval s var_resolution env |> ignore) stmts;
       Nil
   | Return (_, expr, _) ->
