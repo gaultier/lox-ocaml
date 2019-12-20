@@ -5,11 +5,14 @@ open Monad_utils
 
 exception FunctionReturn of value
 
-let print_env_values values =
+let rec print_env level env =
+  Stdlib.Printf.printf "Level=%d " level;
   Hashtbl.iteri
     ~f:(fun ~key:k ~data:d ->
-      Stdlib.Printf.printf "- %s = %s\n" k (value_to_string d))
-    values
+      Stdlib.Printf.printf "%s=%s " k (value_to_string d))
+    env.values;
+  Stdlib.print_newline ();
+  Option.iter env.enclosing ~f:(print_env (level + 1))
 
 let rec climb_nth_env env depth =
   match (env, depth) with
@@ -98,10 +101,8 @@ let eval_callable_of_function var_resolution env eval is_ctor = function
       in
       call.decl_environment <- create_in_current_env name (Callable call) env;
       Stdlib.Printf.printf "D030\nNew fn n=%s decl_env=\n" name;
-      print_env_values env.values;
-      Stdlib.print_endline "D031";
-      Option.iter ~f:(fun env -> print_env_values env.values) env.enclosing;
-      Stdlib.print_endline "D032";
+      print_env 0 env;
+      Stdlib.print_endline "D0031";
       (name, Callable call)
   | _ -> failwith "Malformed function"
 
@@ -111,14 +112,8 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
   | Super (_, { kind = Identifier m; _ }, id) ->
       let dist = Option.value_exn (Map.find var_resolution id) - 1 in
       Stdlib.Printf.printf "D040\nSuper method=%s dist=%d env=\n" m dist;
-      print_env_values env.values;
-      Stdlib.print_endline "D041";
-      Option.iter ~f:(fun env -> print_env_values env.values) env.enclosing;
-      Stdlib.print_endline "D042";
-      env.enclosing
-      |> Option.bind ~f:(fun env -> env.enclosing)
-      |> Option.iter ~f:(fun env -> print_env_values env.values);
-      Stdlib.print_endline "D043";
+      print_env 0 env;
+      Stdlib.print_endline "D0041";
       let superclass =
         Option.value_exn (find_in_environment "super" id var_resolution env)
       in
@@ -128,16 +123,9 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       |> Var_resolver.opt_value ~error:"Method not found in superclass"
   | Super _ -> assert false
   | This (_, id) ->
-      Stdlib.print_endline "this";
-      Stdlib.print_endline "D0011";
-      print_env_values env.values;
+      Stdlib.print_endline "D0011 this";
+      print_env 0 env;
       Stdlib.print_endline "D0012";
-      Option.iter ~f:(fun env -> print_env_values env.values) env.enclosing;
-      Stdlib.print_endline "D0013";
-      env.enclosing
-      |> Option.bind ~f:(fun env -> env.enclosing)
-      |> Option.iter ~f:(fun env -> print_env_values env.values);
-      Stdlib.print_endline "D0014";
       find_in_environment "this" id var_resolution env
       |> Var_resolver.opt_value ~error:"Unbound this in this context"
   | Set (lhs, n, rhs) -> (
@@ -287,9 +275,9 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
             (Some e, env)
         | None -> (None, env)
       in
-      Stdlib.print_endline "D020";
-      print_env_values env.values;
-      Stdlib.print_endline "D021";
+      Stdlib.print_endline "D0020 start class";
+      print_env 0 env;
+      Stdlib.print_endline "D0021";
 
       let methods =
         List.map
@@ -301,15 +289,9 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
       in
       let c = VClass (n, superclass, methods) in
       Stdlib.print_endline n;
-      Stdlib.print_endline "D001";
-      print_env_values env.values;
-      Stdlib.print_endline "D002";
-      Option.iter ~f:(fun env -> print_env_values env.values) env.enclosing;
-      Stdlib.print_endline "D003";
-      env.enclosing
-      |> Option.bind ~f:(fun env -> env.enclosing)
-      |> Option.iter ~f:(fun env -> print_env_values env.values);
-      Stdlib.print_endline "D004";
+      Stdlib.print_endline "D0001 end class";
+      print_env 0 env;
+      Stdlib.print_endline "D0002";
       let env =
         match superclass with
         | Some _ -> Option.value_exn env.enclosing
