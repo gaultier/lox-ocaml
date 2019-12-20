@@ -67,11 +67,11 @@ let find_method inst n methods =
   | Some (Callable c) -> Some (bind_fn inst c |> value_of_fn)
   | _ -> None
 
-let methods_of_class = function
-  | VClass (_, _, methods) -> methods
-  | _ -> assert false
-
-let find_method_in_class inst n = methods_of_class >> find_method inst n
+let rec find_method_in_class inst n = function
+  | VClass (_, superclass, methods) ->
+      find_method inst n methods
+      <|> Option.bind ~f:(find_method_in_class inst n) superclass
+  | _ -> None
 
 let eval_callable_of_function var_resolution env eval is_ctor = function
   | Function ({ Lex.kind = Lex.Identifier name; _ }, decl_args, body, _) ->
@@ -110,7 +110,6 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       let dist = Option.value_exn (Map.find var_resolution id) - 1 in
       let this_env = Option.value_exn (climb_nth_env env dist) in
       let this = Option.value_exn (Hashtbl.find this_env.values "this") in
-
       let superclass =
         Option.value_exn (find_in_environment "super" id var_resolution env)
       in
@@ -133,9 +132,9 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
             (value_to_string lhs) () )
   | Get (e, n) -> (
       match eval_exp e var_resolution env with
-      | Instance (VClass (c, superclass, methods), fields) as inst ->
-          Hashtbl.find fields n <|> find_method inst n methods
-          <|> (superclass >>= find_method_in_class inst n)
+      | Instance ((VClass (c, _, _) as klass), fields) as inst ->
+          Hashtbl.find fields n
+          <|> find_method_in_class inst n klass
           |> Var_resolver.opt_value
                ~error:
                  (Printf.sprintf
