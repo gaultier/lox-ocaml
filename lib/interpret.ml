@@ -114,6 +114,9 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       Stdlib.Printf.printf "D040\nSuper method=%s dist=%d env=\n" m dist;
       print_env 0 env;
       Stdlib.print_endline "D0041";
+      Hashtbl.find env.values "super"
+      |> Option.iter ~f:(fun _ ->
+             Stdlib.print_endline "D0041' found super in current env");
       let superclass =
         Option.value_exn (find_in_environment "super" id var_resolution env)
       in
@@ -123,9 +126,9 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       |> Var_resolver.opt_value ~error:"Method not found in superclass"
   | Super _ -> assert false
   | This (_, id) ->
-      Stdlib.print_endline "D0011 this";
+      Stdlib.print_endline "D010 this";
       print_env 0 env;
-      Stdlib.print_endline "D0012";
+      Stdlib.print_endline "D011";
       find_in_environment "this" id var_resolution env
       |> Var_resolver.opt_value ~error:"Unbound this in this context"
   | Set (lhs, n, rhs) -> (
@@ -275,9 +278,9 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
             (Some e, env)
         | None -> (None, env)
       in
-      Stdlib.print_endline "D0020 start class";
+      Stdlib.print_endline "D020 start class";
       print_env 0 env;
-      Stdlib.print_endline "D0021";
+      Stdlib.print_endline "D021";
 
       let methods =
         List.map
@@ -289,9 +292,9 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
       in
       let c = VClass (n, superclass, methods) in
       Stdlib.print_endline n;
-      Stdlib.print_endline "D0001 end class";
+      Stdlib.print_endline "D000 end class";
       print_env 0 env;
-      Stdlib.print_endline "D0002";
+      Stdlib.print_endline "D001";
       let env =
         match superclass with
         | Some _ -> Option.value_exn env.enclosing
