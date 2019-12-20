@@ -37,11 +37,6 @@ let assign_in_environment (n : string) (id : id) v
 let new_env env = { values = empty (); enclosing = Some env }
 
 let call_fn var_resolution env eval_exp f args =
-  Stdlib.Printf.printf "D050 call fn=%s env=\n" f.name;
-  print_env 0 env;
-  Stdlib.print_endline "D051 decl_env=";
-  print_env 0 f.decl_environment;
-  Stdlib.print_endline "D052";
   let args = List.map ~f:(fun a -> eval_exp a var_resolution env) args in
   let len = List.length args in
   if not (Int.equal len f.arity) then
@@ -69,17 +64,7 @@ let bind_fn inst c =
 
 let find_method inst n methods =
   match Hashtbl.find methods n with
-  | Some (Callable c) ->
-      Stdlib.Printf.printf "D0132 find_method n=%s decl_environment=" c.name;
-      print_env 0 c.decl_environment;
-      let m = Some (bind_fn inst c |> value_of_fn) in
-      Stdlib.Printf.printf "\nD0133 find_method n=%s decl_environment="
-        (match m with Some (Callable f) -> f.name | _ -> "");
-      ( match m with
-      | Some (Callable f) -> print_env 0 f.decl_environment
-      | _ -> () );
-
-      m
+  | Some (Callable c) -> Some (bind_fn inst c |> value_of_fn)
   | _ -> None
 
 let methods_of_class = function
@@ -90,13 +75,7 @@ let find_method_in_class inst n = methods_of_class >> find_method inst n
 
 let eval_callable_of_function var_resolution env eval is_ctor = function
   | Function ({ Lex.kind = Lex.Identifier name; _ }, decl_args, body, _) ->
-      Stdlib.Printf.printf "D060 New fn n=%s decl_env=\n" name;
-      print_env 0 env;
-      Stdlib.print_endline "D0061";
       let fn call_args (env : environment) =
-        Stdlib.Printf.printf "D070 Calling fn n=%s decl_env=\n" name;
-        print_env 0 env;
-        Stdlib.print_endline "D0071";
         let env = new_env env in
         List.iter2_exn
           ~f:(fun n v ->
@@ -120,9 +99,6 @@ let eval_callable_of_function var_resolution env eval is_ctor = function
         }
       in
       call.decl_environment <- create_in_current_env name (Callable call) env;
-      Stdlib.Printf.printf "D030\nNew fn n=%s decl_env=\n" name;
-      print_env 0 call.decl_environment;
-      Stdlib.print_endline "D0031";
 
       (name, Callable call)
   | _ -> failwith "Malformed function"
@@ -132,12 +108,6 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
   match exp with
   | Super (_, { kind = Identifier m; _ }, id) ->
       let dist = Option.value_exn (Map.find var_resolution id) - 1 in
-      Stdlib.Printf.printf "D040\nSuper method=%s dist=%d env=\n" m dist;
-      print_env 0 env;
-      Stdlib.print_endline "D0041";
-      Hashtbl.find env.values "super"
-      |> Option.iter ~f:(fun _ ->
-             Stdlib.print_endline "D0042' found super in current env");
       let this_env = Option.value_exn (climb_nth_env env dist) in
       let this = Option.value_exn (Hashtbl.find this_env.values "this") in
 
@@ -148,9 +118,6 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       |> Var_resolver.opt_value ~error:"Method not found in superclass"
   | Super _ -> assert false
   | This (_, id) ->
-      Stdlib.print_endline "D010 this";
-      print_env 0 env;
-      Stdlib.print_endline "D011";
       find_in_environment "this" id var_resolution env
       |> Var_resolver.opt_value ~error:"Unbound this in this context"
   | Set (lhs, n, rhs) -> (
@@ -167,32 +134,12 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
   | Get (e, n) -> (
       match eval_exp e var_resolution env with
       | Instance (VClass (c, superclass, methods), fields) as inst ->
-          Stdlib.print_endline "D112 get, sanity check: ";
-          ( match Hashtbl.find methods "foo" with
-          | Some (Callable f) ->
-              Stdlib.Printf.printf "foo env=";
-              print_env 0 f.decl_environment
-          | _ -> () );
-          Stdlib.print_newline ();
-
-          let v =
-            Hashtbl.find fields n <|> find_method inst n methods
-            <|> (superclass >>= find_method_in_class inst n)
-            |> Var_resolver.opt_value
-                 ~error:
-                   (Printf.sprintf
-                      "Accessing unbound property %s on instance of class %s" n
-                      c)
-          in
-          Stdlib.print_endline "D122 get end, sanity check: ";
-          ( match v with
-          | Callable f when String.equal f.name "foo" ->
-              Stdlib.Printf.printf "foo env=";
-              print_env 0 f.decl_environment
-          | _ -> () );
-          Stdlib.print_newline ();
-
-          v
+          Hashtbl.find fields n <|> find_method inst n methods
+          <|> (superclass >>= find_method_in_class inst n)
+          |> Var_resolver.opt_value
+               ~error:
+                 (Printf.sprintf
+                    "Accessing unbound property %s on instance of class %s" n c)
       | other ->
           Printf.failwithf
             "Only instances have properties that can be read. Got: %s"
@@ -278,19 +225,9 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       let e = eval_exp callee var_resolution env in
       let f =
         match e with
-        | Callable f ->
-            Stdlib.Printf.printf "D080 calling fn=%s decl_environment=\n" f.name;
-            print_env 0 f.decl_environment;
-            f
+        | Callable f -> f
         | VClass (n, _, methods) as c -> (
             let inst = Instance (c, empty ()) in
-            Stdlib.print_endline "D092 new instance, sanity check: ";
-            ( match Hashtbl.find methods "foo" with
-            | Some (Callable f) ->
-                Stdlib.Printf.printf "foo env=";
-                print_env 0 f.decl_environment
-            | _ -> () );
-            Stdlib.print_newline ();
 
             match Hashtbl.find methods "init" with
             | Some v ->
@@ -309,18 +246,7 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
             Printf.failwithf "Value `%s` cannot be called as a function"
               (value_to_string e) ()
       in
-      let inst = call_fn var_resolution env eval_exp f args in
-      Stdlib.print_endline "D102 new instance, sanity check: ";
-      ( match inst with
-      | Instance (VClass (_, _, methods), _) -> (
-          match Hashtbl.find methods "foo" with
-          | Some (Callable f) ->
-              Stdlib.Printf.printf "foo env=";
-              print_env 0 f.decl_environment
-          | _ -> () )
-      | _ -> () );
-      Stdlib.print_newline ();
-      inst
+      call_fn var_resolution env eval_exp f args
 
 let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
   match s with
@@ -341,9 +267,6 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
             (Some e, env)
         | None -> (None, env)
       in
-      Stdlib.Printf.printf "D020 start class=%s\n" n;
-      print_env 0 env;
-      Stdlib.print_endline "D021";
 
       let methods =
         List.map
@@ -354,22 +277,11 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
         |> Hashtbl.of_alist_exn (module String)
       in
       let c = VClass (n, superclass, methods) in
-      Stdlib.print_endline n;
-      Stdlib.print_endline "D000 end class";
-      print_env 0 env;
-      Stdlib.print_endline "D001";
       let env =
         match superclass with
         | Some _ -> Option.value_exn env.enclosing
         | None -> env
       in
-      Stdlib.print_endline "D002 end class, sanity check: ";
-      ( match Hashtbl.find methods "foo" with
-      | Some (Callable f) ->
-          Stdlib.Printf.printf "foo env=";
-          print_env 0 f.decl_environment
-      | _ -> () );
-      Stdlib.print_newline ();
       Option.value_exn (assign_in_environment n id c var_resolution env)
   | Expr (e, _) -> eval_exp e var_resolution env
   | Print (e, _) ->
