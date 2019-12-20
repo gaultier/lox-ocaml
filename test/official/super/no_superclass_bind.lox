@@ -1,0 +1,7 @@
+class Base {
+  foo() {
+    super.doesNotExist; // expect: 3:5:Accessing unbound variable `super`
+  }
+}
+
+Base().foo();

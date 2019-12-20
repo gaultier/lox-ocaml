@@ -1,0 +1,1 @@
+super.foo; // expect: 1:1:Accessing unbound variable `super`
