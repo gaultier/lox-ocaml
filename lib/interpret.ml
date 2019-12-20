@@ -38,12 +38,18 @@ let assign_in_environment (n : string) (id : id) v
 let new_env env = { values = empty (); enclosing = Some env }
 
 let call_fn var_resolution env eval_exp f args =
+  Stdlib.Printf.printf "D050 call fn=%s env=\n" f.name;
+  print_env 0 env;
+  Stdlib.print_endline "D051 decl_env=";
+  print_env 0 f.decl_environment;
+  Stdlib.print_endline "D052";
   let args = List.map ~f:(fun a -> eval_exp a var_resolution env) args in
   let len = List.length args in
   if not (Int.equal len f.arity) then
     Printf.failwithf "Wrong arity in function call: expected %d, got %d" f.arity
       len ();
   let ret = f.fn args f.decl_environment in
+  Stdlib.print_endline "D053 end call";
 
   if f.is_ctor then
     Hashtbl.find f.decl_environment.values "this"
@@ -101,8 +107,9 @@ let eval_callable_of_function var_resolution env eval is_ctor = function
       in
       call.decl_environment <- create_in_current_env name (Callable call) env;
       Stdlib.Printf.printf "D030\nNew fn n=%s decl_env=\n" name;
-      print_env 0 env;
+      print_env 0 call.decl_environment;
       Stdlib.print_endline "D0031";
+
       (name, Callable call)
   | _ -> failwith "Malformed function"
 
@@ -116,14 +123,22 @@ let rec eval_exp exp (var_resolution : Var_resolver.resolution)
       Stdlib.print_endline "D0041";
       Hashtbl.find env.values "super"
       |> Option.iter ~f:(fun _ ->
-             Stdlib.print_endline "D0041' found super in current env");
-      let superclass =
-        Option.value_exn (find_in_environment "super" id var_resolution env)
-      in
+             Stdlib.print_endline "D0042' found super in current env");
       let this_env = Option.value_exn (climb_nth_env env dist) in
       let this = Option.value_exn (Hashtbl.find this_env.values "this") in
-      find_method_in_class env this m superclass
-      |> Var_resolver.opt_value ~error:"Method not found in superclass"
+      let v =
+        match this with
+        | Instance (VClass (_, superclass, _), _) ->
+            find_method_in_class env this m (Option.value_exn superclass)
+            |> Var_resolver.opt_value ~error:"Method not found in superclass"
+        | _ -> assert false
+      in
+      v
+      (* let superclass = *)
+      (*   Option.value_exn (find_in_environment "super" id var_resolution env) *)
+      (* in *)
+      (* find_method_in_class env this m superclass *)
+      (* |> Var_resolver.opt_value ~error:"Method not found in superclass" *)
   | Super _ -> assert false
   | This (_, id) ->
       Stdlib.print_endline "D010 this";
@@ -278,7 +293,7 @@ let rec eval s (var_resolution : Var_resolver.resolution) (env : environment) =
             (Some e, env)
         | None -> (None, env)
       in
-      Stdlib.print_endline "D020 start class";
+      Stdlib.Printf.printf "D020 start class=%s\n" n;
       print_env 0 env;
       Stdlib.print_endline "D021";
 
