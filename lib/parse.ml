@@ -93,7 +93,7 @@ let globals : environment =
 
 let rec sync acc = function
   (* Should we sync at other boundaries, e.g keywords here as well? *)
-  | ({ kind = SemiColon; _ } as t) :: (_ as r) -> (t :: acc, r)
+  | ({ kind = SemiColon; _ } as t) :: rest -> (t :: acc, rest)
   | [] -> (acc, [])
   | x :: r -> sync (x :: acc) r
 
@@ -132,6 +132,8 @@ let rec primary = function
   | ({ kind = Super; _ } as super)
     :: { kind = Dot; _ } :: ({ kind = Identifier _; _ } as m) :: rest ->
       Ok (Super (super, m, next_id ()), rest)
+  | { kind = Super; _ } :: rest ->
+      error "Super" "Expected `super` method call (e.g `super.foo()`)" rest
   | { kind = Identifier _ as i; _ } :: rest ->
       Ok (Variable (i, next_id ()), rest)
   | _ as rest ->
@@ -346,19 +348,33 @@ and for_stmt = function
       Ok (enclosed_body, rest)
   | _ as rest -> error "For-loop" "Expected loop (e.g `for (;;)`)" rest
 
-and block_stmt_inner tokens acc =
+and block_stmt_inner tokens (acc : (statement, string) Base.Result.t list) =
   match tokens with
   | [] -> error "Block statement" "Expected closing `}`" tokens
-  | { kind = CurlyBraceRight; _ } :: rest -> Ok (acc, rest)
+  | { kind = CurlyBraceRight; _ } :: rest ->
+      let acc : (statement list, string list) Base.Result.t =
+        acc |> List.rev |> Result.combine_errors
+      in
+      acc
+      |> Result.map ~f:(fun stmts -> (stmts, rest))
+      |> Result.map_error ~f:(fun errs ->
+             (List.fold ~f:(fun acc err -> acc ^ err ^ "\n") ~init:"" errs, rest))
   | _ ->
-      let%bind s, rest = declaration tokens in
-      let%bind acc = Ok (Array.append acc [| s |]) in
+      let d = declaration tokens in
+      let rest : token list =
+        match d with Ok (_, rest) | Error (_, rest) -> rest
+      in
+      let ok_or_err : (statement, string) Base.Result.t =
+        Result.map ~f:fst d |> Result.map_error ~f:fst
+      in
+
+      let acc = ok_or_err :: acc in
       block_stmt_inner rest acc
 
 and block_stmt = function
   | { kind = CurlyBraceLeft; _ } :: rest ->
-      let%map stmts, rest = block_stmt_inner rest [||] in
-      (Block (stmts, next_id ()), rest)
+      let%map stmts, rest = block_stmt_inner rest [] in
+      (Block (Array.of_list stmts, next_id ()), rest)
   | _ as rest ->
       error "Block statement" "Expected block statement with opening `{`" rest
 
