@@ -4,7 +4,6 @@ class A {
 
 class B < A {
   method() {
-    // expect: error
-    (super).method();
+    (super).method(); // expect: 7:11:Context: Super. Expected `super` method call (e.g `super.foo()`). Got: ` ) . method ( ) ;`.
   }
 }
