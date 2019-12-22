@@ -231,15 +231,15 @@ and expression tokens = assignment tokens
 and assignment = function
   | [] as rest -> error "Assignement" "Expected assignement (e.g `a = 1;`)" rest
   | _ as t -> (
-      let%bind e, rest = logic_or t in
+      let%bind lhs, rest = logic_or t in
       match rest with
       | { kind = Equal; _ } :: rest -> (
-          let%bind a, rest = assignment rest in
-          match (e, a) with
-          | Variable (v, _), _ -> Ok (Assign (v, a, next_id ()), rest)
-          | Get (e, n), _ -> Ok (Set (e, n, a), rest)
+          let%bind rhs, rest = assignment rest in
+          match (lhs, rhs) with
+          | Variable (v, _), _ -> Ok (Assign (v, rhs, next_id ()), rest)
+          | Get (lhs, n), _ -> Ok (Set (lhs, n, rhs), rest)
           | _ -> error "Assignement" "Expected valid assignment target" t )
-      | _ -> Ok (e, rest) )
+      | _ -> Ok (lhs, rest) )
 
 and logic_and tokens =
   let%bind l, rest = equality tokens in
