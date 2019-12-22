@@ -58,8 +58,13 @@ let create_in_current_env n v env =
   env
 
 let bind_fn inst c =
-  let env = new_env c.decl_environment |> create_in_current_env "this" inst in
-  c.decl_environment <- env;
+  ( match Hashtbl.find c.decl_environment.values "this" with
+  | None ->
+      let env =
+        new_env c.decl_environment |> create_in_current_env "this" inst
+      in
+      c.decl_environment <- env
+  | _ -> () );
   c
 
 let find_method inst n methods =
