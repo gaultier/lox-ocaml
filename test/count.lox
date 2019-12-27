@@ -1,0 +1,11 @@
+#!./lox run
+var n = parseNumber(readLine());
+
+for (var i = 0; i < n; i = i+1) {
+    print i;
+}
+// expect: 0.
+// expect: 1.
+// expect: 2.
+// expect: 3.
+// expect: 4.

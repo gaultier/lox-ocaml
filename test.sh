@@ -14,5 +14,5 @@ fi
 
 find test -name '*.lox' -type f | sort | parallel --bar -k --timeout 4 " \
     awk -F '// expect: ' '/expect/{print \$2}' < {} > $TMPDIR/{/}.expected; \
-    $LOXBIN run {} > $TMPDIR/{/}.output 2>&1; \
+    echo 5 | $LOXBIN run {} > $TMPDIR/{/}.output 2>&1; \
     $DIFFTOOL $TMPDIR/{/}.expected $TMPDIR/{/}.output || exit 1"
