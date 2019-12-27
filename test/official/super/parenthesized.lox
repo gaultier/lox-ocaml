@@ -6,4 +6,4 @@ class B < A {
   method() {
     (super).method(); // expect: 7:11:Context: Super. Expected `super` method call (e.g `super.foo()`). Got: ` ) . method ( ) ;`.
   }
-}
+} // expect: 9:1:Context: Primary. Expected primary (e.g `1` or `(true)` or "hello"). Got: ` }`.
