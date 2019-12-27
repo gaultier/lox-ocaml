@@ -72,6 +72,17 @@ and statements = statement list [@@deriving sexp_of]
 
 let empty () : env_values_t = Hashtbl.create (module String)
 
+let value_to_string = function
+  | String s -> s
+  | Number f -> Float.to_string f
+  | Bool true -> "true"
+  | Bool false -> "false"
+  | Nil -> "nil"
+  | Callable { name = n; _ } -> "function@" ^ n
+  | VClass (n, _, _) -> n
+  | Instance (VClass (n, _, _), _) -> "instance@" ^ n
+  | Instance _ -> failwith "Malformed instance"
+
 let globals : environment =
   {
     values =
@@ -86,6 +97,35 @@ let globals : environment =
                 is_ctor = false;
                 decl_environment = { values = empty (); enclosing = None };
                 fn = (fun _ _ -> Number (Unix.gettimeofday ()));
+              } );
+          ( "readLine",
+            Callable
+              {
+                arity = 0;
+                name = "readLine";
+                is_ctor = false;
+                decl_environment = { values = empty (); enclosing = None };
+                fn =
+                  (fun _ _ ->
+                    String
+                      (Stdio.In_channel.input_line_exn ~fix_win_eol:true
+                         Stdio.stdin));
+              } );
+          ( "parseNumber",
+            Callable
+              {
+                arity = 1;
+                name = "parseNumber";
+                is_ctor = false;
+                decl_environment = { values = empty (); enclosing = None };
+                fn =
+                  (fun args _ ->
+                    match List.hd_exn args with
+                    | Number _ as n -> n
+                    | String s -> Number (Float.of_string s)
+                    | v ->
+                        Printf.failwithf "Cannot convert `%s` to number"
+                          (value_to_string v) ());
               } );
         ];
     enclosing = None;
@@ -497,14 +537,3 @@ and program decls = function
       program decls rest
 
 let parse tokens = program [] tokens |> List.rev |> Result.combine_errors
-
-let value_to_string = function
-  | String s -> s
-  | Number f -> Float.to_string f
-  | Bool true -> "true"
-  | Bool false -> "false"
-  | Nil -> "nil"
-  | Callable { name = n; _ } -> "function@" ^ n
-  | VClass (n, _, _) -> n
-  | Instance (VClass (n, _, _), _) -> "instance@" ^ n
-  | Instance _ -> failwith "Malformed instance"

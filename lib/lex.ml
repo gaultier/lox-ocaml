@@ -90,7 +90,11 @@ let expect ctx expected =
       Printf.failwithf "Expected character `%c`, got: no more tokens" expected
         ()
 
-(* let previous ctx = Option.value_exn (peek ctx.source ctx.pos) *)
+let rec until_newline ctx =
+  match ctx.source.[ctx.pos] with
+  | '\n' | (exception Invalid_argument _) ->
+      { ctx with line = ctx.line + 1; column = 1; pos = ctx.pos + 1 }
+  | _ -> until_newline { ctx with pos = ctx.pos + 1; column = ctx.column + 1 }
 
 let lex_string ctx =
   let ctx = expect ctx '"' in
@@ -288,18 +292,26 @@ let rec lex_r ctx =
             Ok { kind = Star; lines = ctx.line; columns = ctx.column }
             :: ctx.tokens;
         }
+  | '#' -> (
+      match ctx.source.[ctx.pos + 1] with
+      | '!' ->
+          let ctx = { ctx with pos = ctx.pos + 2; column = ctx.column + 2 } in
+          until_newline ctx |> lex_r
+      | (exception Invalid_argument _) | _ ->
+          let err =
+            Result.failf "%d:%d:Unkown token: `#`" ctx.line ctx.column
+          in
+          lex_r
+            {
+              ctx with
+              column = ctx.column + 1;
+              pos = ctx.pos + 1;
+              tokens = err :: ctx.tokens;
+            } )
   | '/' -> (
       match ctx.source.[ctx.pos + 1] with
       | '/' ->
           let ctx = { ctx with pos = ctx.pos + 2; column = ctx.column + 2 } in
-          let rec until_newline ctx =
-            match ctx.source.[ctx.pos] with
-            | '\n' | (exception Invalid_argument _) ->
-                { ctx with line = ctx.line + 1; column = 1; pos = ctx.pos + 1 }
-            | _ ->
-                until_newline
-                  { ctx with pos = ctx.pos + 1; column = ctx.column + 1 }
-          in
           until_newline ctx |> lex_r
       | (exception Invalid_argument _) | _ ->
           lex_r
