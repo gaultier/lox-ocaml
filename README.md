@@ -40,7 +40,12 @@ $ echo "print 1 + 2;" | lox dump ast
 - Loops (while, for)
 - All errors are reported with line and column number
 - Functions (including recursion, closures)
-- Classes and objects
+- Object-oriented programming (classes, single inheritance)
+- Shebang
+- "Native" functions:
+  * clock()
+  * readLine()
+  * parseNumber()
 - Basic static analysis:
   * Return statement outside of a function body e.g `return 1;`
   * Variables assigned to themselves e.g `var a = a;`
@@ -111,3 +116,9 @@ $ docker run -it lox
 `lox repl` works out of the box with the [GNU Readline library](https://tiswww.cwru.edu/php/chet/readline/rltop.html) if you have it installed:
 
 `rlwrap lox repl` will provide command history for free.
+
+## Major differences with the official implementation
+
+- Variable resolution does not distinguish between local/global variables. In practices it means that mutally recursive functions in the global scope are not allowed
+- Stricter static analysis, e.g referring to undefined variables (will fail at compile time in some cases insteaf of at runtime)
+
