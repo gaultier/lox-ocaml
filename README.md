@@ -120,5 +120,5 @@ $ docker run -it lox
 ## Major differences with the official implementation
 
 - Variable resolution does not distinguish between local/global variables. In practices it means that mutally recursive functions in the global scope are not allowed
-- Stricter static analysis, e.g referring to undefined variables (will fail at compile time in some cases insteaf of at runtime)
+- Stricter static analysis, e.g referring to undefined variables (will fail at compile time in some cases instead of at runtime)
 
