@@ -5,6 +5,8 @@ OCaml, comprised of a front-end compiler and an interpreter, in roughly 1KLOC !
 
 Big thanks to [Bob Nystrom](https://github.com/munificent)!! You're amazing.
 
+*No further work is expected to happen on this project as it is feature-complete. The implementation is not optimal but still useful as a learning material.*
+
 ## Quickstart
 
 Assuming `ocaml` (version `4.08.1`) and `opam` are installed and setup:
